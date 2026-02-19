@@ -1,4 +1,14 @@
 <script setup lang="ts">
+/**
+ * ManageUsers -- admin/manager CRUD view for staff user accounts.
+ * Provides a toggleable create/edit form with name, email, password,
+ * and role fields. Password is required when creating a new user but
+ * optional when editing (left blank to keep the existing password).
+ * A table lists all users with their role badge and Edit/Remove actions.
+ * The "Remove" action uses a confirm dialog labeled "Deactivate" to
+ * signal that the user account is being disabled rather than permanently
+ * deleted.
+ */
 import { ref, onMounted } from 'vue'
 import api from '@/composables/useApi'
 import AppShell from '@/components/layout/AppShell.vue'
@@ -7,25 +17,34 @@ import BaseInput from '@/components/ui/BaseInput.vue'
 import BadgePill from '@/components/ui/BadgePill.vue'
 import type { User } from '@/types'
 
+// Reactive list of users fetched from the API
 const users = ref<User[]>([])
+// True while the initial user list is being loaded
 const loading = ref(false)
+// True while the create/update API call is in-flight
 const submitting = ref(false)
 
+// Controls visibility of the create/edit form panel
 const showForm = ref(false)
+// When non-null, the form is in "edit" mode for the user with this ID
 const editingId = ref<number | null>(null)
+// Reactive form fields bound to the create/edit form inputs
 const form = ref({
   name: '',
   email: '',
-  password: '',
-  role: 'server',
+  password: '',     // Required for create, optional for edit (blank = keep existing)
+  role: 'server',   // Default role for new users: 'server', 'bartender', 'manager', or 'admin'
 })
 
+// Clears all form fields, exits edit mode, and hides the form panel
 function resetForm() {
   form.value = { name: '', email: '', password: '', role: 'server' }
   editingId.value = null
   showForm.value = false
 }
 
+// Populates the form with an existing user's data for editing.
+// Password is left blank so the user can optionally change it.
 function editUser(user: User) {
   editingId.value = user.id
   form.value = {
@@ -37,6 +56,9 @@ function editUser(user: User) {
   showForm.value = true
 }
 
+/**
+ * Fetches all users from GET /api/users.
+ */
 async function fetchUsers() {
   loading.value = true
   try {
@@ -47,6 +69,12 @@ async function fetchUsers() {
   }
 }
 
+/**
+ * Saves a user -- creates (POST) or updates (PATCH) based on editingId.
+ * Only includes the password field in the payload if it is non-empty.
+ * Validates that password is provided when creating a new user.
+ * Updates the local list in-place on success and resets the form.
+ */
 async function saveUser() {
   if (!form.value.name.trim() || !form.value.email.trim()) return
   submitting.value = true
@@ -56,6 +84,7 @@ async function saveUser() {
       email: form.value.email,
       role: form.value.role,
     }
+    // Only include password if provided (avoids overwriting on edit)
     if (form.value.password) {
       payload.password = form.value.password
     }
@@ -66,6 +95,7 @@ async function saveUser() {
       if (idx !== -1) users.value[idx] = data
       toast('User updated', 'success')
     } else {
+      // Password is mandatory for new user creation
       if (!form.value.password) {
         toast('Password is required for new users', 'error')
         submitting.value = false
@@ -83,6 +113,10 @@ async function saveUser() {
   }
 }
 
+/**
+ * Removes/deactivates a user after confirmation.
+ * Removes the user from the local list on success.
+ */
 async function deleteUser(id: number) {
   if (!confirm('Deactivate this user?')) return
   try {
@@ -94,10 +128,12 @@ async function deleteUser(id: number) {
   }
 }
 
+// Helper to dispatch a global toast notification via CustomEvent
 function toast(message: string, type: string) {
   window.dispatchEvent(new CustomEvent('toast', { detail: { message, type } }))
 }
 
+// Maps user roles to BadgePill color values for the table's role column
 const roleColor: Record<string, 'red' | 'yellow' | 'blue' | 'green' | 'gray'> = {
   admin: 'red',
   manager: 'yellow',
@@ -105,6 +141,7 @@ const roleColor: Record<string, 'red' | 'yellow' | 'blue' | 'green' | 'gray'> = 
   bartender: 'green',
 }
 
+// Fetch users on component mount
 onMounted(fetchUsers)
 </script>
 

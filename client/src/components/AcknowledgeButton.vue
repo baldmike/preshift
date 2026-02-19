@@ -1,16 +1,32 @@
 <script setup lang="ts">
+/**
+ * AcknowledgeButton -- toggle button that lets staff confirm they have read
+ * an 86'd item, special, push item, or announcement. Once acknowledged,
+ * it shows a green checkmark instead of the clickable button.
+ * Dispatches a toast on failure so the user is notified.
+ */
 import { ref } from 'vue'
 import { useAcknowledgments } from '@/composables/useAcknowledgments'
 
+// Props:
+// - type:         The acknowledgeable entity type string (e.g. 'eighty_sixed', 'special', 'push_item', 'announcement')
+// - id:           The database ID of the entity being acknowledged
+// - acknowledged: Whether the current user has already acknowledged this entity
 const props = defineProps<{
   type: string
   id: number
   acknowledged: boolean
 }>()
 
+// Pulls the acknowledge action from the composable to send the ack to the API
 const { acknowledge } = useAcknowledgments()
+// Tracks whether the API call is in-flight to disable the button and show a spinner
 const loading = ref(false)
 
+/**
+ * Handles the click on the "Acknowledge" button.
+ * Sends the acknowledgment to the API and shows an error toast on failure.
+ */
 async function handleAcknowledge() {
   loading.value = true
   try {

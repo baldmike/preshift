@@ -4,6 +4,23 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
+/**
+ * Create infrastructure tables for sessions, cache, and the job queue.
+ *
+ * These are standard Laravel framework tables required when using the database
+ * driver for sessions, cache, and queues. The job-related tables (jobs,
+ * job_batches, failed_jobs) are particularly important in this app because
+ * broadcast events implement ShouldBroadcast, which pushes them onto the queue
+ * for asynchronous delivery to WebSocket clients.
+ *
+ * Tables created:
+ *   - sessions     -- Stores HTTP session data when using the "database" session driver.
+ *   - cache        -- Key/value store for the "database" cache driver.
+ *   - cache_locks  -- Atomic locks for the "database" cache driver.
+ *   - jobs         -- Pending queued jobs (including broadcast event dispatches).
+ *   - job_batches  -- Tracks batched job groups and their completion status.
+ *   - failed_jobs  -- Records jobs that exhausted their retry attempts for debugging.
+ */
 return new class extends Migration
 {
     /**

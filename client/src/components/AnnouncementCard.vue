@@ -1,15 +1,25 @@
 <script setup lang="ts">
+/**
+ * AnnouncementCard -- renders a single management announcement.
+ * Displays the title, a priority badge (urgent/high/normal/low),
+ * the announcement body, who posted it, when it expires, and
+ * an AcknowledgeButton for staff read-receipts.
+ */
 import type { Announcement } from '@/types'
 import { useAcknowledgments } from '@/composables/useAcknowledgments'
 import AcknowledgeButton from '@/components/AcknowledgeButton.vue'
 import BadgePill from '@/components/ui/BadgePill.vue'
 
+// Props:
+// - announcement: The Announcement record with title, body, priority, poster, expires_at, etc.
 const props = defineProps<{
   announcement: Announcement
 }>()
 
+// Pulls the isAcknowledged checker for the current user's ack status on this announcement
 const { isAcknowledged } = useAcknowledgments()
 
+// Maps announcement priority levels to BadgePill colors for visual urgency
 const priorityColor = {
   urgent: 'red' as const,
   high: 'yellow' as const,
@@ -17,6 +27,7 @@ const priorityColor = {
   low: 'gray' as const,
 }
 
+// Formats an ISO datetime string to a short, human-readable timestamp (e.g. "Feb 19, 3:45 PM")
 function formatDateTime(dateStr: string | null) {
   if (!dateStr) return ''
   return new Date(dateStr).toLocaleString([], {

@@ -1,4 +1,11 @@
 <script setup lang="ts">
+/**
+ * ManagePushItems -- admin/manager CRUD view for push items.
+ * Push items are menu items that management wants staff to actively
+ * promote or upsell. This view provides a toggleable create/edit form
+ * with a priority selector (low/medium/high) and a table listing all
+ * push items with Edit and Delete actions.
+ */
 import { ref, onMounted } from 'vue'
 import api from '@/composables/useApi'
 import AppShell from '@/components/layout/AppShell.vue'
@@ -7,25 +14,33 @@ import BaseInput from '@/components/ui/BaseInput.vue'
 import BadgePill from '@/components/ui/BadgePill.vue'
 import type { PushItem } from '@/types'
 
+// Reactive list of push items fetched from the API
 const items = ref<PushItem[]>([])
+// True while the initial list is being loaded
 const loading = ref(false)
+// True while the create/update API call is in-flight
 const submitting = ref(false)
 
+// Controls visibility of the create/edit form panel
 const showForm = ref(false)
+// When non-null, the form is in "edit" mode for the push item with this ID
 const editingId = ref<number | null>(null)
+// Reactive form fields bound to the create/edit form inputs
 const form = ref({
   title: '',
   description: '',
-  reason: '',
-  priority: 'medium',
+  reason: '',           // Why this item should be pushed (e.g. overstock, high margin)
+  priority: 'medium',   // Priority level: 'low', 'medium', or 'high'
 })
 
+// Clears all form fields, exits edit mode, and hides the form panel
 function resetForm() {
   form.value = { title: '', description: '', reason: '', priority: 'medium' }
   editingId.value = null
   showForm.value = false
 }
 
+// Populates the form with an existing push item's data for editing
 function editItem(item: PushItem) {
   editingId.value = item.id
   form.value = {
@@ -37,6 +52,9 @@ function editItem(item: PushItem) {
   showForm.value = true
 }
 
+/**
+ * Fetches all push items from GET /api/push-items.
+ */
 async function fetchItems() {
   loading.value = true
   try {
@@ -47,6 +65,10 @@ async function fetchItems() {
   }
 }
 
+/**
+ * Saves a push item -- creates (POST) or updates (PATCH) based on editingId.
+ * Updates the local list in-place on success and resets the form.
+ */
 async function saveItem() {
   if (!form.value.title.trim()) return
   submitting.value = true
@@ -69,6 +91,10 @@ async function saveItem() {
   }
 }
 
+/**
+ * Deletes a push item after user confirmation.
+ * Removes the record from the local list on success.
+ */
 async function deleteItem(id: number) {
   if (!confirm('Delete this push item?')) return
   try {
@@ -80,16 +106,19 @@ async function deleteItem(id: number) {
   }
 }
 
+// Helper to dispatch a global toast notification via CustomEvent
 function toast(message: string, type: string) {
   window.dispatchEvent(new CustomEvent('toast', { detail: { message, type } }))
 }
 
+// Maps priority levels to BadgePill color values for the table column
 const priorityColor: Record<string, 'red' | 'yellow' | 'green' | 'gray'> = {
   high: 'red',
   medium: 'yellow',
   low: 'green',
 }
 
+// Fetch push items on component mount
 onMounted(fetchItems)
 </script>
 

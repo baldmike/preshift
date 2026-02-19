@@ -1,4 +1,12 @@
 <script setup lang="ts">
+/**
+ * DashboardView -- the main staff-facing view that aggregates all pre-shift
+ * information in one place: 86'd items, daily specials, push items, and
+ * announcements. Data is fetched on mount from the preshift store and then
+ * kept in sync via Laravel Reverb WebSocket events scoped to the user's
+ * location channel. Each section only renders if it has items, and an
+ * empty-state message is shown when there is nothing for the day.
+ */
 import { onMounted, onUnmounted } from 'vue'
 import { usePreshiftStore } from '@/stores/preshift'
 import { useAuth } from '@/composables/useAuth'
@@ -9,24 +17,33 @@ import SpecialCard from '@/components/SpecialCard.vue'
 import PushItemCard from '@/components/PushItemCard.vue'
 import AnnouncementCard from '@/components/AnnouncementCard.vue'
 
+// Central Pinia store holding all pre-shift data (86'd, specials, push items, announcements)
 const store = usePreshiftStore()
+// Current user's location ID, needed to subscribe to the correct Reverb channel
 const { locationId } = useAuth()
 
+// Reference to the Echo channel so we can unsubscribe on component teardown
 let channel: ReturnType<typeof useLocationChannel> | null = null
 
 onMounted(async () => {
+  // Initial data load from the API via the preshift store
   await store.fetchAll()
 
+  // Subscribe to the location-specific WebSocket channel for realtime updates.
+  // Each .listen() call registers a handler for a specific broadcast event
+  // so the dashboard updates instantly when managers make changes.
   if (locationId.value) {
     channel = useLocationChannel(locationId.value)
 
     channel
+      // 86'd item events -- add new or remove restored items from the store
       .listen('.item.eighty-sixed', (e: any) => {
         store.addEightySixed(e.item || e)
       })
       .listen('.item.restored', (e: any) => {
         store.removeEightySixed(e.item?.id || e.id)
       })
+      // Special events -- add, update, or remove specials in realtime
       .listen('.special.created', (e: any) => {
         store.addSpecial(e.special || e)
       })
@@ -36,6 +53,7 @@ onMounted(async () => {
       .listen('.special.deleted', (e: any) => {
         store.removeSpecial(e.id)
       })
+      // Push item events -- add, update, or remove push items in realtime
       .listen('.push-item.created', (e: any) => {
         store.addPushItem(e.pushItem || e)
       })
@@ -45,6 +63,7 @@ onMounted(async () => {
       .listen('.push-item.deleted', (e: any) => {
         store.removePushItem(e.id)
       })
+      // Announcement events -- add, update, or remove announcements in realtime
       .listen('.announcement.posted', (e: any) => {
         store.addAnnouncement(e.announcement || e)
       })
@@ -57,6 +76,8 @@ onMounted(async () => {
   }
 })
 
+// Clean up all WebSocket listeners when the component is destroyed
+// to prevent memory leaks and duplicate event handling
 onUnmounted(() => {
   if (channel && locationId.value) {
     channel.stopListening('.item.eighty-sixed')

@@ -1,4 +1,11 @@
 <script setup lang="ts">
+/**
+ * ManageSpecials -- admin/manager CRUD view for daily specials.
+ * Provides a toggleable create/edit form and a table of all specials.
+ * Supports creating new specials (POST), editing existing ones (PATCH),
+ * and deleting specials (DELETE). The form is reused for both create
+ * and edit modes, distinguished by whether editingId is set.
+ */
 import { ref, onMounted } from 'vue'
 import api from '@/composables/useApi'
 import AppShell from '@/components/layout/AppShell.vue'
@@ -6,26 +13,34 @@ import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import type { Special } from '@/types'
 
+// Reactive list of specials fetched from the API
 const specials = ref<Special[]>([])
+// True while the initial specials list is being loaded
 const loading = ref(false)
+// True while the create/update API call is in-flight
 const submitting = ref(false)
 
+// Controls visibility of the create/edit form panel
 const showForm = ref(false)
+// When non-null, the form is in "edit" mode for the special with this ID
 const editingId = ref<number | null>(null)
+// Reactive form fields bound to the create/edit form inputs
 const form = ref({
   title: '',
   description: '',
-  type: '',
-  starts_at: '',
-  ends_at: '',
+  type: '',       // Category of special (e.g. "food", "drink")
+  starts_at: '',  // Start date (ISO date string)
+  ends_at: '',    // End date (ISO date string)
 })
 
+// Clears all form fields, exits edit mode, and hides the form panel
 function resetForm() {
   form.value = { title: '', description: '', type: '', starts_at: '', ends_at: '' }
   editingId.value = null
   showForm.value = false
 }
 
+// Populates the form with an existing special's data for editing
 function editSpecial(special: Special) {
   editingId.value = special.id
   form.value = {
@@ -38,6 +53,9 @@ function editSpecial(special: Special) {
   showForm.value = true
 }
 
+/**
+ * Fetches all specials from GET /api/specials.
+ */
 async function fetchSpecials() {
   loading.value = true
   try {
@@ -48,6 +66,11 @@ async function fetchSpecials() {
   }
 }
 
+/**
+ * Saves a special -- creates (POST) or updates (PATCH) based on editingId.
+ * Defaults starts_at to today if not provided on create.
+ * Updates the local list in-place on success and resets the form.
+ */
 async function saveSpecial() {
   if (!form.value.title.trim()) return
   submitting.value = true
@@ -73,6 +96,10 @@ async function saveSpecial() {
   }
 }
 
+/**
+ * Deletes a special after user confirmation via browser confirm dialog.
+ * Removes the record from the local list on success.
+ */
 async function deleteSpecial(id: number) {
   if (!confirm('Delete this special?')) return
   try {
@@ -84,10 +111,12 @@ async function deleteSpecial(id: number) {
   }
 }
 
+// Helper to dispatch a global toast notification via CustomEvent
 function toast(message: string, type: string) {
   window.dispatchEvent(new CustomEvent('toast', { detail: { message, type } }))
 }
 
+// Load specials on component mount
 onMounted(fetchSpecials)
 </script>
 

@@ -1,12 +1,22 @@
 <script setup lang="ts">
+/**
+ * ManageDashboard -- the management hub that links to all admin CRUD views.
+ * Displayed as a grid of navigation cards, each showing the section name
+ * and an active-item count (for countable sections like 86'd items, specials,
+ * push items, and announcements). The "Locations" link is shown only to
+ * users with the admin role. Counts are fetched from the /api/preshift
+ * endpoint on mount.
+ */
 import { ref, onMounted } from 'vue'
 import { useAuth } from '@/composables/useAuth'
 import api from '@/composables/useApi'
 import AppShell from '@/components/layout/AppShell.vue'
 import type { PreShiftData } from '@/types'
 
+// Used to conditionally show the admin-only "Locations" link
 const { isAdmin } = useAuth()
 
+// Holds the active-item counts displayed on each nav card badge
 const counts = ref({
   eightySixed: 0,
   specials: 0,
@@ -14,6 +24,8 @@ const counts = ref({
   announcements: 0,
 })
 
+// Fetch current pre-shift data on mount to populate the counts.
+// On failure, counts remain at 0 (silent degradation).
 onMounted(async () => {
   try {
     const { data } = await api.get<PreShiftData>('/api/preshift')
@@ -26,6 +38,9 @@ onMounted(async () => {
   }
 })
 
+// Static navigation link definitions for the management grid.
+// Each entry maps to a manage sub-route, with a label, color, and
+// optional key into the `counts` object to display "X active".
 const links = [
   { to: '/manage/86', label: '86\'d Items', icon: 'ban', key: 'eightySixed' as const, color: 'bg-red-500' },
   { to: '/manage/specials', label: 'Specials', icon: 'star', key: 'specials' as const, color: 'bg-blue-500' },

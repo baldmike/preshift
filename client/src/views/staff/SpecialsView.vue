@@ -1,13 +1,25 @@
 <script setup lang="ts">
+/**
+ * SpecialsView -- read-only staff view that lists all current daily specials.
+ * Fetches specials from the API on mount and renders each as a SpecialCard.
+ * Unlike the admin ManageSpecials view, staff cannot create/edit/delete here;
+ * they can only view and acknowledge specials.
+ */
 import { ref, onMounted } from 'vue'
 import api from '@/composables/useApi'
 import AppShell from '@/components/layout/AppShell.vue'
 import SpecialCard from '@/components/SpecialCard.vue'
 import type { Special } from '@/types'
 
+// Reactive list of specials fetched from the API
 const specials = ref<Special[]>([])
+// True while the specials list is being loaded from the server
 const loading = ref(false)
 
+/**
+ * Fetches the current specials from GET /api/specials
+ * and populates the specials array.
+ */
 async function fetchSpecials() {
   loading.value = true
   try {
@@ -18,6 +30,7 @@ async function fetchSpecials() {
   }
 }
 
+// Load specials when the view mounts
 onMounted(fetchSpecials)
 </script>
 

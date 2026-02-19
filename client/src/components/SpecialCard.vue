@@ -1,15 +1,25 @@
 <script setup lang="ts">
+/**
+ * SpecialCard -- renders a single daily special (food or drink promotion).
+ * Displays the special's title, optional type badge (e.g. "food", "drink"),
+ * description, date range, and an AcknowledgeButton for staff read-receipts.
+ * Used on the staff Dashboard and the Specials view.
+ */
 import type { Special } from '@/types'
 import { useAcknowledgments } from '@/composables/useAcknowledgments'
 import AcknowledgeButton from '@/components/AcknowledgeButton.vue'
 import BadgePill from '@/components/ui/BadgePill.vue'
 
+// Props:
+// - special: The Special record with title, description, type, starts_at, ends_at, etc.
 const props = defineProps<{
   special: Special
 }>()
 
+// Pulls the isAcknowledged checker to see if the current user has ack'd this special
 const { isAcknowledged } = useAcknowledgments()
 
+// Formats an ISO date string to a short date display (e.g. "Feb 19"), returns empty string for null
 function formatDate(dateStr: string | null) {
   if (!dateStr) return ''
   return new Date(dateStr).toLocaleDateString([], {

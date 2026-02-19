@@ -4,6 +4,22 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
+/**
+ * Create the `users` table.
+ *
+ * Stores all staff accounts. Each user belongs to a single location (except admins,
+ * whose location_id is null, granting them access to all locations). The role enum
+ * drives authorization throughout the app: admins and managers can create/edit
+ * content, while servers and bartenders have read-only access to pre-shift data.
+ *
+ * Key columns:
+ *   - location_id (FK, nullable) -- The location this user belongs to. Null for
+ *     admins who oversee all locations. Set to null on delete (nullOnDelete).
+ *   - email       (string, unique) -- Login identifier.
+ *   - password    (string) -- Bcrypt-hashed password.
+ *   - role        (enum: admin, manager, server, bartender) -- Determines
+ *     permissions via the CheckRole middleware.
+ */
 return new class extends Migration
 {
     /**

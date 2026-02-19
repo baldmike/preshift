@@ -1,4 +1,16 @@
 <script setup lang="ts">
+/**
+ * BaseInput -- reusable text input with optional label and error message.
+ * Implements v-model via modelValue prop + update:modelValue emit so
+ * parent components can bind with `v-model`.
+ */
+
+// Props:
+// - modelValue:  Current input value, bound via v-model from the parent
+// - label:       Optional label text rendered above the input
+// - type:        HTML input type attribute (defaults to 'text' in the template)
+// - error:       Validation error string; when present, input border turns red
+// - placeholder: Placeholder text shown when input is empty
 defineProps<{
   modelValue?: string | number
   label?: string
@@ -7,6 +19,9 @@ defineProps<{
   placeholder?: string
 }>()
 
+// Emits:
+// - update:modelValue: Fired on every input event with the new string value,
+//   enabling two-way binding via v-model in the parent component
 defineEmits<{
   'update:modelValue': [value: string]
 }>()

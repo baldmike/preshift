@@ -1,6 +1,13 @@
 <script setup lang="ts">
+/**
+ * BottomNav -- fixed bottom navigation bar for mobile-first navigation.
+ * Renders links to Dashboard, 86'd Board, Specials, and conditionally
+ * a "Manage" link visible only to admin/manager roles. Active route
+ * highlighting is driven by comparing $route.path in the template.
+ */
 import { useAuth } from '@/composables/useAuth'
 
+// Role checks used to conditionally display the Manage nav link
 const { isAdmin, isManager } = useAuth()
 </script>
 
@@ -43,6 +50,7 @@ const { isAdmin, isManager } = useAuth()
         <span>Specials</span>
       </router-link>
 
+      <!-- Manage link is restricted to admin and manager roles -->
       <router-link
         v-if="isAdmin || isManager"
         to="/manage"

@@ -1,4 +1,13 @@
 <script setup lang="ts">
+/**
+ * ManageAnnouncements -- admin/manager CRUD view for announcements.
+ * Announcements are general messages posted by management for staff
+ * to read before their shift (e.g. policy changes, event info).
+ * This view provides a toggleable create/edit form with a priority
+ * selector (low/normal/high/urgent), optional expiration date, and
+ * a textarea for the announcement body. A table lists all current
+ * announcements with Edit and Delete actions.
+ */
 import { ref, onMounted } from 'vue'
 import api from '@/composables/useApi'
 import AppShell from '@/components/layout/AppShell.vue'
@@ -7,25 +16,34 @@ import BaseInput from '@/components/ui/BaseInput.vue'
 import BadgePill from '@/components/ui/BadgePill.vue'
 import type { Announcement } from '@/types'
 
+// Reactive list of announcements fetched from the API
 const announcements = ref<Announcement[]>([])
+// True while the initial list is being loaded
 const loading = ref(false)
+// True while the create/update API call is in-flight
 const submitting = ref(false)
 
+// Controls visibility of the create/edit form panel
 const showForm = ref(false)
+// When non-null, the form is in "edit" mode for the announcement with this ID
 const editingId = ref<number | null>(null)
+// Reactive form fields bound to the create/edit form inputs
 const form = ref({
   title: '',
-  body: '',
-  priority: 'normal',
-  expires_at: '',
+  body: '',               // The full announcement text
+  priority: 'normal',     // Priority level: 'low', 'normal', 'high', or 'urgent'
+  expires_at: '',          // Optional expiration date (ISO date string)
 })
 
+// Clears all form fields, exits edit mode, and hides the form panel
 function resetForm() {
   form.value = { title: '', body: '', priority: 'normal', expires_at: '' }
   editingId.value = null
   showForm.value = false
 }
 
+// Populates the form with an existing announcement's data for editing.
+// Strips the time portion from expires_at for the date input.
 function editAnnouncement(a: Announcement) {
   editingId.value = a.id
   form.value = {
@@ -37,6 +55,9 @@ function editAnnouncement(a: Announcement) {
   showForm.value = true
 }
 
+/**
+ * Fetches all announcements from GET /api/announcements.
+ */
 async function fetchAnnouncements() {
   loading.value = true
   try {
@@ -47,6 +68,11 @@ async function fetchAnnouncements() {
   }
 }
 
+/**
+ * Saves an announcement -- creates (POST) or updates (PATCH) based on editingId.
+ * Converts empty expires_at to null before sending to the API.
+ * Updates the local list in-place on success and resets the form.
+ */
 async function saveAnnouncement() {
   if (!form.value.title.trim()) return
   submitting.value = true
@@ -73,6 +99,10 @@ async function saveAnnouncement() {
   }
 }
 
+/**
+ * Deletes an announcement after user confirmation.
+ * Removes the record from the local list on success.
+ */
 async function deleteAnnouncement(id: number) {
   if (!confirm('Delete this announcement?')) return
   try {
@@ -84,10 +114,12 @@ async function deleteAnnouncement(id: number) {
   }
 }
 
+// Helper to dispatch a global toast notification via CustomEvent
 function toast(message: string, type: string) {
   window.dispatchEvent(new CustomEvent('toast', { detail: { message, type } }))
 }
 
+// Maps announcement priority levels to BadgePill colors for the table column
 const priorityColor: Record<string, 'red' | 'yellow' | 'blue' | 'gray'> = {
   urgent: 'red',
   high: 'yellow',
@@ -95,6 +127,7 @@ const priorityColor: Record<string, 'red' | 'yellow' | 'blue' | 'gray'> = {
   low: 'gray',
 }
 
+// Fetch announcements on component mount
 onMounted(fetchAnnouncements)
 </script>
 

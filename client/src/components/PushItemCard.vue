@@ -1,15 +1,25 @@
 <script setup lang="ts">
+/**
+ * PushItemCard -- renders a single "push item" that management wants
+ * staff to actively promote or upsell during their shift.
+ * Displays the item title, a priority badge (high/medium/low),
+ * an optional description and reason, plus an AcknowledgeButton.
+ */
 import type { PushItem } from '@/types'
 import { useAcknowledgments } from '@/composables/useAcknowledgments'
 import AcknowledgeButton from '@/components/AcknowledgeButton.vue'
 import BadgePill from '@/components/ui/BadgePill.vue'
 
+// Props:
+// - item: The PushItem record with title, description, reason, priority, etc.
 const props = defineProps<{
   item: PushItem
 }>()
 
+// Pulls the isAcknowledged checker for the current user's ack status on this push item
 const { isAcknowledged } = useAcknowledgments()
 
+// Maps priority levels to BadgePill color values for visual urgency indication
 const priorityColor = {
   high: 'red' as const,
   medium: 'yellow' as const,

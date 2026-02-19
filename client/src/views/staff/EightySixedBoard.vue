@@ -1,4 +1,11 @@
 <script setup lang="ts">
+/**
+ * EightySixedBoard -- staff-facing view that lists all currently 86'd items.
+ * All users can see the board, but only admins and managers see an inline
+ * form to 86 a new item. Items are displayed as EightySixedCard components
+ * in a responsive grid. The form posts to the API and optimistically adds
+ * the new record to the local list on success.
+ */
 import { ref, onMounted } from 'vue'
 import { useAuth } from '@/composables/useAuth'
 import api from '@/composables/useApi'
@@ -8,16 +15,23 @@ import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import type { EightySixed } from '@/types'
 
+// Role checks to conditionally show the "86 an Item" manager form
 const { isAdmin, isManager } = useAuth()
 
+// Reactive list of all currently 86'd items from the API
 const items = ref<EightySixed[]>([])
+// True while the initial item list is being fetched
 const loading = ref(false)
 
-// Form state for managers
-const itemName = ref('')
-const reason = ref('')
-const submitting = ref(false)
+// Form state for the manager-only "86 an Item" form
+const itemName = ref('')   // Name of the item to 86
+const reason = ref('')     // Optional reason why the item is unavailable
+const submitting = ref(false) // True while the form POST is in-flight
 
+/**
+ * Fetches all currently 86'd items from GET /api/eighty-sixed
+ * and populates the items array.
+ */
 async function fetchItems() {
   loading.value = true
   try {
@@ -28,6 +42,11 @@ async function fetchItems() {
   }
 }
 
+/**
+ * Handles the "86 It" form submission. Validates that itemName is non-empty,
+ * POSTs to the API, then optimistically appends the returned record to the
+ * local list and resets the form fields. Shows a toast on success or failure.
+ */
 async function addItem() {
   if (!itemName.value.trim()) return
   submitting.value = true
@@ -51,6 +70,7 @@ async function addItem() {
   }
 }
 
+// Fetch items on component mount
 onMounted(fetchItems)
 </script>
 

@@ -1,4 +1,12 @@
 <script setup lang="ts">
+/**
+ * ManageMenuItems -- admin/manager CRUD view for the restaurant's menu items.
+ * Fetches both menu items and categories in parallel on mount. Provides a
+ * toggleable create/edit form with fields for name, price, description, type,
+ * category (from a dropdown populated by the categories API), and an
+ * active/inactive toggle. A table lists all menu items with Edit and Delete
+ * actions. Price is parsed to a float before sending to the API.
+ */
 import { ref, onMounted } from 'vue'
 import api from '@/composables/useApi'
 import AppShell from '@/components/layout/AppShell.vue'
@@ -7,28 +15,36 @@ import BaseInput from '@/components/ui/BaseInput.vue'
 import BadgePill from '@/components/ui/BadgePill.vue'
 import type { MenuItem, Category } from '@/types'
 
+// Reactive lists of menu items and categories from the API
 const menuItems = ref<MenuItem[]>([])
-const categories = ref<Category[]>([])
+const categories = ref<Category[]>([])  // Used to populate the category dropdown
+// True while the initial data is being loaded
 const loading = ref(false)
+// True while the create/update API call is in-flight
 const submitting = ref(false)
 
+// Controls visibility of the create/edit form panel
 const showForm = ref(false)
+// When non-null, the form is in "edit" mode for the menu item with this ID
 const editingId = ref<number | null>(null)
+// Reactive form fields bound to the create/edit form inputs
 const form = ref({
   name: '',
   description: '',
-  price: '',
-  type: '',
-  category_id: '' as string | number,
-  is_active: true,
+  price: '',                        // Entered as string, parsed to float on save
+  type: '',                         // Item type (e.g. "food", "drink")
+  category_id: '' as string | number, // FK to the categories table, or empty for none
+  is_active: true,                  // Whether the item is currently on the menu
 })
 
+// Clears all form fields, exits edit mode, and hides the form panel
 function resetForm() {
   form.value = { name: '', description: '', price: '', type: '', category_id: '', is_active: true }
   editingId.value = null
   showForm.value = false
 }
 
+// Populates the form with an existing menu item's data for editing
 function editItem(item: MenuItem) {
   editingId.value = item.id
   form.value = {
@@ -42,6 +58,10 @@ function editItem(item: MenuItem) {
   showForm.value = true
 }
 
+/**
+ * Fetches menu items and categories in parallel from the API.
+ * Both are needed: items for the table, categories for the form dropdown.
+ */
 async function fetchData() {
   loading.value = true
   try {
@@ -56,6 +76,11 @@ async function fetchData() {
   }
 }
 
+/**
+ * Saves a menu item -- creates (POST) or updates (PATCH) based on editingId.
+ * Converts price from string to float and empty category_id to null.
+ * Updates the local list in-place on success and resets the form.
+ */
 async function saveItem() {
   if (!form.value.name.trim()) return
   submitting.value = true
@@ -83,6 +108,10 @@ async function saveItem() {
   }
 }
 
+/**
+ * Deletes a menu item after user confirmation.
+ * Removes the record from the local list on success.
+ */
 async function deleteItem(id: number) {
   if (!confirm('Delete this menu item?')) return
   try {
@@ -94,15 +123,18 @@ async function deleteItem(id: number) {
   }
 }
 
+// Helper to dispatch a global toast notification via CustomEvent
 function toast(message: string, type: string) {
   window.dispatchEvent(new CustomEvent('toast', { detail: { message, type } }))
 }
 
+// Resolves a category_id to its display name for the table, returns '-' if not found
 function getCategoryName(id: number | null): string {
   if (!id) return '-'
   return categories.value.find((c) => c.id === id)?.name || '-'
 }
 
+// Fetch both menu items and categories on component mount
 onMounted(fetchData)
 </script>
 

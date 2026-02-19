@@ -1,18 +1,33 @@
 <script setup lang="ts">
+/**
+ * LoginView -- the authentication entry point for all users.
+ * Renders a centered login form with email/password fields.
+ * On successful authentication, redirects to the staff dashboard.
+ * Does NOT use the AppShell layout since the user is not yet authenticated.
+ */
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
 
+// Router used to navigate to the dashboard after successful login
 const router = useRouter()
+// Auth store provides the login action that sends credentials to the API
 const authStore = useAuthStore()
 
-const email = ref('')
-const password = ref('')
-const error = ref('')
-const loading = ref(false)
+// Reactive form state
+const email = ref('')    // Bound to the email input via v-model
+const password = ref('')  // Bound to the password input via v-model
+const error = ref('')     // Holds the error message displayed when login fails
+const loading = ref(false) // Tracks whether the login API call is in-flight
 
+/**
+ * Handles the login form submission. Clears any previous error,
+ * calls the auth store's login action with the credentials,
+ * and navigates to /dashboard on success. On failure, displays
+ * the server error message or a generic fallback.
+ */
 async function handleLogin() {
   error.value = ''
   loading.value = true

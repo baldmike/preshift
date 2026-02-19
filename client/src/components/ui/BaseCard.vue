@@ -1,4 +1,12 @@
 <script setup lang="ts">
+/**
+ * BaseCard -- simple card container with an optional title heading.
+ * Provides a white background, rounded corners, and shadow.
+ * Card body content is injected via the default <slot />.
+ */
+
+// Props:
+// - title: Optional heading rendered as an <h3> above the slot content
 defineProps<{
   title?: string
 }>()

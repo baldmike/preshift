@@ -1,4 +1,13 @@
 <script setup lang="ts">
+/**
+ * ManageLocations -- admin-only CRUD view for restaurant locations.
+ * Each location represents a physical venue. Locations are used to
+ * scope pre-shift data (86'd items, specials, etc.) and realtime
+ * WebSocket channels. This view provides a toggleable create/edit
+ * form with name, address, and timezone fields, plus a table with
+ * an Edit action. No delete action is provided since removing a
+ * location would cascade-affect all related data.
+ */
 import { ref, onMounted } from 'vue'
 import api from '@/composables/useApi'
 import AppShell from '@/components/layout/AppShell.vue'
@@ -6,24 +15,32 @@ import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import type { Location } from '@/types'
 
+// Reactive list of locations fetched from the API
 const locations = ref<Location[]>([])
+// True while the initial list is being loaded
 const loading = ref(false)
+// True while the create/update API call is in-flight
 const submitting = ref(false)
 
+// Controls visibility of the create/edit form panel
 const showForm = ref(false)
+// When non-null, the form is in "edit" mode for the location with this ID
 const editingId = ref<number | null>(null)
+// Reactive form fields bound to the create/edit form inputs
 const form = ref({
   name: '',
   address: '',
-  timezone: 'America/New_York',
+  timezone: 'America/New_York',  // Defaults to Eastern time; user can override
 })
 
+// Clears all form fields, exits edit mode, and hides the form panel
 function resetForm() {
   form.value = { name: '', address: '', timezone: 'America/New_York' }
   editingId.value = null
   showForm.value = false
 }
 
+// Populates the form with an existing location's data for editing
 function editLocation(loc: Location) {
   editingId.value = loc.id
   form.value = {
@@ -34,6 +51,9 @@ function editLocation(loc: Location) {
   showForm.value = true
 }
 
+/**
+ * Fetches all locations from GET /api/locations.
+ */
 async function fetchLocations() {
   loading.value = true
   try {
@@ -44,6 +64,10 @@ async function fetchLocations() {
   }
 }
 
+/**
+ * Saves a location -- creates (POST) or updates (PATCH) based on editingId.
+ * Updates the local list in-place on success and resets the form.
+ */
 async function saveLocation() {
   if (!form.value.name.trim()) return
   submitting.value = true
@@ -66,10 +90,12 @@ async function saveLocation() {
   }
 }
 
+// Helper to dispatch a global toast notification via CustomEvent
 function toast(message: string, type: string) {
   window.dispatchEvent(new CustomEvent('toast', { detail: { message, type } }))
 }
 
+// Fetch locations on component mount
 onMounted(fetchLocations)
 </script>
 

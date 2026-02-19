@@ -4,6 +4,21 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
+/**
+ * Create the `locations` table.
+ *
+ * Locations represent individual restaurant venues (e.g., "The Anchor - Downtown").
+ * They are the top-level tenant in the system: every other resource (users, menu
+ * items, specials, announcements, etc.) belongs to a location. Each location has
+ * a name, optional address, and a timezone used for date/time display and special
+ * scheduling.
+ *
+ * Key columns:
+ *   - name     (string)  -- Display name of the venue.
+ *   - address  (string, nullable) -- Physical address for reference.
+ *   - timezone (string, default 'America/New_York') -- IANA timezone identifier
+ *     used for localizing timestamps and scheduling specials.
+ */
 return new class extends Migration
 {
     /**

@@ -1,4 +1,11 @@
 <script setup lang="ts">
+/**
+ * ManageEightySixed -- admin/manager view for managing 86'd items.
+ * Provides a form to 86 a new item (POST) and a table listing all
+ * currently 86'd items with a "Restore" action (PATCH) to mark
+ * an item as available again. Changes are reflected in the local
+ * list immediately without a full refetch.
+ */
 import { ref, onMounted } from 'vue'
 import api from '@/composables/useApi'
 import AppShell from '@/components/layout/AppShell.vue'
@@ -6,13 +13,20 @@ import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import type { EightySixed } from '@/types'
 
+// Reactive list of currently 86'd items
 const items = ref<EightySixed[]>([])
+// True while the initial list is being fetched from the API
 const loading = ref(false)
 
-const itemName = ref('')
-const reason = ref('')
+// Form fields for 86'ing a new item
+const itemName = ref('')   // The menu item name to 86
+const reason = ref('')     // Optional reason why the item is unavailable
+// True while the "86 It" form submission is in-flight
 const submitting = ref(false)
 
+/**
+ * Fetches all currently 86'd items from GET /api/eighty-sixed.
+ */
 async function fetchItems() {
   loading.value = true
   try {
@@ -23,6 +37,11 @@ async function fetchItems() {
   }
 }
 
+/**
+ * Handles the "86 It" form submission. POSTs the new item to the API,
+ * appends the returned record to the local list, resets form fields,
+ * and shows a success/error toast.
+ */
 async function addItem() {
   if (!itemName.value.trim()) return
   submitting.value = true
@@ -42,6 +61,10 @@ async function addItem() {
   }
 }
 
+/**
+ * Restores a previously 86'd item by PATCHing its restore endpoint.
+ * Removes the item from the local list on success.
+ */
 async function restoreItem(id: number) {
   try {
     await api.patch(`/api/eighty-sixed/${id}/restore`)
@@ -52,16 +75,19 @@ async function restoreItem(id: number) {
   }
 }
 
+// Helper to dispatch a global toast notification via CustomEvent
 function toast(message: string, type: string) {
   window.dispatchEvent(new CustomEvent('toast', { detail: { message, type } }))
 }
 
+// Formats an ISO date string to a short, human-readable timestamp
 function formatTime(dateStr: string) {
   return new Date(dateStr).toLocaleString([], {
     month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit',
   })
 }
 
+// Fetch the 86'd items list on component mount
 onMounted(fetchItems)
 </script>
 

@@ -1,23 +1,43 @@
 <script setup lang="ts">
+/**
+ * AcknowledgmentTracker -- admin/manager view that shows which staff members
+ * have acknowledged the current pre-shift information. Displays a summary
+ * grid of total active items across all categories (86'd, specials, push
+ * items, announcements) and a table of all users with their acknowledgment
+ * progress. Fetches users, pre-shift data, and acknowledgment status in
+ * parallel on mount.
+ *
+ * Note: The per-user acknowledgment count is a placeholder ('-') because
+ * the current API only returns the authenticated user's own ack status.
+ * A production implementation would require a manager-scoped endpoint
+ * that returns ack counts for all users.
+ */
 import { ref, onMounted, computed } from 'vue'
 import api from '@/composables/useApi'
 import AppShell from '@/components/layout/AppShell.vue'
 import BadgePill from '@/components/ui/BadgePill.vue'
 import type { User, PreShiftData } from '@/types'
 
+// Shape of a user's acknowledgment status (reserved for future API expansion)
 interface AckStatus {
   user: User
-  eightySixed: number[]
-  specials: number[]
-  pushItems: number[]
-  announcements: number[]
+  eightySixed: number[]   // IDs of 86'd items this user has acknowledged
+  specials: number[]       // IDs of specials this user has acknowledged
+  pushItems: number[]      // IDs of push items this user has acknowledged
+  announcements: number[]  // IDs of announcements this user has acknowledged
 }
 
+// Reactive list of all staff users
 const users = ref<User[]>([])
+// Current pre-shift data used to calculate totals for the summary grid
 const preshift = ref<PreShiftData | null>(null)
+// Per-user acknowledgment statuses (currently unused -- see note above)
 const ackStatuses = ref<AckStatus[]>([])
+// True while the initial data is being loaded
 const loading = ref(false)
 
+// Computed total of all active pre-shift items across all categories.
+// Displayed in the table header to show "Acknowledged (X items)".
 const totalItems = computed(() => {
   if (!preshift.value) return 0
   return (
@@ -28,6 +48,11 @@ const totalItems = computed(() => {
   )
 })
 
+/**
+ * Fetches users, pre-shift data, and acknowledgment status in parallel.
+ * The ack status endpoint currently returns only the logged-in user's
+ * acks, so ackStatuses remains empty until the API is expanded.
+ */
 async function fetchData() {
   loading.value = true
   try {
@@ -40,21 +65,21 @@ async function fetchData() {
     users.value = usersRes.data
     preshift.value = preshiftRes.data
 
-    // For each user, we'd need their ack status
-    // The ack status endpoint returns the current user's acks
-    // In a real app, the manager endpoint would return all users' acks
-    // For now, we show the user list with the data we have
+    // Placeholder: the current API does not provide per-user ack data.
+    // When a manager-scoped endpoint is available, this would be populated
+    // with each user's acknowledged item IDs.
     ackStatuses.value = []
   } finally {
     loading.value = false
   }
 }
 
+// Placeholder function returning '-' until the API supports per-user ack counts
 function getUserAckCount(user: User): string {
-  // In a production app, the API would provide per-user acknowledgment counts
   return '-'
 }
 
+// Fetch all data on component mount
 onMounted(fetchData)
 </script>
 

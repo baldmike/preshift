@@ -1,4 +1,14 @@
 <script setup lang="ts">
+/**
+ * BaseButton -- reusable button primitive used throughout the app.
+ * Supports three visual variants, three sizes, and a loading state
+ * that disables the button and shows a spinner animation.
+ */
+
+// Props:
+// - variant: Visual style -- 'primary' (indigo, default), 'secondary' (gray), or 'danger' (red)
+// - size:    Button sizing -- 'sm', 'md' (default), or 'lg'
+// - loading: When true, disables the button and prepends an animated spinner SVG
 defineProps<{
   variant?: 'primary' | 'secondary' | 'danger'
   size?: 'sm' | 'md' | 'lg'

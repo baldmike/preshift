@@ -1,4 +1,13 @@
 <script setup lang="ts">
+/**
+ * BadgePill -- small colored pill/badge used to display status labels,
+ * priority levels, roles, and category tags throughout the app.
+ * Defaults to gray when no color prop is supplied.
+ */
+
+// Props:
+// - color: Background/text color theme -- 'green', 'yellow', 'red', 'blue', or 'gray' (default)
+// - label: The text displayed inside the pill (required)
 defineProps<{
   color?: 'green' | 'yellow' | 'red' | 'blue' | 'gray'
   label: string
