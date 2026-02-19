@@ -1,0 +1,34 @@
+# Dependencies
+api/vendor/
+client/node_modules/
+
+# Environment files
+api/.env
+client/.env
+
+# Build output
+client/dist/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Laravel
+api/storage/*.key
+api/storage/framework/cache/data/*
+api/storage/framework/sessions/*
+api/storage/framework/views/*
+api/bootstrap/cache/*
+!api/bootstrap/cache/.gitkeep
+!api/storage/framework/cache/data/.gitkeep
+!api/storage/framework/sessions/.gitkeep
+!api/storage/framework/views/.gitkeep
+
+# SQLite
+api/database/database.sqlite
