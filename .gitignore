@@ -8,6 +8,7 @@ client/.env
 
 # Build output
 client/dist/
+client/.vite/
 
 # IDE
 .idea/
