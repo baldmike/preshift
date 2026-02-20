@@ -49,6 +49,8 @@ export interface User {
    *  - 'bartender' : bar staff, read-only dashboard access
    */
   role: 'admin' | 'manager' | 'server' | 'bartender'
+  /** Whether this user has SuperAdmin privileges */
+  is_superadmin: boolean
   /** Contact phone number; null if not provided */
   phone: string | null
   /**

@@ -161,7 +161,8 @@ describe('AvailabilityGrid.vue', () => {
     })
 
     // Last button = Save Availability
-    const saveBtn = wrapper.findAll('button').at(-1)!
+    const buttons = wrapper.findAll('button')
+    const saveBtn = buttons[buttons.length - 1]
     expect(saveBtn.text()).toContain('Save Availability')
     await saveBtn.trigger('click')
 

@@ -1,4 +1,14 @@
 <script setup lang="ts">
+/**
+ * DashboardView.vue
+ *
+ * Primary staff dashboard and pre-shift briefing screen. Displays a 2x2
+ * grid of 86'd items, specials, push items, and announcements, plus a
+ * "Today's Schedule" section showing who is working each shift. Subscribes
+ * to real-time Reverb events on the location channel so cards update live
+ * as managers make changes. Also surfaces quick-nav links to the shift
+ * drop board and time-off requests.
+ */
 import { onMounted, onUnmounted, computed } from 'vue'
 import { usePreshiftStore } from '@/stores/preshift'
 import { useScheduleStore } from '@/stores/schedule'

@@ -63,6 +63,9 @@ export const useAuthStore = defineStore('auth', () => {
     () => !!user.value && ['server', 'bartender'].includes(user.value.role)
   )
 
+  /** True if the current user has the SuperAdmin privilege. */
+  const isSuperAdmin = computed(() => user.value?.is_superadmin === true)
+
   /** Shortcut to the user's location_id; null if no user is loaded. */
   const locationId = computed(() => user.value?.location_id ?? null)
 
@@ -138,6 +141,7 @@ export const useAuthStore = defineStore('auth', () => {
     isAdmin,
     isManager,
     isStaff,
+    isSuperAdmin,
     locationId,
     login,
     logout,

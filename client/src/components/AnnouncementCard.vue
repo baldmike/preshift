@@ -1,4 +1,15 @@
 <script setup lang="ts">
+/**
+ * AnnouncementCard.vue
+ *
+ * Renders a compact, purple-themed card for a single announcement. Displays
+ * the title, a color-coded priority badge (urgent/important/normal), optional
+ * body text, the poster's name, and an expiration timestamp. Includes an
+ * AcknowledgeButton so staff can mark the announcement as read.
+ *
+ * Props:
+ *   - announcement: Announcement
+ */
 import type { Announcement } from '@/types'
 import { useAcknowledgments } from '@/composables/useAcknowledgments'
 import AcknowledgeButton from '@/components/AcknowledgeButton.vue'

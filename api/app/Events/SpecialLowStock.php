@@ -10,6 +10,14 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
+/**
+ * Broadcast event fired when a special's remaining quantity drops to a low threshold.
+ *
+ * This event is dispatched on the location's private WebSocket channel
+ * (e.g., "location.{id}") as "special.low-stock" when the quantity reaches 2,
+ * alerting staff that the special is nearly sold out. The broadcast payload
+ * includes the special's ID, title, and current quantity.
+ */
 class SpecialLowStock implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;

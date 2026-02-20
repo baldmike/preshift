@@ -71,6 +71,7 @@ function makeTimeOffRequest(overrides: Partial<TimeOffRequest> = {}): TimeOffReq
       name: 'Alice Johnson',
       email: 'alice@example.com',
       role: 'server',
+      is_superadmin: false,
       phone: null,
       availability: null,
       created_at: '2026-01-01T00:00:00Z',

@@ -212,6 +212,24 @@ class ModelTest extends TestCase
     }
 
     /**
+     * Verify that isSuperAdmin() returns true only when is_superadmin is true.
+     */
+    public function test_user_is_superadmin_returns_correct_boolean(): void
+    {
+        $location = $this->createLocation();
+
+        $superadmin = $this->createUser($location, ['is_superadmin' => true]);
+        $this->assertTrue($superadmin->isSuperAdmin());
+
+        $regular = $this->createUser($location, ['is_superadmin' => false]);
+        $this->assertFalse($regular->isSuperAdmin());
+
+        // Default (not explicitly set) should be false
+        $default = $this->createUser($location);
+        $this->assertFalse($default->isSuperAdmin());
+    }
+
+    /**
      * Verify that User->location() returns a BelongsTo relationship pointing
      * at the Location model, and that it resolves to the correct location.
      *

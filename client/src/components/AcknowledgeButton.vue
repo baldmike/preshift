@@ -1,4 +1,18 @@
 <script setup lang="ts">
+/**
+ * AcknowledgeButton.vue
+ *
+ * A button that lets staff acknowledge (mark as seen) a pre-shift item such
+ * as an 86'd item, special, push item, or announcement. Shows a "HEARD"
+ * button in its unacknowledged state and a green checkmark once confirmed.
+ * Handles the API call with a loading spinner and emits a toast on failure.
+ *
+ * Props:
+ *   - type: string           -- acknowledgment category (e.g. 'eighty_sixed')
+ *   - id: number             -- ID of the item being acknowledged
+ *   - acknowledged: boolean  -- whether the item is already acknowledged
+ *   - size?: 'sm' | 'md'     -- controls button dimensions and label visibility
+ */
 import { ref } from 'vue'
 import { useAcknowledgments } from '@/composables/useAcknowledgments'
 

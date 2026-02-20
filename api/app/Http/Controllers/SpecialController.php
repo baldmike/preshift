@@ -126,8 +126,14 @@ class SpecialController extends Controller
     /**
      * Decrement a special's quantity by 1.
      *
-     * Guards against going below 0. Broadcasts SpecialUpdated so all clients
-     * see the new quantity, and fires SpecialLowStock when quantity hits 2.
+     * Guards against going below zero or decrementing specials with unlimited
+     * (null) quantity. After a successful decrement, broadcasts a SpecialUpdated
+     * event so all connected clients see the new quantity. When the quantity
+     * reaches the low-stock threshold (2), a SpecialLowStock event is also
+     * broadcast to alert staff that the special is nearly sold out.
+     *
+     * @param  \App\Models\Special  $special  The special to decrement (via route model binding).
+     * @return \Illuminate\Http\JsonResponse  The updated special with the decremented quantity.
      */
     public function decrement(Special $special): JsonResponse
     {

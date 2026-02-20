@@ -1,7 +1,14 @@
 <script setup lang="ts">
+/**
+ * BottomNav.vue
+ *
+ * Fixed bottom navigation bar for mobile-first layout. Provides icon+label
+ * links to Dashboard, 86'd Board, Specials, Schedule, and (for admins and
+ * managers) the Manage section. The active route is highlighted in amber.
+ */
 import { useAuth } from '@/composables/useAuth'
 
-const { isAdmin, isManager } = useAuth()
+const { isAdmin, isManager, isSuperAdmin } = useAuth()
 </script>
 
 <template>
@@ -67,6 +74,19 @@ const { isAdmin, isManager } = useAuth()
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
         </svg>
         <span>Manage</span>
+      </router-link>
+
+      <router-link
+        v-if="isSuperAdmin"
+        to="/config"
+        class="flex flex-col items-center gap-0.5 text-xs transition-colors"
+        :class="$route.path === '/config' ? 'text-red-400' : 'text-red-500/60 hover:text-red-400'"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+        </svg>
+        <span>Config</span>
       </router-link>
     </div>
   </nav>

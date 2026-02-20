@@ -1,4 +1,12 @@
 <script setup lang="ts">
+/**
+ * LoginView.vue
+ *
+ * Full-screen authentication page with email and password fields. On
+ * successful login, redirects admins and managers to the daily management
+ * view and regular staff to the dashboard. Displays an error banner for
+ * invalid credentials and includes a loading spinner during submission.
+ */
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'

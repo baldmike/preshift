@@ -1,4 +1,14 @@
 <script setup lang="ts">
+/**
+ * EightySixedCard.vue
+ *
+ * Renders a compact, red-themed card for a single 86'd item. Displays
+ * the item name, optional reason, the user who 86'd it, and a timestamp.
+ * Includes an AcknowledgeButton so staff can mark the item as seen.
+ *
+ * Props:
+ *   - item: EightySixed
+ */
 import type { EightySixed } from '@/types'
 import { useAcknowledgments } from '@/composables/useAcknowledgments'
 import AcknowledgeButton from '@/components/AcknowledgeButton.vue'

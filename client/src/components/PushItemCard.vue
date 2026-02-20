@@ -1,4 +1,14 @@
 <script setup lang="ts">
+/**
+ * PushItemCard.vue
+ *
+ * Renders a compact, amber-themed card for a single push item. Shows the
+ * item title, a color-coded priority badge (high/medium/low), an optional
+ * description and reason, and an AcknowledgeButton for staff confirmation.
+ *
+ * Props:
+ *   - item: PushItem
+ */
 import type { PushItem } from '@/types'
 import { useAcknowledgments } from '@/composables/useAcknowledgments'
 import AcknowledgeButton from '@/components/AcknowledgeButton.vue'

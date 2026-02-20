@@ -57,6 +57,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => \App\Http\Middleware\CheckRole::class,
             'location' => \App\Http\Middleware\EnsureLocationAccess::class,
+            'superadmin' => \App\Http\Middleware\CheckSuperAdmin::class,
         ]);
     })
     /*

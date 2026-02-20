@@ -36,6 +36,7 @@ use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\ScheduleEntryController;
 use App\Http\Controllers\ShiftDropController;
 use App\Http\Controllers\TimeOffRequestController;
+use App\Http\Controllers\ConfigController;
 
 /*
 |--------------------------------------------------------------------------
@@ -60,6 +61,17 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     // GET  /api/user   -- Returns the currently authenticated user's profile.
     Route::get('/user', [AuthController::class, 'user']);
+    // POST /api/change-password -- Change the authenticated user's password.
+    Route::post('/change-password', [AuthController::class, 'changePassword']);
+
+    /*
+    |----------------------------------------------------------------------
+    | Config Routes (SuperAdmin)
+    |----------------------------------------------------------------------
+    */
+    Route::get('/config/settings', [ConfigController::class, 'getSettings']);
+    Route::put('/config/settings', [ConfigController::class, 'updateSettings'])->middleware('superadmin');
+    Route::post('/config/reset', [ConfigController::class, 'fullReset'])->middleware('superadmin');
 
     /*
     |----------------------------------------------------------------------

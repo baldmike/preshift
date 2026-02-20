@@ -9,6 +9,7 @@ use App\Models\Location;
 use App\Models\MenuItem;
 use App\Models\PushItem;
 use App\Models\Special;
+use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -88,6 +89,7 @@ class DatabaseSeeder extends Seeder
             'password' => Hash::make('password'),
             'role' => 'manager',
             'location_id' => $downtown->id,
+            'is_superadmin' => true,
         ]);
 
         $server = User::create([
@@ -182,6 +184,9 @@ class DatabaseSeeder extends Seeder
         | sort_order for consistent display in the UI (Appetizers first,
         | Desserts last).
         */
+        // ── Settings ──
+        Setting::create(['key' => 'establishment_name', 'value' => 'The Anchor']);
+
         $appetizers = Category::create(['location_id' => $downtown->id, 'name' => 'Appetizers', 'sort_order' => 1]);
         $entrees = Category::create(['location_id' => $downtown->id, 'name' => 'Entrees', 'sort_order' => 2]);
         $drinks = Category::create(['location_id' => $downtown->id, 'name' => 'Drinks', 'sort_order' => 3]);

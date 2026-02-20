@@ -1,4 +1,13 @@
 <script setup lang="ts">
+/**
+ * DailyManageView.vue
+ *
+ * All-in-one daily management view for admins and managers. Presents a 2x2
+ * grid of 86'd Items, Specials, Push Items, and Announcements, each with
+ * inline create/edit forms and action buttons (restore, decrement, edit,
+ * delete). Also provides quick-nav links to Staff, Schedule, Drops,
+ * Time Off, Menu, and Acknowledgments management pages.
+ */
 import { ref, onMounted } from 'vue'
 import api from '@/composables/useApi'
 import { useAuth } from '@/composables/useAuth'
