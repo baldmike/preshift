@@ -8,10 +8,14 @@ use App\Models\EightySixed;
 use App\Models\Location;
 use App\Models\MenuItem;
 use App\Models\PushItem;
+use App\Models\Schedule;
+use App\Models\ScheduleEntry;
+use App\Models\ShiftTemplate;
 use App\Models\Special;
 use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
 
 /**
@@ -375,5 +379,219 @@ class DatabaseSeeder extends Seeder
             'posted_by' => $manager->id,
             'expires_at' => now()->addDay(),
         ]);
+
+        /*
+        |------------------------------------------------------------------
+        | Employee Availability
+        |------------------------------------------------------------------
+        | Assign random availability to every Downtown employee (servers,
+        | bartenders, managers). Friday and Saturday evenings are heavily
+        | favored since that's when restaurants need the most staff.
+        |
+        | Slot values: '10:30' (morning), '16:30' (4:30 PM), '18:00' (6 PM),
+        |              '19:00' (7 PM), 'open' (all day).
+        */
+        $days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+        $allSlots = ['10:30', '16:30', '18:00', '19:00'];
+        $eveningSlots = ['16:30', '18:00', '19:00'];
+
+        $downtownStaff = User::where('location_id', $downtown->id)->get();
+
+        foreach ($downtownStaff as $staffMember) {
+            $availability = [];
+            foreach ($days as $day) {
+                $isFriSat = in_array($day, ['friday', 'saturday']);
+                $roll = rand(1, 100);
+
+                if ($isFriSat) {
+                    // 40% open, 40% evening slots, 15% specific slot, 5% off
+                    if ($roll <= 40) {
+                        $availability[$day] = ['open'];
+                    } elseif ($roll <= 80) {
+                        // Pick 2-3 evening slots
+                        shuffle($eveningSlots);
+                        $availability[$day] = array_slice($eveningSlots, 0, rand(2, 3));
+                    } elseif ($roll <= 95) {
+                        $availability[$day] = [$eveningSlots[array_rand($eveningSlots)]];
+                    } else {
+                        $availability[$day] = [];
+                    }
+                } else {
+                    // Weekdays: 20% open, 30% 2-3 slots, 25% 1 slot, 25% off
+                    if ($roll <= 20) {
+                        $availability[$day] = ['open'];
+                    } elseif ($roll <= 50) {
+                        shuffle($allSlots);
+                        $availability[$day] = array_slice($allSlots, 0, rand(2, 3));
+                    } elseif ($roll <= 75) {
+                        $availability[$day] = [$allSlots[array_rand($allSlots)]];
+                    } else {
+                        $availability[$day] = [];
+                    }
+                }
+            }
+            $staffMember->update(['availability' => $availability]);
+        }
+
+        /*
+        |------------------------------------------------------------------
+        | Shift Templates
+        |------------------------------------------------------------------
+        | Three standard restaurant shifts for Downtown.
+        */
+        $lunch = ShiftTemplate::create([
+            'location_id' => $downtown->id,
+            'name' => 'Lunch',
+            'start_time' => '10:30:00',
+            'end_time' => '16:00:00',
+        ]);
+
+        $dinner = ShiftTemplate::create([
+            'location_id' => $downtown->id,
+            'name' => 'Dinner',
+            'start_time' => '16:30:00',
+            'end_time' => '23:00:00',
+        ]);
+
+        $close = ShiftTemplate::create([
+            'location_id' => $downtown->id,
+            'name' => 'Close',
+            'start_time' => '18:00:00',
+            'end_time' => '00:00:00',
+        ]);
+
+        /*
+        |------------------------------------------------------------------
+        | 4-Week Schedule (Monday–Sunday)
+        |------------------------------------------------------------------
+        | Creates published weekly schedules starting from the Monday of the
+        | current week, extending 4 weeks out. Each day gets a realistic mix
+        | of lunch and dinner shifts populated from available staff.
+        |
+        | Staffing targets per shift:
+        |   - Weekday lunch:  3 servers, 1 bartender
+        |   - Weekday dinner: 5 servers, 2 bartenders
+        |   - Fri/Sat dinner: 7 servers, 3 bartenders
+        |   - Sunday:         4 servers, 2 bartenders (brunch-ish)
+        */
+        $servers = $downtownStaff->filter(fn ($u) => $u->role === 'server')->values();
+        $bartenders = $downtownStaff->filter(fn ($u) => $u->role === 'bartender')->values();
+
+        // Start from the Monday of the current week
+        $weekStart = Carbon::now()->startOfWeek(Carbon::MONDAY);
+
+        for ($week = 0; $week < 4; $week++) {
+            $monday = $weekStart->copy()->addWeeks($week);
+
+            $schedule = Schedule::create([
+                'location_id' => $downtown->id,
+                'week_start' => $monday->toDateString(),
+                'status' => 'published',
+                'published_at' => now(),
+                'published_by' => $manager->id,
+            ]);
+
+            // Build entries for each day (Mon=0 through Sun=6)
+            for ($dayOffset = 0; $dayOffset < 7; $dayOffset++) {
+                $date = $monday->copy()->addDays($dayOffset);
+                $dayName = strtolower($date->format('l')); // 'monday', 'tuesday', etc.
+                $isFriSat = in_array($dayName, ['friday', 'saturday']);
+                $isSunday = $dayName === 'sunday';
+
+                // Determine staffing targets
+                $lunchServers = $isSunday ? 4 : 3;
+                $lunchBartenders = $isSunday ? 2 : 1;
+                $dinnerServers = $isFriSat ? 7 : 5;
+                $dinnerBartenders = $isFriSat ? 3 : 2;
+
+                // Helper: pick N random staff from the pool, preferring those available
+                $pickStaff = function ($pool, $count, $dayName, $shift) {
+                    $isLunch = $shift === 'lunch';
+                    $lunchSlot = '10:30';
+
+                    // Sort: available first, then random
+                    $sorted = $pool->sortByDesc(function ($u) use ($dayName, $isLunch, $lunchSlot) {
+                        $slots = $u->availability[$dayName] ?? [];
+                        if (in_array('open', $slots)) return 2 + (rand(0, 100) / 1000);
+                        if ($isLunch && in_array($lunchSlot, $slots)) return 1 + (rand(0, 100) / 1000);
+                        if (!$isLunch && count(array_intersect($slots, ['16:30', '18:00', '19:00'])) > 0) return 1 + (rand(0, 100) / 1000);
+                        return rand(0, 100) / 1000; // Not available but fill if needed
+                    })->values();
+
+                    return $sorted->take($count);
+                };
+
+                // Lunch shift entries
+                $lunchServerPicks = $pickStaff($servers, $lunchServers, $dayName, 'lunch');
+                foreach ($lunchServerPicks as $s) {
+                    ScheduleEntry::create([
+                        'schedule_id' => $schedule->id,
+                        'user_id' => $s->id,
+                        'shift_template_id' => $lunch->id,
+                        'date' => $date->toDateString(),
+                        'role' => 'server',
+                    ]);
+                }
+
+                $lunchBartenderPicks = $pickStaff($bartenders, $lunchBartenders, $dayName, 'lunch');
+                foreach ($lunchBartenderPicks as $b) {
+                    ScheduleEntry::create([
+                        'schedule_id' => $schedule->id,
+                        'user_id' => $b->id,
+                        'shift_template_id' => $lunch->id,
+                        'date' => $date->toDateString(),
+                        'role' => 'bartender',
+                    ]);
+                }
+
+                // Dinner shift entries
+                $dinnerServerPicks = $pickStaff($servers, $dinnerServers, $dayName, 'dinner');
+                foreach ($dinnerServerPicks as $s) {
+                    ScheduleEntry::create([
+                        'schedule_id' => $schedule->id,
+                        'user_id' => $s->id,
+                        'shift_template_id' => $dinner->id,
+                        'date' => $date->toDateString(),
+                        'role' => 'server',
+                    ]);
+                }
+
+                $dinnerBartenderPicks = $pickStaff($bartenders, $dinnerBartenders, $dayName, 'dinner');
+                foreach ($dinnerBartenderPicks as $b) {
+                    ScheduleEntry::create([
+                        'schedule_id' => $schedule->id,
+                        'user_id' => $b->id,
+                        'shift_template_id' => $dinner->id,
+                        'date' => $date->toDateString(),
+                        'role' => 'bartender',
+                    ]);
+                }
+
+                // Fri/Sat get a Close shift too
+                if ($isFriSat) {
+                    $closeServerPicks = $pickStaff($servers, 3, $dayName, 'dinner');
+                    foreach ($closeServerPicks as $s) {
+                        ScheduleEntry::create([
+                            'schedule_id' => $schedule->id,
+                            'user_id' => $s->id,
+                            'shift_template_id' => $close->id,
+                            'date' => $date->toDateString(),
+                            'role' => 'server',
+                        ]);
+                    }
+
+                    $closeBartenderPicks = $pickStaff($bartenders, 1, $dayName, 'dinner');
+                    foreach ($closeBartenderPicks as $b) {
+                        ScheduleEntry::create([
+                            'schedule_id' => $schedule->id,
+                            'user_id' => $b->id,
+                            'shift_template_id' => $close->id,
+                            'date' => $date->toDateString(),
+                            'role' => 'bartender',
+                        ]);
+                    }
+                }
+            }
+        }
     }
 }
