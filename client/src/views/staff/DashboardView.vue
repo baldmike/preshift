@@ -6,8 +6,7 @@
  * grid of 86'd items, specials, push items, and announcements, plus a
  * "Today's Schedule" section showing who is working each shift. Subscribes
  * to real-time Reverb events on the location channel so cards update live
- * as managers make changes. Also surfaces quick-nav links to the shift
- * drop board and time-off requests.
+ * as managers make changes.
  */
 import { onMounted, onUnmounted, computed } from 'vue'
 import { usePreshiftStore } from '@/stores/preshift'

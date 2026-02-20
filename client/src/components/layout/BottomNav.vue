@@ -2,9 +2,10 @@
 /**
  * BottomNav.vue
  *
- * Fixed bottom navigation bar for mobile-first layout. Provides icon+label
- * links to Dashboard, 86'd Board, Specials, Schedule, and (for admins and
- * managers) the Manage section. The active route is highlighted in amber.
+ * Fixed bottom navigation bar for mobile-first layout. Displays a persistent
+ * copyright line above icon+label links to Dashboard, 86'd Board, Specials,
+ * Schedule, (for admins/managers) Manage, and (for superadmins) Config.
+ * The active route is highlighted in amber; the Config link uses red.
  */
 import { useAuth } from '@/composables/useAuth'
 
