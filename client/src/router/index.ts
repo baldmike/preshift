@@ -191,6 +191,16 @@ const routes: RouteRecordRaw[] = [
   },
 
   // -----------------------------------------------------------------------
+  // SuperAdmin config page
+  // -----------------------------------------------------------------------
+  {
+    path: '/config',
+    name: 'Config',
+    component: () => import('@/views/admin/ConfigView.vue'),
+    meta: { requiresAuth: true, requiresSuperAdmin: true },
+  },
+
+  // -----------------------------------------------------------------------
   // Admin-only routes (admin role exclusively)
   // -----------------------------------------------------------------------
   {
@@ -249,7 +259,14 @@ router.beforeEach(async (to, _from, next) => {
       }
     }
 
-    // GUARD 3: Role-based access control
+    // GUARD 3: SuperAdmin access control
+    if (to.meta.requiresSuperAdmin) {
+      if (!authStore.user?.is_superadmin) {
+        return next('/dashboard')
+      }
+    }
+
+    // GUARD 4: Role-based access control
     if (to.meta.roles) {
       const allowedRoles = to.meta.roles as string[]
       if (authStore.user && !allowedRoles.includes(authStore.user.role)) {

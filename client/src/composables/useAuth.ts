@@ -38,6 +38,7 @@ export function useAuth() {
   const isAdmin = computed(() => store.isAdmin)
   const isManager = computed(() => store.isManager)
   const isStaff = computed(() => store.isStaff)
+  const isSuperAdmin = computed(() => store.isSuperAdmin)
   const locationId = computed(() => store.locationId)
 
   return {
@@ -46,6 +47,7 @@ export function useAuth() {
     isAdmin,
     isManager,
     isStaff,
+    isSuperAdmin,
     locationId,
   }
 }

@@ -49,6 +49,7 @@ class User extends Authenticatable
         'role',        // Determines authorization level (admin | manager | server | bartender)
         'phone',       // Contact phone number (nullable)
         'availability', // JSON map of day-of-week availability (nullable)
+        'is_superadmin', // SuperAdmin privilege flag
     ];
 
     /**
@@ -75,6 +76,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'availability' => 'array',
+            'is_superadmin' => 'boolean',
         ];
     }
 
@@ -128,6 +130,14 @@ class User extends Authenticatable
      * Staff members have read-only access to the daily briefing data and can
      * submit acknowledgments, but cannot create or modify operational records.
      */
+    /**
+     * Check whether the user has the SuperAdmin privilege.
+     */
+    public function isSuperAdmin(): bool
+    {
+        return $this->is_superadmin === true;
+    }
+
     public function isStaff(): bool
     {
         // Both "server" and "bartender" share the same permission tier

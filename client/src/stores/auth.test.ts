@@ -62,6 +62,7 @@ function makeUser(overrides: Partial<User> = {}): User {
     name: 'Test User',
     email: 'test@test.com',
     role: 'server',
+    is_superadmin: false,
     phone: null,
     availability: null,
     created_at: '2026-01-01T00:00:00Z',
@@ -211,6 +212,27 @@ describe('useAuthStore', () => {
       // Manager is NOT staff
       store.user = makeUser({ role: 'manager' })
       expect(store.isStaff).toBe(false)
+    })
+  })
+
+  // ── isSuperAdmin ───────────────────────────────────────────────────────
+
+  describe('isSuperAdmin', () => {
+    it('returns false when no user is loaded', () => {
+      const store = useAuthStore()
+      expect(store.isSuperAdmin).toBe(false)
+    })
+
+    it('returns true when user has is_superadmin = true', () => {
+      const store = useAuthStore()
+      store.user = makeUser({ is_superadmin: true })
+      expect(store.isSuperAdmin).toBe(true)
+    })
+
+    it('returns false when user has is_superadmin = false', () => {
+      const store = useAuthStore()
+      store.user = makeUser({ is_superadmin: false })
+      expect(store.isSuperAdmin).toBe(false)
     })
   })
 
