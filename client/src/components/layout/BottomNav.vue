@@ -1,23 +1,16 @@
 <script setup lang="ts">
-/**
- * BottomNav -- fixed bottom navigation bar for mobile-first navigation.
- * Renders links to Dashboard, 86'd Board, Specials, and conditionally
- * a "Manage" link visible only to admin/manager roles. Active route
- * highlighting is driven by comparing $route.path in the template.
- */
 import { useAuth } from '@/composables/useAuth'
 
-// Role checks used to conditionally display the Manage nav link
 const { isAdmin, isManager } = useAuth()
 </script>
 
 <template>
-  <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40">
+  <nav class="fixed bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-800 z-40">
     <div class="flex items-center justify-around h-14 max-w-lg mx-auto">
       <router-link
         to="/dashboard"
-        class="flex flex-col items-center gap-0.5 text-xs"
-        :class="$route.path === '/dashboard' ? 'text-indigo-600' : 'text-gray-500 hover:text-gray-700'"
+        class="flex flex-col items-center gap-0.5 text-xs transition-colors"
+        :class="$route.path === '/dashboard' ? 'text-amber-400' : 'text-gray-500 hover:text-gray-300'"
       >
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -28,8 +21,8 @@ const { isAdmin, isManager } = useAuth()
 
       <router-link
         to="/86"
-        class="flex flex-col items-center gap-0.5 text-xs"
-        :class="$route.path === '/86' ? 'text-indigo-600' : 'text-gray-500 hover:text-gray-700'"
+        class="flex flex-col items-center gap-0.5 text-xs transition-colors"
+        :class="$route.path === '/86' ? 'text-amber-400' : 'text-gray-500 hover:text-gray-300'"
       >
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -40,8 +33,8 @@ const { isAdmin, isManager } = useAuth()
 
       <router-link
         to="/specials"
-        class="flex flex-col items-center gap-0.5 text-xs"
-        :class="$route.path === '/specials' ? 'text-indigo-600' : 'text-gray-500 hover:text-gray-700'"
+        class="flex flex-col items-center gap-0.5 text-xs transition-colors"
+        :class="$route.path === '/specials' ? 'text-amber-400' : 'text-gray-500 hover:text-gray-300'"
       >
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -50,12 +43,11 @@ const { isAdmin, isManager } = useAuth()
         <span>Specials</span>
       </router-link>
 
-      <!-- Manage link is restricted to admin and manager roles -->
       <router-link
         v-if="isAdmin || isManager"
         to="/manage"
-        class="flex flex-col items-center gap-0.5 text-xs"
-        :class="$route.path.startsWith('/manage') ? 'text-indigo-600' : 'text-gray-500 hover:text-gray-700'"
+        class="flex flex-col items-center gap-0.5 text-xs transition-colors"
+        :class="$route.path.startsWith('/manage') ? 'text-amber-400' : 'text-gray-500 hover:text-gray-300'"
       >
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

@@ -1,13 +1,5 @@
 <script setup lang="ts">
-/**
- * DashboardView -- the main staff-facing view that aggregates all pre-shift
- * information in one place: 86'd items, daily specials, push items, and
- * announcements. Data is fetched on mount from the preshift store and then
- * kept in sync via Laravel Reverb WebSocket events scoped to the user's
- * location channel. Each section only renders if it has items, and an
- * empty-state message is shown when there is nothing for the day.
- */
-import { onMounted, onUnmounted } from 'vue'
+import { onMounted, onUnmounted, computed } from 'vue'
 import { usePreshiftStore } from '@/stores/preshift'
 import { useAuth } from '@/composables/useAuth'
 import { useLocationChannel } from '@/composables/useReverb'
@@ -17,67 +9,35 @@ import SpecialCard from '@/components/SpecialCard.vue'
 import PushItemCard from '@/components/PushItemCard.vue'
 import AnnouncementCard from '@/components/AnnouncementCard.vue'
 
-// Central Pinia store holding all pre-shift data (86'd, specials, push items, announcements)
 const store = usePreshiftStore()
-// Current user's location ID, needed to subscribe to the correct Reverb channel
 const { locationId } = useAuth()
 
-// Reference to the Echo channel so we can unsubscribe on component teardown
 let channel: ReturnType<typeof useLocationChannel> | null = null
 
+const hasContent = computed(() =>
+  store.eightySixed.length || store.specials.length || store.pushItems.length || store.announcements.length
+)
+
 onMounted(async () => {
-  // Initial data load from the API via the preshift store
   await store.fetchAll()
 
-  // Subscribe to the location-specific WebSocket channel for realtime updates.
-  // Each .listen() call registers a handler for a specific broadcast event
-  // so the dashboard updates instantly when managers make changes.
   if (locationId.value) {
     channel = useLocationChannel(locationId.value)
-
     channel
-      // 86'd item events -- add new or remove restored items from the store
-      .listen('.item.eighty-sixed', (e: any) => {
-        store.addEightySixed(e.item || e)
-      })
-      .listen('.item.restored', (e: any) => {
-        store.removeEightySixed(e.item?.id || e.id)
-      })
-      // Special events -- add, update, or remove specials in realtime
-      .listen('.special.created', (e: any) => {
-        store.addSpecial(e.special || e)
-      })
-      .listen('.special.updated', (e: any) => {
-        store.updateSpecial(e.special || e)
-      })
-      .listen('.special.deleted', (e: any) => {
-        store.removeSpecial(e.id)
-      })
-      // Push item events -- add, update, or remove push items in realtime
-      .listen('.push-item.created', (e: any) => {
-        store.addPushItem(e.pushItem || e)
-      })
-      .listen('.push-item.updated', (e: any) => {
-        store.updatePushItem(e.pushItem || e)
-      })
-      .listen('.push-item.deleted', (e: any) => {
-        store.removePushItem(e.id)
-      })
-      // Announcement events -- add, update, or remove announcements in realtime
-      .listen('.announcement.posted', (e: any) => {
-        store.addAnnouncement(e.announcement || e)
-      })
-      .listen('.announcement.updated', (e: any) => {
-        store.updateAnnouncement(e.announcement || e)
-      })
-      .listen('.announcement.deleted', (e: any) => {
-        store.removeAnnouncement(e.id)
-      })
+      .listen('.item.eighty-sixed', (e: any) => store.addEightySixed(e.item || e))
+      .listen('.item.restored', (e: any) => store.removeEightySixed(e.item?.id || e.id))
+      .listen('.special.created', (e: any) => store.addSpecial(e.special || e))
+      .listen('.special.updated', (e: any) => store.updateSpecial(e.special || e))
+      .listen('.special.deleted', (e: any) => store.removeSpecial(e.id))
+      .listen('.push-item.created', (e: any) => store.addPushItem(e.pushItem || e))
+      .listen('.push-item.updated', (e: any) => store.updatePushItem(e.pushItem || e))
+      .listen('.push-item.deleted', (e: any) => store.removePushItem(e.id))
+      .listen('.announcement.posted', (e: any) => store.addAnnouncement(e.announcement || e))
+      .listen('.announcement.updated', (e: any) => store.updateAnnouncement(e.announcement || e))
+      .listen('.announcement.deleted', (e: any) => store.removeAnnouncement(e.id))
   }
 })
 
-// Clean up all WebSocket listeners when the component is destroyed
-// to prevent memory leaks and duplicate event handling
 onUnmounted(() => {
   if (channel && locationId.value) {
     channel.stopListening('.item.eighty-sixed')
@@ -97,82 +57,175 @@ onUnmounted(() => {
 
 <template>
   <AppShell>
-    <div v-if="store.loading" class="flex items-center justify-center py-12">
-      <svg class="animate-spin h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-      </svg>
+    <!-- Loading -->
+    <div v-if="store.loading" class="flex items-center justify-center py-20">
+      <div class="flex flex-col items-center gap-3">
+        <svg class="animate-spin h-8 w-8 text-amber-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+        </svg>
+        <span class="text-sm text-gray-500">Loading pre-shift...</span>
+      </div>
     </div>
 
-    <div v-else class="space-y-6">
-      <!-- 86'd Items -->
-      <section v-if="store.eightySixed.length">
-        <h2 class="text-lg font-bold text-red-700 mb-3 flex items-center gap-2">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <!-- Dashboard grid -->
+    <div v-else-if="hasContent" class="grid grid-cols-2 gap-3 sm:gap-4">
+
+      <!-- 86'd Items — top left -->
+      <section class="dash-quarter dash-quarter--red">
+        <header class="dash-quarter__header">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
           </svg>
-          86'd Items
-        </h2>
-        <div class="space-y-3">
-          <EightySixedCard v-for="item in store.eightySixed" :key="item.id" :item="item" />
+          <h2>86'd</h2>
+          <span class="dash-quarter__count" v-if="store.eightySixed.length">{{ store.eightySixed.length }}</span>
+        </header>
+        <div class="dash-quarter__body">
+          <template v-if="store.eightySixed.length">
+            <EightySixedCard v-for="item in store.eightySixed" :key="item.id" :item="item" />
+          </template>
+          <p v-else class="text-gray-600 text-xs text-center py-4">Nothing 86'd</p>
         </div>
       </section>
 
-      <!-- Specials -->
-      <section v-if="store.specials.length">
-        <h2 class="text-lg font-bold text-blue-700 mb-3 flex items-center gap-2">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <!-- Specials — top right -->
+      <section class="dash-quarter dash-quarter--blue">
+        <header class="dash-quarter__header">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
           </svg>
-          Today's Specials
-        </h2>
-        <div class="space-y-3">
-          <SpecialCard v-for="special in store.specials" :key="special.id" :special="special" />
+          <h2>Specials</h2>
+          <span class="dash-quarter__count" v-if="store.specials.length">{{ store.specials.length }}</span>
+        </header>
+        <div class="dash-quarter__body">
+          <template v-if="store.specials.length">
+            <SpecialCard v-for="special in store.specials" :key="special.id" :special="special" />
+          </template>
+          <p v-else class="text-gray-600 text-xs text-center py-4">No specials today</p>
         </div>
       </section>
 
-      <!-- Push Items -->
-      <section v-if="store.pushItems.length">
-        <h2 class="text-lg font-bold text-amber-700 mb-3 flex items-center gap-2">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <!-- Push Items — bottom left -->
+      <section class="dash-quarter dash-quarter--amber">
+        <header class="dash-quarter__header">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
           </svg>
-          Push Items
-        </h2>
-        <div class="space-y-3">
-          <PushItemCard v-for="item in store.pushItems" :key="item.id" :item="item" />
+          <h2>Push</h2>
+          <span class="dash-quarter__count" v-if="store.pushItems.length">{{ store.pushItems.length }}</span>
+        </header>
+        <div class="dash-quarter__body">
+          <template v-if="store.pushItems.length">
+            <PushItemCard v-for="item in store.pushItems" :key="item.id" :item="item" />
+          </template>
+          <p v-else class="text-gray-600 text-xs text-center py-4">No push items</p>
         </div>
       </section>
 
-      <!-- Announcements -->
-      <section v-if="store.announcements.length">
-        <h2 class="text-lg font-bold text-purple-700 mb-3 flex items-center gap-2">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <!-- Announcements — bottom right -->
+      <section class="dash-quarter dash-quarter--purple">
+        <header class="dash-quarter__header">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
           </svg>
-          Announcements
-        </h2>
-        <div class="space-y-3">
-          <AnnouncementCard
-            v-for="announcement in store.announcements"
-            :key="announcement.id"
-            :announcement="announcement"
-          />
+          <h2>Announcements</h2>
+          <span class="dash-quarter__count" v-if="store.announcements.length">{{ store.announcements.length }}</span>
+        </header>
+        <div class="dash-quarter__body">
+          <template v-if="store.announcements.length">
+            <AnnouncementCard
+              v-for="announcement in store.announcements"
+              :key="announcement.id"
+              :announcement="announcement"
+            />
+          </template>
+          <p v-else class="text-gray-600 text-xs text-center py-4">No announcements</p>
         </div>
       </section>
+    </div>
 
-      <!-- Empty State -->
-      <div
-        v-if="!store.eightySixed.length && !store.specials.length && !store.pushItems.length && !store.announcements.length"
-        class="text-center py-12"
-      >
-        <p class="text-gray-500 text-lg">Nothing for today's pre-shift.</p>
-        <p class="text-gray-400 text-sm mt-1">Check back before your next shift.</p>
+    <!-- Empty state -->
+    <div v-else class="flex flex-col items-center justify-center py-20 text-center">
+      <div class="w-16 h-16 rounded-full bg-gray-800 flex items-center justify-center mb-4">
+        <svg class="w-8 h-8 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+        </svg>
       </div>
+      <p class="text-gray-400 text-base font-medium">Nothing for today's pre-shift</p>
+      <p class="text-gray-600 text-sm mt-1">Check back before your next shift</p>
     </div>
   </AppShell>
 </template>
+
+<style scoped>
+.dash-quarter {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 0.75rem;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.dash-quarter__header {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.625rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.dash-quarter__header h2 {
+  flex: 1;
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+.dash-quarter__count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 0.375rem;
+  border-radius: 9999px;
+  font-size: 0.625rem;
+  font-weight: 700;
+}
+
+.dash-quarter__body {
+  flex: 1;
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  overflow-y: auto;
+  max-height: 40vh;
+}
+
+/* Color themes */
+.dash-quarter--red .dash-quarter__header { color: #fca5a5; }
+.dash-quarter--red .dash-quarter__count { background: rgba(239, 68, 68, 0.2); color: #fca5a5; }
+.dash-quarter--red { border-color: rgba(239, 68, 68, 0.15); }
+
+.dash-quarter--blue .dash-quarter__header { color: #93c5fd; }
+.dash-quarter--blue .dash-quarter__count { background: rgba(59, 130, 246, 0.2); color: #93c5fd; }
+.dash-quarter--blue { border-color: rgba(59, 130, 246, 0.15); }
+
+.dash-quarter--amber .dash-quarter__header { color: #fcd34d; }
+.dash-quarter--amber .dash-quarter__count { background: rgba(245, 158, 11, 0.2); color: #fcd34d; }
+.dash-quarter--amber { border-color: rgba(245, 158, 11, 0.15); }
+
+.dash-quarter--purple .dash-quarter__header { color: #c4b5fd; }
+.dash-quarter--purple .dash-quarter__count { background: rgba(139, 92, 246, 0.2); color: #c4b5fd; }
+.dash-quarter--purple { border-color: rgba(139, 92, 246, 0.15); }
+</style>
