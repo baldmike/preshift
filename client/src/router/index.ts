@@ -190,35 +190,27 @@ router.beforeEach(async (to, _from, next) => {
     return next('/login')
   }
 
-  // GUARD 2: If the route specifies allowed roles, perform role-based access
-  // control.  We only enter this block when a token exists (the user appears
-  // to be logged in).
-  if (to.meta.roles && token) {
-    // Lazy-import the auth store to break the circular dependency:
-    //   router -> auth store -> useApi -> router
-    // By dynamically importing here, the module is resolved at runtime
-    // rather than at module-load time.
+  // GUARD 2: If the route requires auth and we have a token, ensure the
+  // user object is loaded (it may be null after a page refresh).
+  if (to.meta.requiresAuth && token) {
     const { useAuthStore } = await import('@/stores/auth')
     const authStore = useAuthStore()
 
-    // If the user object has not been loaded yet (e.g. after a page reload
-    // when only the token survived in localStorage), fetch it from the API.
     if (!authStore.user) {
       try {
         await authStore.fetchUser()
       } catch {
-        // fetchUser failed -- the token is probably expired or revoked.
-        // Clear the stale token and redirect to login.
         localStorage.removeItem('preshift_token')
         return next('/login')
       }
     }
 
-    // Check if the user's role is in the route's allowed roles list.
-    // If not, redirect them to the staff dashboard as a safe fallback.
-    const allowedRoles = to.meta.roles as string[]
-    if (authStore.user && !allowedRoles.includes(authStore.user.role)) {
-      return next('/dashboard')
+    // GUARD 3: Role-based access control
+    if (to.meta.roles) {
+      const allowedRoles = to.meta.roles as string[]
+      if (authStore.user && !allowedRoles.includes(authStore.user.role)) {
+        return next('/dashboard')
+      }
     }
   }
 

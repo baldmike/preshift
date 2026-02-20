@@ -48,7 +48,7 @@ const timeStr = computed(() =>
   })
 )
 
-const establishment = computed(() => user.value?.location?.name || 'PreShift')
+const establishment = computed(() => user.value?.location?.name || 'PreShift86')
 
 const initials = computed(() => {
   if (!user.value?.name) return '?'

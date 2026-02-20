@@ -40,7 +40,7 @@ async function handleLogin() {
           <span class="h-px w-8 bg-amber-500/60"></span>
         </div>
         <h1 class="text-4xl sm:text-5xl font-bold text-white tracking-tight">
-          Pre<span class="text-amber-400">Shift</span>
+          <span class="text-amber-400">Pre</span><span class="text-green-500">Shift</span><span class="text-red-600">86</span>
         </h1>
         <p class="text-gray-500 text-sm mt-2">Sign in to start your shift</p>
       </div>
@@ -108,7 +108,7 @@ async function handleLogin() {
 
       <!-- Footer -->
       <p class="text-center text-gray-600 text-xs mt-8">
-        Powered by <span class="text-gray-500">PreShift</span>
+        Powered by <span class="text-gray-500">PreShift86</span>
       </p>
     </div>
   </div>
