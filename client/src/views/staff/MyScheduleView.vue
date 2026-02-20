@@ -1,13 +1,60 @@
 <script setup lang="ts">
+/**
+ * MyScheduleView -- staff view showing the full weekly schedule grid,
+ * the employee's own upcoming shifts, and a self-service availability
+ * grid where they can set which days/times they're available.
+ */
 import { ref, onMounted } from 'vue'
 import { useScheduleStore } from '@/stores/schedule'
+import { useAuthStore } from '@/stores/auth'
 import api from '@/composables/useApi'
 import AppShell from '@/components/layout/AppShell.vue'
 import ShiftCard from '@/components/ShiftCard.vue'
 import ScheduleGrid from '@/components/ScheduleGrid.vue'
+import AvailabilityGrid from '@/components/AvailabilityGrid.vue'
 
 const store = useScheduleStore()
+const authStore = useAuthStore()
 const loading = ref(false)
+
+// ── Availability state ──────────────────────────────────────────────────
+const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const
+
+/** Build an empty availability map (no slots selected) */
+function emptyAvailability(): Record<string, string[]> {
+  return Object.fromEntries(DAYS.map(d => [d, []]))
+}
+
+const availability = ref<Record<string, string[]>>(emptyAvailability())
+const savingAvailability = ref(false)
+
+/** Load the current user's availability from their profile */
+function loadAvailability() {
+  const user = authStore.user
+  if (user?.availability) {
+    // Merge with empty map so every day key exists
+    availability.value = { ...emptyAvailability(), ...user.availability }
+  }
+}
+
+/** Save availability via PUT /api/my-availability */
+async function saveAvailability() {
+  savingAvailability.value = true
+  try {
+    const { data } = await api.put('/api/my-availability', {
+      availability: availability.value,
+    })
+    // Update the auth store with the returned user data
+    authStore.user = data
+    toast('Availability saved', 'success')
+  } catch {
+    toast('Failed to save availability', 'error')
+  } finally {
+    savingAvailability.value = false
+  }
+}
+
+// ── Schedule loading ────────────────────────────────────────────────────
 
 async function loadData() {
   loading.value = true
@@ -34,7 +81,10 @@ async function giveUpShift(entryId: number) {
   }
 }
 
-onMounted(loadData)
+onMounted(() => {
+  loadData()
+  loadAvailability()
+})
 </script>
 
 <template>
@@ -110,6 +160,19 @@ onMounted(loadData)
             />
           </div>
         </div>
+
+        <!-- My Availability -->
+        <section class="rounded-xl border border-white/[0.06] bg-white/[0.03] p-4 space-y-3">
+          <div>
+            <h2 class="text-sm font-bold text-gray-400 uppercase tracking-wide">My Availability</h2>
+            <p class="text-[10px] text-gray-600 mt-0.5">Tap the times you can work each day. OPEN = available all day.</p>
+          </div>
+          <AvailabilityGrid
+            v-model="availability"
+            :saving="savingAvailability"
+            @save="saveAvailability"
+          />
+        </section>
       </template>
 
     </div>

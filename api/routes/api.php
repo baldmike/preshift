@@ -236,6 +236,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/schedules/{schedule}/publish', [ScheduleController::class, 'publish'])->middleware('role:admin,manager');
         Route::post('/schedules/{schedule}/unpublish', [ScheduleController::class, 'unpublish'])->middleware('role:admin,manager');
         Route::get('/my-shifts', [ScheduleController::class, 'myShifts']);
+        // PUT /api/my-availability -- Staff self-service: update own weekly availability grid.
+        Route::put('/my-availability', [UserController::class, 'updateMyAvailability']);
 
         /*
         |------------------------------------------------------------------

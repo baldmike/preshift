@@ -611,4 +611,81 @@ class SmokeTest extends TestCase
             'role' => 'bartender',
         ]);
     }
+
+    // ══════════════════════════════════════════════
+    //  MY AVAILABILITY (SELF-SERVICE)
+    // ══════════════════════════════════════════════
+
+    /**
+     * Staff can update their own weekly availability via PUT /api/my-availability.
+     */
+    public function test_staff_can_update_own_availability(): void
+    {
+        $seed = $this->seedLocationAndUsers();
+
+        $availability = [
+            'monday' => ['10:30', '16:30'],
+            'tuesday' => ['open'],
+            'wednesday' => [],
+            'thursday' => ['10:30'],
+            'friday' => ['16:30'],
+            'saturday' => ['open'],
+            'sunday' => [],
+        ];
+
+        $response = $this->actingAs($seed['staff'], 'sanctum')
+            ->putJson('/api/my-availability', [
+                'availability' => $availability,
+            ]);
+
+        $response->assertOk()
+            ->assertJsonPath('availability.monday', ['10:30', '16:30'])
+            ->assertJsonPath('availability.tuesday', ['open'])
+            ->assertJsonPath('availability.wednesday', []);
+
+        // Verify persistence
+        $seed['staff']->refresh();
+        $this->assertEquals(['10:30', '16:30'], $seed['staff']->availability['monday']);
+        $this->assertEquals(['open'], $seed['staff']->availability['tuesday']);
+    }
+
+    /**
+     * Availability rejects invalid slot values.
+     */
+    public function test_availability_rejects_invalid_slots(): void
+    {
+        $seed = $this->seedLocationAndUsers();
+
+        $response = $this->actingAs($seed['staff'], 'sanctum')
+            ->putJson('/api/my-availability', [
+                'availability' => [
+                    'monday' => ['invalid_slot'],
+                ],
+            ]);
+
+        $response->assertStatus(422);
+    }
+
+    /**
+     * Manager can set availability for a user via PATCH /api/users/{id}.
+     */
+    public function test_manager_can_set_user_availability(): void
+    {
+        $seed = $this->seedLocationAndUsers();
+
+        $response = $this->actingAs($seed['manager'], 'sanctum')
+            ->patchJson("/api/users/{$seed['staff']->id}", [
+                'name' => $seed['staff']->name,
+                'email' => $seed['staff']->email,
+                'role' => $seed['staff']->role,
+                'availability' => [
+                    'monday' => ['open'],
+                    'tuesday' => ['10:30'],
+                ],
+            ]);
+
+        $response->assertOk()
+            ->assertJsonPath('availability.monday', ['open'])
+            ->assertJsonPath('availability.tuesday', ['10:30']);
+    }
 }

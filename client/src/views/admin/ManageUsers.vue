@@ -13,6 +13,7 @@ import AppShell from '@/components/layout/AppShell.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import BadgePill from '@/components/ui/BadgePill.vue'
+import AvailabilityGrid from '@/components/AvailabilityGrid.vue'
 import type { User } from '@/types'
 
 // Day-of-week keys matching the availability JSON format
@@ -45,7 +46,7 @@ const form = ref({
   password: '',
   role: 'server',
   phone: '',
-  availability: Object.fromEntries(DAYS.map(d => [d, true])) as Record<string, boolean>,
+  availability: Object.fromEntries(DAYS.map(d => [d, [] as string[]])) as Record<string, string[]>,
 })
 
 // Clears all form fields, exits edit mode, and hides the form panel
@@ -56,7 +57,7 @@ function resetForm() {
     password: '',
     role: 'server',
     phone: '',
-    availability: Object.fromEntries(DAYS.map(d => [d, true])),
+    availability: Object.fromEntries(DAYS.map(d => [d, [] as string[]])),
   }
   editingId.value = null
   showForm.value = false
@@ -72,19 +73,31 @@ function editUser(user: User) {
     role: user.role,
     phone: user.phone || '',
     availability: user.availability
-      ? { ...Object.fromEntries(DAYS.map(d => [d, true])), ...user.availability }
-      : Object.fromEntries(DAYS.map(d => [d, true])),
+      ? { ...Object.fromEntries(DAYS.map(d => [d, [] as string[]])), ...user.availability }
+      : Object.fromEntries(DAYS.map(d => [d, [] as string[]])),
   }
   showForm.value = true
 }
 
-/** Returns a short summary of availability like "Mon, Tue, Wed, Fri" */
-function availabilitySummary(availability: Record<string, boolean> | null): string {
-  if (!availability) return 'All days'
-  const available = DAYS.filter(d => availability[d])
-  if (available.length === 7) return 'All days'
-  if (available.length === 0) return 'None'
-  return available.map(d => DAY_LABELS[d]).join(', ')
+/** Returns a short summary of availability like "Mon (10:30, 4:30), Tue (OPEN)" */
+function availabilitySummary(availability: Record<string, string[]> | null): string {
+  if (!availability) return 'Not set'
+  const parts: string[] = []
+  for (const d of DAYS) {
+    const slots = availability[d]
+    if (!slots || slots.length === 0) continue
+    if (slots.includes('open')) {
+      parts.push(`${DAY_LABELS[d]}`)
+    } else {
+      const labels = slots.map(s => s === '10:30' ? '10:30' : '4:30')
+      parts.push(`${DAY_LABELS[d]} (${labels.join(', ')})`)
+    }
+  }
+  if (parts.length === 0) return 'None'
+  // Check if every day is open
+  const allOpen = DAYS.every(d => availability[d]?.includes('open'))
+  if (allOpen) return 'Open all week'
+  return parts.join(', ')
 }
 
 /**
@@ -183,8 +196,8 @@ function toggleSort(key: SortKey) {
 const roleOrder: Record<string, number> = { admin: 0, manager: 1, bartender: 2, server: 3 }
 
 function availabilityCount(user: User): number {
-  if (!user.availability) return 7
-  return DAYS.filter(d => user.availability![d]).length
+  if (!user.availability) return 0
+  return DAYS.filter(d => (user.availability![d] ?? []).length > 0).length
 }
 
 const sortedUsers = computed(() => {
@@ -256,25 +269,10 @@ onMounted(fetchUsers)
           <div class="grid grid-cols-2 gap-3">
             <BaseInput v-model="form.phone" label="Phone" type="tel" placeholder="(555) 123-4567" />
           </div>
-          <!-- Availability checkboxes -->
+          <!-- Availability grid -->
           <div>
             <label class="block text-sm font-medium text-gray-400 mb-2">Availability</label>
-            <div class="flex flex-wrap gap-3">
-              <label
-                v-for="day in DAYS"
-                :key="day"
-                class="flex items-center gap-1.5 text-sm text-gray-300 cursor-pointer"
-              >
-                <input
-                  type="checkbox"
-                  v-model="form.availability[day]"
-                  :true-value="true"
-                  :false-value="false"
-                  class="rounded border-gray-600 bg-gray-700 text-indigo-500 focus:ring-indigo-500"
-                />
-                {{ DAY_LABELS[day] }}
-              </label>
-            </div>
+            <AvailabilityGrid v-model="form.availability" :saving="false" @save="() => {}" />
           </div>
           <div class="flex gap-2">
             <BaseButton type="submit" :loading="submitting">{{ editingId ? 'Update' : 'Create' }}</BaseButton>

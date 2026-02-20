@@ -78,7 +78,8 @@ class UserController extends Controller
             'location_id' => 'nullable|exists:locations,id',   // Optional assignment to a location
             'phone' => 'nullable|string|max:20',               // Contact phone number
             'availability' => 'nullable|array',                // Day-of-week availability map
-            'availability.*' => 'boolean',                     // Each day value must be boolean
+            'availability.*' => 'array',                       // Each day maps to an array of slot strings
+            'availability.*.*' => 'string|in:10:30,16:30,open', // Valid slots
         ]);
 
         // Hash the plaintext password before storing it in the database.
@@ -117,7 +118,8 @@ class UserController extends Controller
             'location_id' => 'nullable|exists:locations,id',
             'phone' => 'nullable|string|max:20',                          // Contact phone number
             'availability' => 'nullable|array',                           // Day-of-week availability map
-            'availability.*' => 'boolean',                                // Each day value must be boolean
+            'availability.*' => 'array',                                  // Each day maps to an array of slot strings
+            'availability.*.*' => 'string|in:10:30,16:30,open',          // Valid slots
         ]);
 
         if (isset($validated['password'])) {
@@ -130,6 +132,35 @@ class UserController extends Controller
 
         // Apply validated changes to the user record.
         $user->update($validated);
+
+        return response()->json($user);
+    }
+
+    /**
+     * Update the authenticated user's own availability.
+     *
+     * Staff members call PUT /api/my-availability to self-service their
+     * weekly availability grid. Each day maps to an array of slot strings:
+     *   - "10:30"  → available 10:30 AM – 6:00 PM
+     *   - "16:30"  → available 4:30 PM – close
+     *   - "open"   → open availability (any time)
+     *
+     * Example payload:
+     *   { "availability": { "monday": ["10:30", "16:30"], "tuesday": ["open"], "wednesday": [] } }
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse  The updated user.
+     */
+    public function updateMyAvailability(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'availability' => 'required|array',
+            'availability.*' => 'array',
+            'availability.*.*' => 'string|in:10:30,16:30,open',
+        ]);
+
+        $user = $request->user();
+        $user->update(['availability' => $validated['availability']]);
 
         return response()->json($user);
     }

@@ -51,8 +51,14 @@ export interface User {
   role: 'admin' | 'manager' | 'server' | 'bartender'
   /** Contact phone number; null if not provided */
   phone: string | null
-  /** Day-of-week availability map; null means available every day */
-  availability: Record<string, boolean> | null
+  /**
+   * Weekly availability grid. Each day maps to an array of slot strings:
+   *   - "10:30"  → available 10:30 AM – 6:00 PM
+   *   - "16:30"  → available 4:30 PM – close
+   *   - "open"   → open availability (any shift)
+   * Null means the employee hasn't set availability yet.
+   */
+  availability: Record<string, string[]> | null
   /** Eagerly-loaded Location relationship (optional, depends on API include) */
   location?: Location
   /** ISO-8601 creation timestamp */

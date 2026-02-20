@@ -104,9 +104,29 @@ const shiftTemplates = ref<ShiftTemplate[]>([])
 // All staff users at this location (for the entry form's user dropdown)
 const rawUsers = ref<User[]>([])
 const roleOrder: Record<string, number> = { admin: 0, manager: 1, bartender: 2, server: 3 }
-const users = computed(() =>
-  [...rawUsers.value].sort((a, b) => (roleOrder[a.role] ?? 99) - (roleOrder[b.role] ?? 99) || a.name.localeCompare(b.name))
-)
+
+/**
+ * Sorted user list: available users first, then unavailable.
+ * Within each group, sorted by role tier then name.
+ */
+const users = computed(() => {
+  const list = [...rawUsers.value]
+  const dayName = entryForm.value.date ? getDayName(entryForm.value.date) : ''
+  const startTime = entryForm.value.start_time
+
+  list.sort((a, b) => {
+    // If we have a date + time, sort available before unavailable
+    if (dayName && startTime) {
+      const aAvail = isUserAvailable(a, dayName, startTime) ? 0 : 1
+      const bAvail = isUserAvailable(b, dayName, startTime) ? 0 : 1
+      if (aAvail !== bAvail) return aAvail - bAvail
+    }
+    // Then by role tier, then by name
+    return (roleOrder[a.role] ?? 99) - (roleOrder[b.role] ?? 99) || a.name.localeCompare(b.name)
+  })
+
+  return list
+})
 // Approved time-off requests (shown as warnings below the grid)
 const timeOffRequests = ref<TimeOffRequest[]>([])
 
@@ -366,27 +386,53 @@ function getDayName(dateStr: string): string {
   return DAY_NAMES[date.getDay()]
 }
 
-/** Checks whether a user is available on a specific day name */
-function isUserAvailable(user: User, dayName: string): boolean {
-  if (!user.availability) return true
-  return user.availability[dayName] !== false
+/** Convert "HH:MM" to total minutes for range comparison */
+function timeToMinutes(time: string): number {
+  const [h, m] = time.split(':').map(Number)
+  return h * 60 + m
+}
+
+/**
+ * Checks whether a user is available for a specific day + start time.
+ * Availability slots:
+ *   "open"  → available any time
+ *   "10:30" → available 10:30 AM – 6:00 PM (630–1080 min)
+ *   "16:30" → available 4:30 PM – close (990+ min)
+ *
+ * If the user has no availability set (null), they are treated as not yet
+ * configured — we show them but mark as "not set".
+ */
+function isUserAvailable(user: User, dayName: string, startTime: string): boolean {
+  if (!user.availability) return true // Not set yet — show them
+  const slots = user.availability[dayName] ?? []
+  if (slots.length === 0) return false // Day has no availability
+  if (slots.includes('open')) return true // Open = any time
+
+  const startMin = timeToMinutes(startTime)
+  // "10:30" covers shifts starting 10:30 AM (630) to before 6:00 PM (1080)
+  if (slots.includes('10:30') && startMin >= 630 && startMin < 1080) return true
+  // "16:30" covers shifts starting 4:30 PM (990) onwards
+  if (slots.includes('16:30') && startMin >= 990) return true
+
+  return false
 }
 
 /** Returns the availability indicator for the staff dropdown */
 function availabilityIndicator(user: User): string {
-  if (!entryForm.value.date) return ''
+  if (!entryForm.value.date || !entryForm.value.start_time) return ''
+  if (!user.availability) return ' (not set)'
   const dayName = getDayName(entryForm.value.date)
-  return isUserAvailable(user, dayName) ? '' : ' (unavailable)'
+  return isUserAvailable(user, dayName, entryForm.value.start_time) ? '' : ' (unavailable)'
 }
 
 /** Computed warning message when an unavailable user is selected */
 const availabilityWarning = computed(() => {
-  if (!entryForm.value.user_id || !entryForm.value.date) return ''
+  if (!entryForm.value.user_id || !entryForm.value.date || !entryForm.value.start_time) return ''
   const user = users.value.find(u => u.id === entryForm.value.user_id)
   if (!user) return ''
   const dayName = getDayName(entryForm.value.date)
-  if (isUserAvailable(user, dayName)) return ''
-  return `${user.name} is not available on ${DAY_LABELS[dayName]}`
+  if (isUserAvailable(user, dayName, entryForm.value.start_time)) return ''
+  return `${user.name} is not available on ${DAY_LABELS[dayName]} at this time`
 })
 
 /** Dispatches a global toast notification via CustomEvent. */
