@@ -16,7 +16,8 @@ async function handleLogin() {
   loading.value = true
   try {
     await authStore.login(email.value, password.value)
-    router.push('/dashboard')
+    const role = authStore.user?.role
+    router.push(role === 'admin' || role === 'manager' ? '/manage/daily' : '/dashboard')
   } catch (e: any) {
     error.value = e.response?.data?.message || 'Invalid credentials. Please try again.'
   } finally {

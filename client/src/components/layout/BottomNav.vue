@@ -45,7 +45,7 @@ const { isAdmin, isManager } = useAuth()
 
       <router-link
         v-if="isAdmin || isManager"
-        to="/manage"
+        to="/manage/daily"
         class="flex flex-col items-center gap-0.5 text-xs transition-colors"
         :class="$route.path.startsWith('/manage') ? 'text-amber-400' : 'text-gray-500 hover:text-gray-300'"
       >

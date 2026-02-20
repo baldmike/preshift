@@ -91,9 +91,13 @@ const routes: RouteRecordRaw[] = [
   // -----------------------------------------------------------------------
   {
     path: '/manage',
-    name: 'ManageDashboard',
-    // Overview dashboard for managers with links to all management views
-    component: () => import('@/views/admin/ManageDashboard.vue'),
+    redirect: '/manage/daily',
+  },
+  {
+    path: '/manage/daily',
+    name: 'DailyManage',
+    // Unified daily management panel for all four content areas
+    component: () => import('@/views/admin/DailyManageView.vue'),
     meta: { requiresAuth: true, roles: ['admin', 'manager'] },
   },
   {
