@@ -1,4 +1,15 @@
 <script setup lang="ts">
+/**
+ * ShiftDropCard.vue
+ *
+ * Renders a compact, amber-themed card for a single shift drop request.
+ * Shows the requester's name, a color-coded status badge (open/filled/
+ * cancelled), shift name, date, time range, volunteer count, and an
+ * optional reason.
+ *
+ * Props:
+ *   - drop: ShiftDrop
+ */
 import { computed } from 'vue'
 import type { ShiftDrop } from '@/types'
 import BadgePill from '@/components/ui/BadgePill.vue'

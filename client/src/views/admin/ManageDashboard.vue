@@ -1,4 +1,13 @@
 <script setup lang="ts">
+/**
+ * ManageDashboard.vue
+ *
+ * Top-level management hub that provides icon-card links to every admin
+ * section (86'd, Specials, Push Items, Announcements, Menu, Employees,
+ * Acknowledgments, Schedule, Shift Drops, Time Off). Each card shows a
+ * live count of active items fetched from the preshift endpoint. Admins
+ * also see a separate "Locations" link.
+ */
 import { ref, onMounted } from 'vue'
 import { useAuth } from '@/composables/useAuth'
 import api from '@/composables/useApi'

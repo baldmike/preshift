@@ -1,4 +1,14 @@
 <script setup lang="ts">
+/**
+ * SpecialCard.vue
+ *
+ * Renders a compact, blue-themed card for a single daily special. Displays
+ * the title, a type badge, optional description, date range, remaining
+ * quantity, and an AcknowledgeButton for staff confirmation.
+ *
+ * Props:
+ *   - special: Special
+ */
 import type { Special } from '@/types'
 import { useAcknowledgments } from '@/composables/useAcknowledgments'
 import AcknowledgeButton from '@/components/AcknowledgeButton.vue'

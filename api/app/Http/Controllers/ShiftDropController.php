@@ -11,13 +11,36 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
+/**
+ * ShiftDropController manages the shift-drop workflow for a location.
+ *
+ * A "shift drop" allows a staff member to release an assigned shift so that
+ * another qualified employee can volunteer to pick it up. The lifecycle is:
+ *   1. Staff member creates a drop (status = open) via store().
+ *   2. Other staff with the same role volunteer via volunteer().
+ *   3. A manager selects a volunteer via select(), which reassigns the
+ *      schedule entry and marks the drop as filled.
+ *   4. The original requester may cancel an open drop via cancel().
+ *
+ * Real-time WebSocket events (ShiftDropRequested, ShiftDropVolunteered,
+ * ShiftDropFilled) are broadcast on the location's private channel so all
+ * connected clients stay in sync.
+ */
 class ShiftDropController extends Controller
 {
     /**
      * List shift drops visible to the authenticated user.
      *
-     * Staff see open drops matching their role plus their own drops.
-     * Managers see all drops for the location.
+     * Authorization logic:
+     * - Staff users see their own drops (any status) plus open drops that match
+     *   their role, allowing them to discover shifts they could volunteer for.
+     * - Managers see all drops for the location regardless of role or status.
+     *
+     * Results are eager-loaded with the schedule entry, shift template, requester,
+     * filler, and volunteers to avoid N+1 queries on the client.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse  A JSON array of shift drop records.
      */
     public function index(Request $request): JsonResponse
     {
@@ -47,8 +70,18 @@ class ShiftDropController extends Controller
     }
 
     /**
-     * Drop a shift (staff action — can only drop own shifts).
-     * Creates the drop with status=open and broadcasts to all staff.
+     * Create a new shift drop request (staff action -- can only drop own shifts).
+     *
+     * Validates the request payload, confirms the authenticated user owns the
+     * schedule entry, then creates a ShiftDrop record with status "open" and
+     * broadcasts a ShiftDropRequested event to the location's private channel.
+     *
+     * Validation rules:
+     * - schedule_entry_id: required, must reference an existing schedule entry.
+     * - reason: optional, string, max 255 chars -- why the shift is being dropped.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse  The newly created shift drop with a 201 status.
      */
     public function store(Request $request): JsonResponse
     {
@@ -78,7 +111,19 @@ class ShiftDropController extends Controller
 
     /**
      * Volunteer to pick up an open shift drop.
-     * Validates the drop is open, user has the same role, and isn't the requester.
+     *
+     * A staff member indicates willingness to cover the dropped shift. The method
+     * enforces several guard clauses before recording the volunteer:
+     * - The drop must still be in "open" status.
+     * - The authenticated user cannot volunteer for their own drop.
+     * - The user's role must match the schedule entry's role.
+     * - Duplicate volunteers are rejected.
+     *
+     * On success a ShiftDropVolunteered event is broadcast to the location channel.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \App\Models\ShiftDrop     $shiftDrop  The shift drop to volunteer for (via route model binding).
+     * @return \Illuminate\Http\JsonResponse  The updated shift drop with volunteers loaded.
      */
     public function volunteer(Request $request, ShiftDrop $shiftDrop): JsonResponse
     {
@@ -115,8 +160,21 @@ class ShiftDropController extends Controller
     }
 
     /**
-     * Manager selects a volunteer to fill the shift drop.
-     * Reassigns the schedule entry and marks the drop as filled.
+     * Select a volunteer to fill the shift drop (manager action).
+     *
+     * The manager chooses one of the existing volunteers to take over the shift.
+     * This method verifies the drop is still open and that the specified user has
+     * actually volunteered, then performs three atomic updates:
+     *   1. Marks the volunteer record as selected.
+     *   2. Reassigns the underlying schedule entry to the selected user.
+     *   3. Updates the drop's status to "filled" with the filler ID and timestamp.
+     *
+     * A ShiftDropFilled event is broadcast to notify all connected clients.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \App\Models\ShiftDrop     $shiftDrop  The shift drop to fill (via route model binding).
+     * @param  \App\Models\User          $user       The volunteer to assign the shift to (via route model binding).
+     * @return \Illuminate\Http\JsonResponse  The updated shift drop with filler and volunteers loaded.
      */
     public function select(Request $request, ShiftDrop $shiftDrop, User $user): JsonResponse
     {
@@ -151,7 +209,15 @@ class ShiftDropController extends Controller
     }
 
     /**
-     * Cancel an open shift drop (staff action — own drops only).
+     * Cancel an open shift drop (staff action -- own drops only).
+     *
+     * Only the original requester may cancel, and only while the drop is still
+     * in "open" status. Sets the drop's status to "cancelled", preventing further
+     * volunteering or selection.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \App\Models\ShiftDrop     $shiftDrop  The shift drop to cancel (via route model binding).
+     * @return \Illuminate\Http\JsonResponse  The updated shift drop with status "cancelled".
      */
     public function cancel(Request $request, ShiftDrop $shiftDrop): JsonResponse
     {

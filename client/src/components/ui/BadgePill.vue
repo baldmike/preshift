@@ -1,4 +1,15 @@
 <script setup lang="ts">
+/**
+ * BadgePill.vue
+ *
+ * A small, rounded pill badge used to display short labels such as priority
+ * levels, statuses, or roles. The background and text color are determined
+ * by the `color` prop, defaulting to gray when unspecified.
+ *
+ * Props:
+ *   - label: string          -- text displayed inside the pill
+ *   - color?: 'green' | 'yellow' | 'red' | 'blue' | 'gray'
+ */
 defineProps<{
   color?: 'green' | 'yellow' | 'red' | 'blue' | 'gray'
   label: string

@@ -1,4 +1,12 @@
 <script setup lang="ts">
+/**
+ * EightySixedBoard.vue
+ *
+ * Full-page view listing all currently 86'd items. Staff see the read-only
+ * card list, while admins and managers also get an inline form to 86 new
+ * items on the fly. Fetches the item list from GET /api/eighty-sixed on
+ * mount and displays an empty-state message when nothing is 86'd.
+ */
 import { ref, onMounted } from 'vue'
 import { useAuth } from '@/composables/useAuth'
 import api from '@/composables/useApi'

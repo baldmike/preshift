@@ -10,6 +10,15 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
+/**
+ * Broadcast event fired when a staff member volunteers to pick up a dropped shift.
+ *
+ * This event is dispatched on the location's private WebSocket channel
+ * (e.g., "location.{id}") as "shift-drop.volunteered", notifying connected
+ * clients that a new volunteer has signed up. The broadcast payload includes
+ * the shift drop with its schedule entry, shift template, requester, and
+ * updated volunteers list.
+ */
 class ShiftDropVolunteered implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
