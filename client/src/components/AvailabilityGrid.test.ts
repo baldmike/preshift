@@ -3,13 +3,14 @@
  *
  * Unit tests for the AvailabilityGrid.vue component.
  *
- * AvailabilityGrid renders a 7-column weekly grid with three toggleable
- * buttons per day: 10:30 AM, 4:30 PM, and OPEN. There is also a master
- * "Open Availability" button at the top that sets every day to open.
+ * AvailabilityGrid renders a 7-column weekly grid with five toggleable
+ * buttons per day: 10:30 AM, 4:30 PM, 6:00 PM, 7:00 PM, and OPEN.
+ * There is also a master "Open Availability" button at the top that sets
+ * every day to open.
  *
  * Tests verify:
  *   1. Renders 7 day columns with correct labels.
- *   2. Renders correct number of buttons (master + 3 per day + save).
+ *   2. Renders correct number of buttons (master + 5 per day + save).
  *   3. Clicking a time slot emits update:modelValue with the slot added.
  *   4. Clicking OPEN replaces existing slots with ['open'].
  *   5. Clicking a time slot while OPEN is active deselects OPEN.
@@ -36,13 +37,13 @@ function allOpenAvailability(): Record<string, string[]> {
   return Object.fromEntries(DAYS.map(d => [d, ['open']]))
 }
 
-// Button layout:
+// Button layout (4 time slots + OPEN per day = 5 per day):
 //   [0] = Master "Open Availability"
-//   [1] = Mon 10:30, [2] = Mon 4:30, [3] = Mon OPEN
-//   [4] = Tue 10:30, [5] = Tue 4:30, [6] = Tue OPEN
+//   [1] = Mon 10:30, [2] = Mon 4:30, [3] = Mon 6:00, [4] = Mon 7:00, [5] = Mon OPEN
+//   [6] = Tue 10:30, [7] = Tue 4:30, [8] = Tue 6:00, [9] = Tue 7:00, [10] = Tue OPEN
 //   ...
-//   [19] = Sun 10:30, [20] = Sun 4:30, [21] = Sun OPEN
-//   [22] = Save Availability
+//   [31] = Sun 10:30, [32] = Sun 4:30, [33] = Sun 6:00, [34] = Sun 7:00, [35] = Sun OPEN
+//   [36] = Save Availability
 
 describe('AvailabilityGrid.vue', () => {
   /**
@@ -62,15 +63,15 @@ describe('AvailabilityGrid.vue', () => {
   /**
    * Test 2 — Renders correct number of buttons
    *
-   * 1 master + 7 days * 3 slot buttons + 1 save button = 23
+   * 1 master + 7 days * 5 slot buttons + 1 save button = 37
    */
-  it('renders master + 3 per day + save buttons', () => {
+  it('renders master + 5 per day + save buttons', () => {
     const wrapper = mount(AvailabilityGrid, {
       props: { modelValue: emptyAvailability() },
     })
 
     const buttons = wrapper.findAll('button')
-    expect(buttons).toHaveLength(23)
+    expect(buttons).toHaveLength(37)
   })
 
   /**
@@ -101,9 +102,9 @@ describe('AvailabilityGrid.vue', () => {
       props: { modelValue: avail },
     })
 
-    // Button [3] = Mon OPEN
+    // Button [5] = Mon OPEN
     const buttons = wrapper.findAll('button')
-    await buttons[3].trigger('click')
+    await buttons[5].trigger('click')
 
     const emitted = wrapper.emitted('update:modelValue')
     expect(emitted).toBeTruthy()
@@ -178,9 +179,9 @@ describe('AvailabilityGrid.vue', () => {
       props: { modelValue: avail },
     })
 
-    // Button [6] = Tue OPEN
+    // Button [10] = Tue OPEN
     const buttons = wrapper.findAll('button')
-    await buttons[6].trigger('click')
+    await buttons[10].trigger('click')
 
     const emitted = wrapper.emitted('update:modelValue')
     expect(emitted).toBeTruthy()
