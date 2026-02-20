@@ -84,6 +84,11 @@ class UserController extends Controller
         // Hash the plaintext password before storing it in the database.
         $validated['password'] = Hash::make($validated['password']);
 
+        // Auto-assign the creating user's location if none was provided.
+        if (empty($validated['location_id'])) {
+            $validated['location_id'] = $request->user()->location_id;
+        }
+
         // Create the user record with the hashed password and validated data.
         $user = User::create($validated);
 

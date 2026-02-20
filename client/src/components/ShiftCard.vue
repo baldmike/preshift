@@ -18,6 +18,7 @@ import type { ScheduleEntry } from '@/types'
 import BadgePill from '@/components/ui/BadgePill.vue'
 
 const props = defineProps<{ entry: ScheduleEntry }>()
+const emit = defineEmits<{ 'give-up': [entryId: number] }>()
 
 // ── Helpers ────────────────────────────────────────────────────────────
 
@@ -104,6 +105,12 @@ const roleColor = computed(() => {
       <p v-if="entry.notes" class="text-[10px] text-blue-500/50 mt-1 italic line-clamp-2">
         {{ entry.notes }}
       </p>
+
+      <!-- Give Up Shift button -->
+      <button
+        @click="emit('give-up', entry.id)"
+        class="mt-2 text-[10px] font-medium text-red-400/70 hover:text-red-300 transition-colors"
+      >Give Up Shift</button>
     </div>
   </div>
 </template>

@@ -48,7 +48,7 @@ const dayAbbreviations = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
  */
 const weekDates = computed<string[]>(() => {
   const dates: string[] = []
-  const base = new Date(props.schedule.week_start + 'T12:00:00')
+  const base = new Date(props.schedule.week_start.split('T')[0] + 'T12:00:00')
   for (let i = 0; i < 7; i++) {
     const d = new Date(base)
     d.setDate(base.getDate() + i)
@@ -81,7 +81,7 @@ const columnHeaders = computed(() => {
 function entriesFor(shiftTemplateId: number, date: string): ScheduleEntry[] {
   if (!props.schedule.entries) return []
   return props.schedule.entries.filter(
-    (e) => e.shift_template_id === shiftTemplateId && e.date === date,
+    (e) => e.shift_template_id === shiftTemplateId && e.date.split('T')[0] === date,
   )
 }
 

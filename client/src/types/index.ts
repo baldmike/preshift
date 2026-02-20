@@ -383,41 +383,35 @@ export interface ScheduleEntry {
 }
 
 /**
- * A request by a staff member to swap one of their scheduled shifts.
- * Lifecycle: pending → offered → approved/denied (or cancelled).
+ * A volunteer who offered to pick up a dropped shift.
  */
-export interface SwapRequest {
-  /** Primary key */
+export interface ShiftDropVolunteer {
   id: number
-  /** Foreign key to the ScheduleEntry being swapped */
-  schedule_entry_id: number
-  /** Foreign key to the staff member who requested the swap */
-  requested_by: number
-  /** Foreign key to a specific target person (null = open to anyone) */
-  target_user_id: number | null
-  /** Foreign key to the person who offered to pick up the shift */
-  picked_up_by: number | null
-  /** Current lifecycle state */
-  status: 'pending' | 'offered' | 'approved' | 'denied' | 'cancelled'
-  /** Optional reason for the swap */
-  reason: string | null
-  /** Foreign key to the manager who approved/denied */
-  resolved_by: number | null
-  /** ISO-8601 timestamp of when the decision was made */
-  resolved_at: string | null
-  /** Eagerly-loaded schedule entry (optional) */
-  schedule_entry?: ScheduleEntry
-  /** Eagerly-loaded requester (optional) */
-  requester?: User
-  /** Eagerly-loaded target user (optional) */
-  target_user?: User
-  /** Eagerly-loaded picker (optional) */
-  picker?: User
-  /** Eagerly-loaded resolver (optional) */
-  resolver?: User
-  /** ISO-8601 creation timestamp */
+  shift_drop_id: number
+  user_id: number
+  selected: boolean
+  user?: User
   created_at: string
-  /** ISO-8601 last-update timestamp */
+}
+
+/**
+ * A shift drop — staff gives up a shift, other staff volunteer to pick it up,
+ * manager selects the volunteer who gets the shift.
+ * Status flow: open → filled (or cancelled).
+ */
+export interface ShiftDrop {
+  id: number
+  schedule_entry_id: number
+  requested_by: number
+  reason: string | null
+  status: 'open' | 'filled' | 'cancelled'
+  filled_by: number | null
+  filled_at: string | null
+  schedule_entry?: ScheduleEntry
+  requester?: User
+  filler?: User
+  volunteers?: ShiftDropVolunteer[]
+  created_at: string
   updated_at: string
 }
 

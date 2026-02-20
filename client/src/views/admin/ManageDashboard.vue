@@ -50,7 +50,7 @@ const links = [
   { to: '/manage/users', label: 'Employees', icon: 'users', key: null, color: 'bg-indigo-500' },
   { to: '/manage/acknowledgments', label: 'Acknowledgments', icon: 'check', key: null, color: 'bg-teal-500' },
   { to: '/manage/schedule', label: 'Schedule Builder', icon: 'calendar', key: null, color: 'bg-cyan-500' },
-  { to: '/manage/swaps', label: 'Manage Swaps', icon: 'swap', key: null, color: 'bg-orange-500' },
+  { to: '/manage/shift-drops', label: 'Shift Drops', icon: 'swap', key: null, color: 'bg-orange-500' },
   { to: '/manage/time-off', label: 'Manage Time Off', icon: 'clock', key: null, color: 'bg-rose-500' },
 ]
 </script>

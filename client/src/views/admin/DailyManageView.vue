@@ -1,8 +1,20 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import api from '@/composables/useApi'
+import { useAuth } from '@/composables/useAuth'
 import AppShell from '@/components/layout/AppShell.vue'
 import type { EightySixed, Special, PushItem, Announcement } from '@/types'
+
+const { isAdmin } = useAuth()
+
+const manageLinks = [
+  { to: '/manage/users', label: 'Employees' },
+  { to: '/manage/schedule', label: 'Schedule Builder' },
+  { to: '/manage/shift-drops', label: 'Shift Drops' },
+  { to: '/manage/time-off', label: 'Time Off' },
+  { to: '/manage/menu', label: 'Menu Items' },
+  { to: '/manage/acknowledgments', label: 'Acknowledgments' },
+]
 
 // ─── 86'd Items ─────────────────────────────────────────────────────────────
 const eightySixed = ref<EightySixed[]>([])
@@ -307,7 +319,7 @@ onMounted(() => {
 <template>
   <AppShell>
     <!-- Page header -->
-    <div class="flex items-center justify-between mb-5">
+    <div class="flex items-center justify-between mb-3">
       <div>
         <h1 class="text-xl font-bold text-white tracking-tight">Daily Management</h1>
         <p class="text-xs text-gray-500 mt-0.5">Manage today's pre-shift content</p>
@@ -316,6 +328,17 @@ onMounted(() => {
         to="/dashboard"
         class="text-xs text-gray-500 hover:text-gray-300 transition-colors"
       >View Dashboard</router-link>
+    </div>
+
+    <!-- Quick-nav to other management pages -->
+    <div class="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 mb-4">
+      <router-link
+        v-for="link in manageLinks"
+        :key="link.to"
+        :to="link.to"
+        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-semibold whitespace-nowrap
+               bg-white/[0.06] text-gray-400 hover:bg-white/[0.1] hover:text-white transition-colors"
+      >{{ link.label }}</router-link>
     </div>
 
     <!-- 2x2 grid -->

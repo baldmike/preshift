@@ -92,10 +92,9 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true },
   },
   {
-    path: '/swap-board',
-    name: 'SwapBoard',
-    // Staff view to pick up or request shift swaps
-    component: () => import('@/views/staff/SwapBoardView.vue'),
+    path: '/shift-drops',
+    name: 'ShiftDropBoard',
+    component: () => import('@/views/staff/ShiftDropBoardView.vue'),
     meta: { requiresAuth: true },
   },
   {
@@ -178,10 +177,9 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true, roles: ['admin', 'manager'] },
   },
   {
-    path: '/manage/swaps',
-    name: 'ManageSwapRequests',
-    // Manager view to approve/deny shift swap requests
-    component: () => import('@/views/admin/ManageSwapRequests.vue'),
+    path: '/manage/shift-drops',
+    name: 'ManageShiftDrops',
+    component: () => import('@/views/admin/ManageShiftDrops.vue'),
     meta: { requiresAuth: true, roles: ['admin', 'manager'] },
   },
   {

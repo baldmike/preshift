@@ -8,30 +8,52 @@
 
 import { computed } from 'vue'
 import { useScheduleStore } from '@/stores/schedule'
+import type { ScheduleEntry } from '@/types'
 
-/**
- * Returns scheduling helpers and computed refs.
- *
- * @returns An object containing:
- *  - `nextShift`      : The authenticated user's next upcoming shift (or null).
- *  - `pendingSwaps`   : Count of swap requests in "pending" or "offered" status.
- *  - `pendingTimeOff` : Count of pending time-off requests.
- *  - `formatShiftTime`: Formats a HH:MM:SS time string into a short label.
- *  - `formatWeekLabel`: Formats a week_start date into a human-readable week range.
- */
 export function useSchedule() {
   const store = useScheduleStore()
 
-  /** The user's next upcoming shift, or null if none. */
   const nextShift = computed(() => {
     return store.myShifts.length > 0 ? store.myShifts[0] : null
   })
 
-  /** Count of swap requests awaiting action (pending or offered). */
-  const pendingSwaps = computed(() => {
-    return store.swapRequests.filter(
-      (s) => s.status === 'pending' || s.status === 'offered'
-    ).length
+  const currentWeekRange = computed(() => {
+    const today = new Date()
+    const jsDay = today.getDay()
+    const offset = (jsDay + 6) % 7
+
+    const monday = new Date(today)
+    monday.setDate(today.getDate() - offset)
+
+    const sunday = new Date(monday)
+    sunday.setDate(monday.getDate() + 6)
+
+    const toISO = (d: Date) =>
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+
+    return { monday: toISO(monday), sunday: toISO(sunday) }
+  })
+
+  const currentWeekShifts = computed<Record<string, ScheduleEntry[]>>(() => {
+    const { monday, sunday } = currentWeekRange.value
+    const result: Record<string, ScheduleEntry[]> = {}
+
+    for (const entry of store.myShifts) {
+      const d = entry.date.split('T')[0]
+      if (d >= monday && d <= sunday) {
+        if (!result[d]) {
+          result[d] = []
+        }
+        result[d].push(entry)
+      }
+    }
+
+    return result
+  })
+
+  /** Count of shift drops with status "open". */
+  const pendingDrops = computed(() => {
+    return store.shiftDrops.filter((d) => d.status === 'open').length
   })
 
   /** Count of time-off requests still pending manager review. */
@@ -39,10 +61,6 @@ export function useSchedule() {
     return store.timeOffRequests.filter((r) => r.status === 'pending').length
   })
 
-  /**
-   * Formats a HH:MM or HH:MM:SS time string into a short label.
-   * e.g. "16:00" → "4:00 PM", "10:30:00" → "10:30 AM"
-   */
   function formatShiftTime(time: string): string {
     const [h, m] = time.split(':').map(Number)
     const period = h >= 12 ? 'PM' : 'AM'
@@ -50,12 +68,8 @@ export function useSchedule() {
     return `${hour}:${String(m).padStart(2, '0')} ${period}`
   }
 
-  /**
-   * Formats a week_start date string into a human-readable range.
-   * e.g. "2026-02-23" → "Feb 23 – Mar 1"
-   */
   function formatWeekLabel(weekStart: string): string {
-    const start = new Date(weekStart + 'T00:00:00')
+    const start = new Date(weekStart.split('T')[0] + 'T00:00:00')
     const end = new Date(start)
     end.setDate(end.getDate() + 6)
 
@@ -65,7 +79,9 @@ export function useSchedule() {
 
   return {
     nextShift,
-    pendingSwaps,
+    currentWeekShifts,
+    currentWeekRange,
+    pendingDrops,
     pendingTimeOff,
     formatShiftTime,
     formatWeekLabel,

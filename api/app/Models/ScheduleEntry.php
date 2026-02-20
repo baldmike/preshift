@@ -88,12 +88,12 @@ class ScheduleEntry extends Model
     }
 
     /**
-     * Swap requests filed against this schedule entry.
+     * Shift drops filed against this schedule entry.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany<SwapRequest>
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany<ShiftDrop>
      */
-    public function swapRequests(): HasMany
+    public function shiftDrops(): HasMany
     {
-        return $this->hasMany(SwapRequest::class, 'schedule_entry_id');
+        return $this->hasMany(ShiftDrop::class, 'schedule_entry_id');
     }
 }

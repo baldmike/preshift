@@ -34,7 +34,7 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ShiftTemplateController;
 use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\ScheduleEntryController;
-use App\Http\Controllers\SwapRequestController;
+use App\Http\Controllers\ShiftDropController;
 use App\Http\Controllers\TimeOffRequestController;
 
 /*
@@ -253,24 +253,22 @@ Route::middleware('auth:sanctum')->group(function () {
 
         /*
         |------------------------------------------------------------------
-        | Swap Requests
+        | Shift Drops
         |------------------------------------------------------------------
-        | Staff request shift swaps; other staff offer to pick them up;
-        | managers approve or deny.
+        | Staff drop shifts they can't work; other staff volunteer to
+        | pick them up; managers select the volunteer who gets the shift.
         |
-        | GET    /api/swap-requests                   -- List (role-filtered).
-        | POST   /api/swap-requests                   -- Request a swap (staff).
-        | POST   /api/swap-requests/{id}/offer        -- Offer to cover (staff).
-        | POST   /api/swap-requests/{id}/approve      -- Approve (manager+).
-        | POST   /api/swap-requests/{id}/deny         -- Deny (manager+).
-        | POST   /api/swap-requests/{id}/cancel       -- Cancel own request (staff).
+        | GET    /api/shift-drops                              -- List (role-filtered).
+        | POST   /api/shift-drops                              -- Drop a shift (staff).
+        | POST   /api/shift-drops/{id}/volunteer               -- Volunteer to pick up (staff).
+        | POST   /api/shift-drops/{id}/select/{user}           -- Manager selects volunteer.
+        | POST   /api/shift-drops/{id}/cancel                  -- Cancel own drop (staff).
         */
-        Route::get('/swap-requests', [SwapRequestController::class, 'index']);
-        Route::post('/swap-requests', [SwapRequestController::class, 'store']);
-        Route::post('/swap-requests/{swapRequest}/offer', [SwapRequestController::class, 'offer']);
-        Route::post('/swap-requests/{swapRequest}/approve', [SwapRequestController::class, 'approve'])->middleware('role:admin,manager');
-        Route::post('/swap-requests/{swapRequest}/deny', [SwapRequestController::class, 'deny'])->middleware('role:admin,manager');
-        Route::post('/swap-requests/{swapRequest}/cancel', [SwapRequestController::class, 'cancel']);
+        Route::get('/shift-drops', [ShiftDropController::class, 'index']);
+        Route::post('/shift-drops', [ShiftDropController::class, 'store']);
+        Route::post('/shift-drops/{shiftDrop}/volunteer', [ShiftDropController::class, 'volunteer']);
+        Route::post('/shift-drops/{shiftDrop}/select/{user}', [ShiftDropController::class, 'select'])->middleware('role:admin,manager');
+        Route::post('/shift-drops/{shiftDrop}/cancel', [ShiftDropController::class, 'cancel']);
 
         /*
         |------------------------------------------------------------------

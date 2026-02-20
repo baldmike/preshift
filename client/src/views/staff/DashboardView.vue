@@ -5,6 +5,7 @@ import { useScheduleStore } from '@/stores/schedule'
 import { useAuth } from '@/composables/useAuth'
 import { useSchedule } from '@/composables/useSchedule'
 import { useLocationChannel } from '@/composables/useReverb'
+import api from '@/composables/useApi'
 import AppShell from '@/components/layout/AppShell.vue'
 import EightySixedCard from '@/components/EightySixedCard.vue'
 import SpecialCard from '@/components/SpecialCard.vue'
@@ -14,10 +15,81 @@ import AnnouncementCard from '@/components/AnnouncementCard.vue'
 const store = usePreshiftStore()
 const scheduleStore = useScheduleStore()
 const { locationId } = useAuth()
-const { nextShift, formatShiftTime } = useSchedule()
+const { nextShift, currentWeekShifts, currentWeekRange, formatShiftTime } = useSchedule()
+
+/**
+ * Generates an array of 7 day objects (Monday through Sunday) for the
+ * current week.  Each object contains:
+ *  - `date`      : ISO date string (YYYY-MM-DD)
+ *  - `dayAbbrev` : 3-letter day abbreviation ("Mon", "Tue", etc.)
+ *  - `dayNum`    : Calendar day number (1-31)
+ *  - `isToday`   : Whether this day is today
+ *
+ * Used by the template to render the 7-column week strip.
+ */
+const weekDays = computed(() => {
+  const { monday } = currentWeekRange.value
+  // Build a Date from the monday ISO string (local time)
+  const mon = new Date(monday + 'T00:00:00')
+  const today = new Date()
+  // Today's ISO string for comparison
+  const todayISO = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+
+  const days = []
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(mon)
+    d.setDate(mon.getDate() + i)
+    const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    days.push({
+      date: iso,
+      dayAbbrev: d.toLocaleDateString('en-US', { weekday: 'short' }), // Mon, Tue, …
+      dayNum: d.getDate(),
+      isToday: iso === todayISO,
+    })
+  }
+  return days
+})
+
+/**
+ * True when the user has at least one shift in the current Mon–Sun week.
+ * Determines whether we show the full weekly strip or the simpler
+ * "Next Shift" fallback.
+ */
+const hasCurrentWeekShifts = computed(() => {
+  return Object.keys(currentWeekShifts.value).length > 0
+})
+
+/**
+ * Human-readable label for the current week's date range.
+ * e.g. "Feb 16 – 22" (same month) or "Feb 28 – Mar 6" (cross-month).
+ */
+const weekRangeLabel = computed(() => {
+  const { monday } = currentWeekRange.value
+  const mon = new Date(monday + 'T00:00:00')
+  const sun = new Date(mon)
+  sun.setDate(mon.getDate() + 6)
+
+  const opts: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' }
+  // If both dates are in the same month, shorten to "Feb 16 – 22"
+  if (mon.getMonth() === sun.getMonth()) {
+    return `${mon.toLocaleDateString('en-US', opts)} – ${sun.getDate()}`
+  }
+  // Cross-month: "Feb 28 – Mar 6"
+  return `${mon.toLocaleDateString('en-US', opts)} – ${sun.toLocaleDateString('en-US', opts)}`
+})
 
 function toast(message: string, type: string) {
   window.dispatchEvent(new CustomEvent('toast', { detail: { message, type } }))
+}
+
+async function giveUpShift(entryId: number) {
+  try {
+    const { data } = await api.post('/api/shift-drops', { schedule_entry_id: entryId })
+    scheduleStore.upsertShiftDrop(data)
+    toast('Shift dropped — waiting for a volunteer', 'success')
+  } catch {
+    toast('Failed to drop shift', 'error')
+  }
 }
 
 let channel: ReturnType<typeof useLocationChannel> | null = null
@@ -53,11 +125,11 @@ onMounted(async () => {
         scheduleStore.onSchedulePublished(e)
         toast('A new schedule has been published!', 'success')
       })
-      .listen('.swap.requested', (e: any) => scheduleStore.upsertSwapRequest(e))
-      .listen('.swap.offered', (e: any) => scheduleStore.upsertSwapRequest(e))
-      .listen('.swap.resolved', (e: any) => {
-        scheduleStore.upsertSwapRequest(e)
-        if (e.status === 'approved') toast('A swap request was approved', 'success')
+      .listen('.shift-drop.requested', (e: any) => scheduleStore.upsertShiftDrop(e))
+      .listen('.shift-drop.volunteered', (e: any) => scheduleStore.upsertShiftDrop(e))
+      .listen('.shift-drop.filled', (e: any) => {
+        scheduleStore.upsertShiftDrop(e)
+        toast('A shift drop was filled', 'success')
       })
       .listen('.time-off.resolved', (e: any) => {
         scheduleStore.upsertTimeOffRequest(e)
@@ -80,9 +152,9 @@ onUnmounted(() => {
     channel.stopListening('.announcement.deleted')
     channel.stopListening('.special.low-stock')
     channel.stopListening('.schedule.published')
-    channel.stopListening('.swap.requested')
-    channel.stopListening('.swap.offered')
-    channel.stopListening('.swap.resolved')
+    channel.stopListening('.shift-drop.requested')
+    channel.stopListening('.shift-drop.volunteered')
+    channel.stopListening('.shift-drop.filled')
     channel.stopListening('.time-off.resolved')
   }
 })
@@ -101,9 +173,107 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <!-- My Shifts widget — shows next upcoming shift with link to full schedule -->
+    <!-- Schedule widget — shows either the full weekly strip or a single "Next Shift" fallback -->
     <div v-else-if="hasContent" class="space-y-3 sm:space-y-4">
-      <section v-if="nextShift" class="rounded-xl bg-emerald-500/5 border border-emerald-500/10 p-3">
+
+      <!-- ═══ "My Week" — full Mon–Sun strip (shown when user has shifts this week) ═══ -->
+      <section v-if="hasCurrentWeekShifts" class="rounded-xl bg-emerald-500/5 border border-emerald-500/10 p-3">
+
+        <!-- Header: calendar icon + "My Week" + date range + "View all" link -->
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <span class="text-xs font-bold text-emerald-400 uppercase tracking-wide">My Week</span>
+            <span class="text-[10px] text-emerald-500/60">{{ weekRangeLabel }}</span>
+          </div>
+          <router-link to="/my-schedule" class="text-[10px] text-emerald-500/60 hover:text-emerald-400 transition-colors">
+            View all
+          </router-link>
+        </div>
+
+        <!-- 7-column Mon–Sun strip — scrolls horizontally on narrow screens -->
+        <div class="flex gap-1 overflow-x-auto pb-1 -mx-1 px-1 snap-x">
+          <div
+            v-for="day in weekDays"
+            :key="day.date"
+            class="week-day-col flex-1 min-w-[4.5rem] rounded-lg p-2 text-center snap-start"
+            :class="{
+              'ring-1 ring-emerald-400/40 bg-emerald-500/10': day.isToday,
+              'bg-white/[0.02]': !day.isToday,
+            }"
+          >
+            <!-- Day abbreviation (Mon, Tue, …) and calendar date number -->
+            <p class="text-[10px] font-semibold uppercase tracking-wide"
+               :class="day.isToday ? 'text-emerald-300' : 'text-gray-500'">
+              {{ day.dayAbbrev }}
+            </p>
+            <p class="text-sm font-bold"
+               :class="day.isToday ? 'text-emerald-200' : 'text-gray-400'">
+              {{ day.dayNum }}
+            </p>
+
+            <!-- Shift(s) for this day, if any -->
+            <template v-if="currentWeekShifts[day.date]">
+              <div
+                v-for="shift in currentWeekShifts[day.date]"
+                :key="shift.id"
+                class="mt-1.5"
+              >
+                <!-- Shift name (e.g. "Lunch", "Dinner") -->
+                <p class="text-[10px] font-semibold text-emerald-300 truncate">
+                  {{ shift.shift_template?.name || 'Shift' }}
+                </p>
+                <!-- Compact time range (e.g. "10:30 AM – 3:00 PM") -->
+                <p v-if="shift.shift_template" class="text-[9px] text-emerald-500/60 leading-tight">
+                  {{ formatShiftTime(shift.shift_template.start_time) }} – {{ formatShiftTime(shift.shift_template.end_time) }}
+                </p>
+                <!-- Give Up Shift -->
+                <button
+                  @click="giveUpShift(shift.id)"
+                  class="mt-1 text-[8px] text-red-400/70 hover:text-red-300 transition-colors"
+                >Give Up</button>
+              </div>
+            </template>
+
+            <!-- No shifts — dimmed dash indicator -->
+            <p v-else class="mt-1.5 text-[10px] text-gray-700">—</p>
+          </div>
+        </div>
+
+        <!-- Sub-nav pill links — quick access to related schedule actions -->
+        <div class="flex items-center gap-2 mt-3 pt-2 border-t border-emerald-500/10">
+          <router-link
+            to="/shift-drops"
+            class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-medium
+                   bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors"
+          >
+            <!-- Drop icon (arrow down) -->
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+            </svg>
+            Drop Board
+          </router-link>
+          <router-link
+            to="/time-off"
+            class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-medium
+                   bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors"
+          >
+            <!-- Calendar-off icon -->
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            Time Off
+          </router-link>
+        </div>
+      </section>
+
+      <!-- ═══ "Next Shift" fallback — shown when user has no shifts this week but has a future shift ═══ -->
+      <section v-else-if="nextShift" class="rounded-xl bg-emerald-500/5 border border-emerald-500/10 p-3">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2">
             <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
