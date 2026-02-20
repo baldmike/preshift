@@ -17,10 +17,7 @@ import ToastContainer from '@/components/ui/ToastContainer.vue'
     <main class="flex-1 pb-24 px-4 py-4 max-w-4xl mx-auto w-full">
       <slot />
     </main>
-    <!-- Copyright footer — shown above the bottom nav on every page -->
-    <div class="pb-20 text-center">
-      <p class="text-[10px] text-gray-600">&copy; BALDMIKE</p>
-    </div>
+    <!-- Copyright moved into BottomNav for persistent visibility -->
     <BottomNav />
     <ToastContainer />
   </div>

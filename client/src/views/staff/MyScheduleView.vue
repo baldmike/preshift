@@ -103,27 +103,7 @@ onMounted(() => {
         <p class="text-xs text-gray-500 mt-0.5">This week's full schedule</p>
       </div>
 
-      <!-- Sub-navigation -->
-      <div class="flex gap-2">
-        <router-link
-          to="/shift-drops"
-          class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md bg-white/[0.06] text-gray-300 hover:bg-white/[0.1] hover:text-white transition-colors"
-        >
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-          </svg>
-          Drop Board
-        </router-link>
-        <router-link
-          to="/time-off"
-          class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md bg-white/[0.06] text-gray-300 hover:bg-white/[0.1] hover:text-white transition-colors"
-        >
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          Request Time Off
-        </router-link>
-      </div>
+      <!-- Sub-navigation (Drop Board & Time Off removed for now) -->
 
       <!-- Loading -->
       <div v-if="loading" class="flex items-center justify-center py-16">
