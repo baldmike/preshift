@@ -49,6 +49,10 @@ export interface User {
    *  - 'bartender' : bar staff, read-only dashboard access
    */
   role: 'admin' | 'manager' | 'server' | 'bartender'
+  /** Contact phone number; null if not provided */
+  phone: string | null
+  /** Day-of-week availability map; null means available every day */
+  availability: Record<string, boolean> | null
   /** Eagerly-loaded Location relationship (optional, depends on API include) */
   location?: Location
   /** ISO-8601 creation timestamp */

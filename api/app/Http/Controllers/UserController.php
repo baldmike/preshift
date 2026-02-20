@@ -76,6 +76,9 @@ class UserController extends Controller
             'password' => 'required|string|min:8',             // Minimum 8 characters
             'role' => 'required|in:admin,manager,server,bartender', // Role determines access level
             'location_id' => 'nullable|exists:locations,id',   // Optional assignment to a location
+            'phone' => 'nullable|string|max:20',               // Contact phone number
+            'availability' => 'nullable|array',                // Day-of-week availability map
+            'availability.*' => 'boolean',                     // Each day value must be boolean
         ]);
 
         // Hash the plaintext password before storing it in the database.
@@ -107,6 +110,9 @@ class UserController extends Controller
             'password' => 'nullable|string|min:8',                        // Optional; only update if provided
             'role' => 'required|in:admin,manager,server,bartender',
             'location_id' => 'nullable|exists:locations,id',
+            'phone' => 'nullable|string|max:20',                          // Contact phone number
+            'availability' => 'nullable|array',                           // Day-of-week availability map
+            'availability.*' => 'boolean',                                // Each day value must be boolean
         ]);
 
         if (isset($validated['password'])) {

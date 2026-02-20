@@ -1,21 +1,31 @@
 <script setup lang="ts">
 /**
- * ManageUsers -- admin/manager CRUD view for staff user accounts.
+ * ManageUsers -- admin/manager CRUD view for employee accounts.
  * Provides a toggleable create/edit form with name, email, password,
- * and role fields. Password is required when creating a new user but
- * optional when editing (left blank to keep the existing password).
- * A table lists all users with their role badge and Edit/Remove actions.
- * The "Remove" action uses a confirm dialog labeled "Deactivate" to
- * signal that the user account is being disabled rather than permanently
- * deleted.
+ * role, phone, and day-of-week availability fields. Password is required
+ * when creating a new user but optional when editing (left blank to keep
+ * the existing password). A table lists all employees with their role badge,
+ * phone, availability summary, and Edit/Remove actions.
  */
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import api from '@/composables/useApi'
 import AppShell from '@/components/layout/AppShell.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import BadgePill from '@/components/ui/BadgePill.vue'
 import type { User } from '@/types'
+
+// Day-of-week keys matching the availability JSON format
+const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const
+const DAY_LABELS: Record<string, string> = {
+  monday: 'Mon',
+  tuesday: 'Tue',
+  wednesday: 'Wed',
+  thursday: 'Thu',
+  friday: 'Fri',
+  saturday: 'Sat',
+  sunday: 'Sun',
+}
 
 // Reactive list of users fetched from the API
 const users = ref<User[]>([])
@@ -32,19 +42,27 @@ const editingId = ref<number | null>(null)
 const form = ref({
   name: '',
   email: '',
-  password: '',     // Required for create, optional for edit (blank = keep existing)
-  role: 'server',   // Default role for new users: 'server', 'bartender', 'manager', or 'admin'
+  password: '',
+  role: 'server',
+  phone: '',
+  availability: Object.fromEntries(DAYS.map(d => [d, true])) as Record<string, boolean>,
 })
 
 // Clears all form fields, exits edit mode, and hides the form panel
 function resetForm() {
-  form.value = { name: '', email: '', password: '', role: 'server' }
+  form.value = {
+    name: '',
+    email: '',
+    password: '',
+    role: 'server',
+    phone: '',
+    availability: Object.fromEntries(DAYS.map(d => [d, true])),
+  }
   editingId.value = null
   showForm.value = false
 }
 
 // Populates the form with an existing user's data for editing.
-// Password is left blank so the user can optionally change it.
 function editUser(user: User) {
   editingId.value = user.id
   form.value = {
@@ -52,8 +70,21 @@ function editUser(user: User) {
     email: user.email,
     password: '',
     role: user.role,
+    phone: user.phone || '',
+    availability: user.availability
+      ? { ...Object.fromEntries(DAYS.map(d => [d, true])), ...user.availability }
+      : Object.fromEntries(DAYS.map(d => [d, true])),
   }
   showForm.value = true
+}
+
+/** Returns a short summary of availability like "Mon, Tue, Wed, Fri" */
+function availabilitySummary(availability: Record<string, boolean> | null): string {
+  if (!availability) return 'All days'
+  const available = DAYS.filter(d => availability[d])
+  if (available.length === 7) return 'All days'
+  if (available.length === 0) return 'None'
+  return available.map(d => DAY_LABELS[d]).join(', ')
 }
 
 /**
@@ -71,9 +102,6 @@ async function fetchUsers() {
 
 /**
  * Saves a user -- creates (POST) or updates (PATCH) based on editingId.
- * Only includes the password field in the payload if it is non-empty.
- * Validates that password is provided when creating a new user.
- * Updates the local list in-place on success and resets the form.
  */
 async function saveUser() {
   if (!form.value.name.trim() || !form.value.email.trim()) return
@@ -83,8 +111,9 @@ async function saveUser() {
       name: form.value.name,
       email: form.value.email,
       role: form.value.role,
+      phone: form.value.phone || null,
+      availability: form.value.availability,
     }
-    // Only include password if provided (avoids overwriting on edit)
     if (form.value.password) {
       payload.password = form.value.password
     }
@@ -93,21 +122,20 @@ async function saveUser() {
       const { data } = await api.patch(`/api/users/${editingId.value}`, payload)
       const idx = users.value.findIndex((u) => u.id === editingId.value)
       if (idx !== -1) users.value[idx] = data
-      toast('User updated', 'success')
+      toast('Employee updated', 'success')
     } else {
-      // Password is mandatory for new user creation
       if (!form.value.password) {
-        toast('Password is required for new users', 'error')
+        toast('Password is required for new employees', 'error')
         submitting.value = false
         return
       }
       const { data } = await api.post('/api/users', payload)
       users.value.push(data)
-      toast('User created', 'success')
+      toast('Employee created', 'success')
     }
     resetForm()
   } catch (e: any) {
-    toast(e.response?.data?.message || 'Failed to save user', 'error')
+    toast(e.response?.data?.message || 'Failed to save employee', 'error')
   } finally {
     submitting.value = false
   }
@@ -115,25 +143,22 @@ async function saveUser() {
 
 /**
  * Removes/deactivates a user after confirmation.
- * Removes the user from the local list on success.
  */
 async function deleteUser(id: number) {
-  if (!confirm('Deactivate this user?')) return
+  if (!confirm('Deactivate this employee?')) return
   try {
     await api.delete(`/api/users/${id}`)
     users.value = users.value.filter((u) => u.id !== id)
-    toast('User removed', 'success')
+    toast('Employee removed', 'success')
   } catch {
-    toast('Failed to remove user', 'error')
+    toast('Failed to remove employee', 'error')
   }
 }
 
-// Helper to dispatch a global toast notification via CustomEvent
 function toast(message: string, type: string) {
   window.dispatchEvent(new CustomEvent('toast', { detail: { message, type } }))
 }
 
-// Maps user roles to BadgePill color values for the table's role column
 const roleColor: Record<string, 'red' | 'yellow' | 'blue' | 'green' | 'gray'> = {
   admin: 'red',
   manager: 'yellow',
@@ -141,7 +166,6 @@ const roleColor: Record<string, 'red' | 'yellow' | 'blue' | 'green' | 'gray'> = 
   bartender: 'green',
 }
 
-// Fetch users on component mount
 onMounted(fetchUsers)
 </script>
 
@@ -149,16 +173,16 @@ onMounted(fetchUsers)
   <AppShell>
     <div class="space-y-6">
       <div class="flex items-center justify-between">
-        <h1 class="text-2xl font-bold text-gray-900">Manage Users</h1>
+        <h1 class="text-2xl font-bold text-white">Employees</h1>
         <div class="flex gap-2">
-          <router-link to="/manage" class="text-sm text-indigo-600 hover:text-indigo-800">Back</router-link>
-          <BaseButton v-if="!showForm" size="sm" @click="showForm = true">Add User</BaseButton>
+          <router-link to="/manage" class="text-sm text-indigo-400 hover:text-indigo-300">Back</router-link>
+          <BaseButton v-if="!showForm" size="sm" @click="showForm = true">Add Employee</BaseButton>
         </div>
       </div>
 
       <!-- Form -->
-      <div v-if="showForm" class="bg-white rounded-lg shadow p-4">
-        <h3 class="font-semibold text-gray-900 mb-3">{{ editingId ? 'Edit' : 'Create' }} User</h3>
+      <div v-if="showForm" class="bg-gray-800 rounded-lg shadow p-4">
+        <h3 class="font-semibold text-white mb-3">{{ editingId ? 'Edit' : 'Create' }} Employee</h3>
         <form @submit.prevent="saveUser" class="space-y-3">
           <div class="grid grid-cols-2 gap-3">
             <BaseInput v-model="form.name" label="Name" placeholder="Full name" />
@@ -172,16 +196,39 @@ onMounted(fetchUsers)
               :placeholder="editingId ? 'Leave blank to keep current' : 'Password'"
             />
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Role</label>
+              <label class="block text-sm font-medium text-gray-400 mb-1">Role</label>
               <select
                 v-model="form.role"
-                class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                class="block w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 text-sm text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
               >
                 <option value="server">Server</option>
                 <option value="bartender">Bartender</option>
                 <option value="manager">Manager</option>
                 <option value="admin">Admin</option>
               </select>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <BaseInput v-model="form.phone" label="Phone" type="tel" placeholder="(555) 123-4567" />
+          </div>
+          <!-- Availability checkboxes -->
+          <div>
+            <label class="block text-sm font-medium text-gray-400 mb-2">Availability</label>
+            <div class="flex flex-wrap gap-3">
+              <label
+                v-for="day in DAYS"
+                :key="day"
+                class="flex items-center gap-1.5 text-sm text-gray-300 cursor-pointer"
+              >
+                <input
+                  type="checkbox"
+                  v-model="form.availability[day]"
+                  :true-value="true"
+                  :false-value="false"
+                  class="rounded border-gray-600 bg-gray-700 text-indigo-500 focus:ring-indigo-500"
+                />
+                {{ DAY_LABELS[day] }}
+              </label>
             </div>
           </div>
           <div class="flex gap-2">
@@ -199,30 +246,34 @@ onMounted(fetchUsers)
         </svg>
       </div>
 
-      <div v-else class="bg-white rounded-lg shadow overflow-hidden">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
+      <div v-else class="bg-gray-800 rounded-lg shadow overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-700">
+          <thead class="bg-gray-800/50">
             <tr>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
-              <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">Name</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">Email</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">Phone</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">Role</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">Availability</th>
+              <th class="px-4 py-3 text-right text-xs font-medium text-gray-400 uppercase">Actions</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-200">
+          <tbody class="divide-y divide-gray-700">
             <tr v-for="user in users" :key="user.id">
-              <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ user.name }}</td>
-              <td class="px-4 py-3 text-sm text-gray-500">{{ user.email }}</td>
+              <td class="px-4 py-3 text-sm font-medium text-white">{{ user.name }}</td>
+              <td class="px-4 py-3 text-sm text-gray-400">{{ user.email }}</td>
+              <td class="px-4 py-3 text-sm text-gray-400">{{ user.phone || '—' }}</td>
               <td class="px-4 py-3">
                 <BadgePill :label="user.role" :color="roleColor[user.role] || 'gray'" />
               </td>
+              <td class="px-4 py-3 text-sm text-gray-400">{{ availabilitySummary(user.availability) }}</td>
               <td class="px-4 py-3 text-right space-x-2">
                 <BaseButton size="sm" variant="secondary" @click="editUser(user)">Edit</BaseButton>
                 <BaseButton size="sm" variant="danger" @click="deleteUser(user.id)">Remove</BaseButton>
               </td>
             </tr>
             <tr v-if="!users.length">
-              <td colspan="4" class="px-4 py-8 text-center text-gray-500">No users</td>
+              <td colspan="6" class="px-4 py-8 text-center text-gray-400">No employees</td>
             </tr>
           </tbody>
         </table>

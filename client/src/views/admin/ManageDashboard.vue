@@ -47,7 +47,7 @@ const links = [
   { to: '/manage/push-items', label: 'Push Items', icon: 'trending', key: 'pushItems' as const, color: 'bg-amber-500' },
   { to: '/manage/announcements', label: 'Announcements', icon: 'megaphone', key: 'announcements' as const, color: 'bg-purple-500' },
   { to: '/manage/menu', label: 'Menu Items', icon: 'menu', key: null, color: 'bg-green-500' },
-  { to: '/manage/users', label: 'Users', icon: 'users', key: null, color: 'bg-indigo-500' },
+  { to: '/manage/users', label: 'Employees', icon: 'users', key: null, color: 'bg-indigo-500' },
   { to: '/manage/acknowledgments', label: 'Acknowledgments', icon: 'check', key: null, color: 'bg-teal-500' },
   { to: '/manage/schedule', label: 'Schedule Builder', icon: 'calendar', key: null, color: 'bg-cyan-500' },
   { to: '/manage/swaps', label: 'Manage Swaps', icon: 'swap', key: null, color: 'bg-orange-500' },

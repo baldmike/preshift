@@ -380,6 +380,43 @@ function templateName(id: number | null): string {
 
 // ── Toast helper ─────────────────────────────────────────────────────────────
 
+// ── Availability helpers ──────────────────────────────────────────────────────
+
+const DAY_NAMES = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const
+const DAY_LABELS: Record<string, string> = {
+  sunday: 'Sundays', monday: 'Mondays', tuesday: 'Tuesdays', wednesday: 'Wednesdays',
+  thursday: 'Thursdays', friday: 'Fridays', saturday: 'Saturdays',
+}
+
+/** Returns the lowercase day name for a given ISO date string */
+function getDayName(dateStr: string): string {
+  const date = new Date(dateStr + 'T00:00:00')
+  return DAY_NAMES[date.getDay()]
+}
+
+/** Checks whether a user is available on a specific day name */
+function isUserAvailable(user: User, dayName: string): boolean {
+  if (!user.availability) return true
+  return user.availability[dayName] !== false
+}
+
+/** Returns the availability indicator for the staff dropdown */
+function availabilityIndicator(user: User): string {
+  if (!entryForm.value.date) return ''
+  const dayName = getDayName(entryForm.value.date)
+  return isUserAvailable(user, dayName) ? '' : ' (unavailable)'
+}
+
+/** Computed warning message when an unavailable user is selected */
+const availabilityWarning = computed(() => {
+  if (!entryForm.value.user_id || !entryForm.value.date) return ''
+  const user = users.value.find(u => u.id === entryForm.value.user_id)
+  if (!user) return ''
+  const dayName = getDayName(entryForm.value.date)
+  if (isUserAvailable(user, dayName)) return ''
+  return `${user.name} is not available on ${DAY_LABELS[dayName]}`
+})
+
 /** Dispatches a global toast notification via CustomEvent. */
 function toast(message: string, type: string) {
   window.dispatchEvent(new CustomEvent('toast', { detail: { message, type } }))
@@ -562,7 +599,7 @@ onMounted(() => {
                       class="w-full px-3 py-2 text-sm text-gray-200 bg-white/5 border border-white/10 rounded-md outline-none focus:border-white/25"
                     >
                       <option :value="null" disabled>Select staff...</option>
-                      <option v-for="u in users" :key="u.id" :value="u.id">{{ u.name }}</option>
+                      <option v-for="u in users" :key="u.id" :value="u.id">{{ u.name }}{{ availabilityIndicator(u) }}</option>
                     </select>
                   </div>
                   <!-- Role selector -->
@@ -577,6 +614,10 @@ onMounted(() => {
                     </select>
                   </div>
                 </div>
+                <!-- Availability warning -->
+                <p v-if="availabilityWarning" class="text-amber-400 text-sm flex items-center gap-1">
+                  <span>⚠</span> {{ availabilityWarning }}
+                </p>
                 <!-- Notes (optional) -->
                 <div>
                   <label class="block text-[10px] font-medium text-gray-500 uppercase tracking-wide mb-1">Notes (optional)</label>

@@ -47,6 +47,8 @@ class User extends Authenticatable
         'email',       // Unique credential used for login
         'password',    // Stored as a bcrypt/argon hash via the 'hashed' cast
         'role',        // Determines authorization level (admin | manager | server | bartender)
+        'phone',       // Contact phone number (nullable)
+        'availability', // JSON map of day-of-week availability (nullable)
     ];
 
     /**
@@ -72,6 +74,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'availability' => 'array',
         ];
     }
 
