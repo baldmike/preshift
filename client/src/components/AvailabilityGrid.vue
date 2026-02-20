@@ -36,10 +36,12 @@ const DAY_LABELS: Record<string, string> = {
   friday: 'Fri', saturday: 'Sat', sunday: 'Sun',
 }
 
-/** The three slot options available per day */
+/** The slot options available per day */
 const SLOTS = [
   { value: '10:30', label: '10:30 AM' },
   { value: '16:30', label: '4:30 PM' },
+  { value: '18:00', label: '6:00 PM' },
+  { value: '19:00', label: '7:00 PM' },
 ] as const
 
 /** Check if a specific slot is active for a given day */

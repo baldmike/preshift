@@ -71,6 +71,9 @@ Route::middleware('auth:sanctum')->group(function () {
     */
     Route::get('/config/settings', [ConfigController::class, 'getSettings']);
     Route::put('/config/settings', [ConfigController::class, 'updateSettings'])->middleware('superadmin');
+    Route::post('/config/remove-items', [ConfigController::class, 'removeItems'])->middleware('superadmin');
+    Route::post('/config/remove-schedules', [ConfigController::class, 'removeSchedules'])->middleware('superadmin');
+    Route::post('/config/remove-employees', [ConfigController::class, 'removeEmployees'])->middleware('superadmin');
     Route::post('/config/reset', [ConfigController::class, 'fullReset'])->middleware('superadmin');
 
     /*
