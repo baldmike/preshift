@@ -56,10 +56,10 @@ const spLoading = ref(false)
 const spSubmitting = ref(false)
 const spShowForm = ref(false)
 const spEditingId = ref<number | null>(null)
-const spForm = ref({ title: '', description: '', type: '', starts_at: '', ends_at: '' })
+const spForm = ref({ title: '', description: '', type: '', starts_at: '', ends_at: '', quantity: null as number | null })
 
 function resetSpForm() {
-  spForm.value = { title: '', description: '', type: '', starts_at: '', ends_at: '' }
+  spForm.value = { title: '', description: '', type: '', starts_at: '', ends_at: '', quantity: null }
   spEditingId.value = null
   spShowForm.value = false
 }
@@ -72,6 +72,7 @@ function editSpecial(s: Special) {
     type: s.type || '',
     starts_at: s.starts_at ? s.starts_at.split('T')[0] : '',
     ends_at: s.ends_at ? s.ends_at.split('T')[0] : '',
+    quantity: s.quantity,
   }
   spShowForm.value = true
 }
@@ -90,14 +91,20 @@ async function saveSpecial() {
   if (!spForm.value.title.trim()) return
   spSubmitting.value = true
   try {
+    const payload = {
+      ...spForm.value,
+      quantity: spForm.value.quantity !== null && spForm.value.quantity !== undefined
+        ? Number(spForm.value.quantity)
+        : null,
+    }
     if (spEditingId.value) {
-      const { data } = await api.patch(`/api/specials/${spEditingId.value}`, spForm.value)
+      const { data } = await api.patch(`/api/specials/${spEditingId.value}`, payload)
       const idx = specials.value.findIndex((s) => s.id === spEditingId.value)
       if (idx !== -1) specials.value[idx] = data
       toast('Special updated', 'success')
     } else {
       const { data } = await api.post('/api/specials', {
-        ...spForm.value,
+        ...payload,
         starts_at: spForm.value.starts_at || new Date().toISOString().split('T')[0],
       })
       specials.value.push(data)
@@ -108,6 +115,17 @@ async function saveSpecial() {
     toast('Failed to save special', 'error')
   } finally {
     spSubmitting.value = false
+  }
+}
+
+async function decrementSpecial(id: number) {
+  try {
+    const { data } = await api.patch(`/api/specials/${id}/decrement`)
+    const idx = specials.value.findIndex((s) => s.id === id)
+    if (idx !== -1) specials.value[idx] = data
+    toast('Quantity decremented', 'success')
+  } catch {
+    toast('Failed to decrement quantity', 'error')
   }
 }
 
@@ -399,7 +417,7 @@ onMounted(() => {
           <form @submit.prevent="saveSpecial" class="space-y-2">
             <input v-model="spForm.title" placeholder="Title *" required class="dm-input" />
             <input v-model="spForm.description" placeholder="Description" class="dm-input" />
-            <div class="grid grid-cols-3 gap-2">
+            <div class="grid grid-cols-4 gap-2">
               <select v-model="spForm.type" class="dm-select">
                 <option value="">Type</option>
                 <option value="daily">Daily</option>
@@ -409,6 +427,7 @@ onMounted(() => {
               </select>
               <input v-model="spForm.starts_at" type="date" class="dm-input" placeholder="Start" />
               <input v-model="spForm.ends_at" type="date" class="dm-input" placeholder="End" />
+              <input v-model.number="spForm.quantity" type="number" min="0" class="dm-input" placeholder="Qty" />
             </div>
             <div class="flex gap-2">
               <button type="submit" :disabled="spSubmitting" class="dm-btn dm-btn--blue">
@@ -433,12 +452,23 @@ onMounted(() => {
                 <div class="flex items-center gap-2">
                   <p class="text-sm font-medium text-gray-200 truncate">{{ s.title }}</p>
                   <span v-if="s.type" class="dm-badge dm-badge--blue">{{ s.type }}</span>
+                  <span v-if="s.quantity != null" class="dm-badge dm-badge--amber">Qty: {{ s.quantity }}</span>
                 </div>
                 <p class="text-xs text-gray-500">
                   {{ formatDate(s.starts_at) }}{{ s.ends_at ? ` - ${formatDate(s.ends_at)}` : '' }}
                 </p>
               </div>
               <div class="flex gap-1">
+                <button
+                  v-if="s.quantity != null && s.quantity > 0"
+                  class="dm-action-btn text-amber-400 hover:text-amber-300"
+                  @click="decrementSpecial(s.id)"
+                  title="Decrement quantity"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
+                  </svg>
+                </button>
                 <button class="dm-action-btn text-blue-400 hover:text-blue-300" @click="editSpecial(s)" title="Edit">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />

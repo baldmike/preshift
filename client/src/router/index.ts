@@ -84,6 +84,27 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/staff/SpecialsView.vue'),
     meta: { requiresAuth: true },
   },
+  {
+    path: '/my-schedule',
+    name: 'MySchedule',
+    // Staff view of their upcoming shifts
+    component: () => import('@/views/staff/MyScheduleView.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/swap-board',
+    name: 'SwapBoard',
+    // Staff view to pick up or request shift swaps
+    component: () => import('@/views/staff/SwapBoardView.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/time-off',
+    name: 'TimeOff',
+    // Staff view to request and manage time off
+    component: () => import('@/views/staff/TimeOffRequestView.vue'),
+    meta: { requiresAuth: true },
+  },
 
   // -----------------------------------------------------------------------
   // Management routes (admin + manager roles only)
@@ -147,6 +168,27 @@ const routes: RouteRecordRaw[] = [
     name: 'AcknowledgmentTracker',
     // Read-only view showing which staff have acknowledged key items
     component: () => import('@/views/admin/AcknowledgmentTracker.vue'),
+    meta: { requiresAuth: true, roles: ['admin', 'manager'] },
+  },
+  {
+    path: '/manage/schedule',
+    name: 'ScheduleBuilder',
+    // Weekly schedule builder -- assign staff to shifts and publish
+    component: () => import('@/views/admin/ScheduleBuilderView.vue'),
+    meta: { requiresAuth: true, roles: ['admin', 'manager'] },
+  },
+  {
+    path: '/manage/swaps',
+    name: 'ManageSwapRequests',
+    // Manager view to approve/deny shift swap requests
+    component: () => import('@/views/admin/ManageSwapRequests.vue'),
+    meta: { requiresAuth: true, roles: ['admin', 'manager'] },
+  },
+  {
+    path: '/manage/time-off',
+    name: 'ManageTimeOff',
+    // Manager view to approve/deny time-off requests
+    component: () => import('@/views/admin/ManageTimeOff.vue'),
     meta: { requiresAuth: true, roles: ['admin', 'manager'] },
   },
 

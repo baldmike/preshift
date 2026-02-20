@@ -44,6 +44,18 @@ const { isAdmin, isManager } = useAuth()
       </router-link>
 
       <router-link
+        to="/my-schedule"
+        class="flex flex-col items-center gap-0.5 text-xs transition-colors"
+        :class="['/my-schedule', '/swap-board', '/time-off'].some(p => $route.path.startsWith(p)) ? 'text-amber-400' : 'text-gray-500 hover:text-gray-300'"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+        <span>Schedule</span>
+      </router-link>
+
+      <router-link
         v-if="isAdmin || isManager"
         to="/manage/daily"
         class="flex flex-col items-center gap-0.5 text-xs transition-colors"

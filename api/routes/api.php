@@ -31,6 +31,11 @@ use App\Http\Controllers\LocationController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\MenuItemController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\ShiftTemplateController;
+use App\Http\Controllers\ScheduleController;
+use App\Http\Controllers\ScheduleEntryController;
+use App\Http\Controllers\SwapRequestController;
+use App\Http\Controllers\TimeOffRequestController;
 
 /*
 |--------------------------------------------------------------------------
@@ -104,6 +109,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/specials', [SpecialController::class, 'index']);
         Route::post('/specials', [SpecialController::class, 'store'])->middleware('role:admin,manager');
         Route::patch('/specials/{special}', [SpecialController::class, 'update'])->middleware('role:admin,manager');
+        Route::patch('/specials/{special}/decrement', [SpecialController::class, 'decrement'])->middleware('role:admin,manager');
         Route::delete('/specials/{special}', [SpecialController::class, 'destroy'])->middleware('role:admin,manager');
 
         /*
@@ -188,6 +194,100 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/categories', [CategoryController::class, 'store'])->middleware('role:admin,manager');
         Route::patch('/categories/{category}', [CategoryController::class, 'update'])->middleware('role:admin,manager');
         Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->middleware('role:admin,manager');
+
+        /*
+        |------------------------------------------------------------------
+        | Shift Templates
+        |------------------------------------------------------------------
+        | Reusable shift definitions per location (e.g. "Lunch 10:30–3:00").
+        | Managers create templates once; they are referenced when building
+        | weekly schedules.
+        |
+        | GET    /api/shift-templates         -- List templates for location.
+        | POST   /api/shift-templates         -- Create a template (manager+).
+        | PATCH  /api/shift-templates/{id}    -- Update a template (manager+).
+        | DELETE /api/shift-templates/{id}    -- Delete a template (manager+).
+        */
+        Route::get('/shift-templates', [ShiftTemplateController::class, 'index']);
+        Route::post('/shift-templates', [ShiftTemplateController::class, 'store'])->middleware('role:admin,manager');
+        Route::patch('/shift-templates/{shiftTemplate}', [ShiftTemplateController::class, 'update'])->middleware('role:admin,manager');
+        Route::delete('/shift-templates/{shiftTemplate}', [ShiftTemplateController::class, 'destroy'])->middleware('role:admin,manager');
+
+        /*
+        |------------------------------------------------------------------
+        | Schedules
+        |------------------------------------------------------------------
+        | Weekly schedules containing shift entries. Managers create a
+        | schedule for a week, populate it with entries, then publish it
+        | to make shifts visible to staff.
+        |
+        | GET    /api/schedules               -- List current/upcoming weeks.
+        | GET    /api/schedules/{id}          -- Full schedule with entries.
+        | POST   /api/schedules               -- Create new week (manager+).
+        | PATCH  /api/schedules/{id}          -- Update week info (manager+).
+        | POST   /api/schedules/{id}/publish  -- Publish schedule (manager+).
+        | POST   /api/schedules/{id}/unpublish -- Revert to draft (manager+).
+        | GET    /api/my-shifts               -- Staff: my upcoming shifts.
+        */
+        Route::get('/schedules', [ScheduleController::class, 'index']);
+        Route::get('/schedules/{schedule}', [ScheduleController::class, 'show']);
+        Route::post('/schedules', [ScheduleController::class, 'store'])->middleware('role:admin,manager');
+        Route::patch('/schedules/{schedule}', [ScheduleController::class, 'update'])->middleware('role:admin,manager');
+        Route::post('/schedules/{schedule}/publish', [ScheduleController::class, 'publish'])->middleware('role:admin,manager');
+        Route::post('/schedules/{schedule}/unpublish', [ScheduleController::class, 'unpublish'])->middleware('role:admin,manager');
+        Route::get('/my-shifts', [ScheduleController::class, 'myShifts']);
+
+        /*
+        |------------------------------------------------------------------
+        | Schedule Entries
+        |------------------------------------------------------------------
+        | Individual staff-to-shift assignments within a schedule.
+        |
+        | POST   /api/schedule-entries        -- Assign staff to shift (manager+).
+        | PATCH  /api/schedule-entries/{id}   -- Update entry (manager+).
+        | DELETE /api/schedule-entries/{id}   -- Remove entry (manager+).
+        */
+        Route::post('/schedule-entries', [ScheduleEntryController::class, 'store'])->middleware('role:admin,manager');
+        Route::patch('/schedule-entries/{scheduleEntry}', [ScheduleEntryController::class, 'update'])->middleware('role:admin,manager');
+        Route::delete('/schedule-entries/{scheduleEntry}', [ScheduleEntryController::class, 'destroy'])->middleware('role:admin,manager');
+
+        /*
+        |------------------------------------------------------------------
+        | Swap Requests
+        |------------------------------------------------------------------
+        | Staff request shift swaps; other staff offer to pick them up;
+        | managers approve or deny.
+        |
+        | GET    /api/swap-requests                   -- List (role-filtered).
+        | POST   /api/swap-requests                   -- Request a swap (staff).
+        | POST   /api/swap-requests/{id}/offer        -- Offer to cover (staff).
+        | POST   /api/swap-requests/{id}/approve      -- Approve (manager+).
+        | POST   /api/swap-requests/{id}/deny         -- Deny (manager+).
+        | POST   /api/swap-requests/{id}/cancel       -- Cancel own request (staff).
+        */
+        Route::get('/swap-requests', [SwapRequestController::class, 'index']);
+        Route::post('/swap-requests', [SwapRequestController::class, 'store']);
+        Route::post('/swap-requests/{swapRequest}/offer', [SwapRequestController::class, 'offer']);
+        Route::post('/swap-requests/{swapRequest}/approve', [SwapRequestController::class, 'approve'])->middleware('role:admin,manager');
+        Route::post('/swap-requests/{swapRequest}/deny', [SwapRequestController::class, 'deny'])->middleware('role:admin,manager');
+        Route::post('/swap-requests/{swapRequest}/cancel', [SwapRequestController::class, 'cancel']);
+
+        /*
+        |------------------------------------------------------------------
+        | Time-Off Requests
+        |------------------------------------------------------------------
+        | Staff submit time-off requests; managers approve or deny.
+        | Approved time-off is shown in the schedule builder.
+        |
+        | GET    /api/time-off-requests                    -- List (role-filtered).
+        | POST   /api/time-off-requests                    -- Submit request (staff).
+        | POST   /api/time-off-requests/{id}/approve       -- Approve (manager+).
+        | POST   /api/time-off-requests/{id}/deny          -- Deny (manager+).
+        */
+        Route::get('/time-off-requests', [TimeOffRequestController::class, 'index']);
+        Route::post('/time-off-requests', [TimeOffRequestController::class, 'store']);
+        Route::post('/time-off-requests/{timeOffRequest}/approve', [TimeOffRequestController::class, 'approve'])->middleware('role:admin,manager');
+        Route::post('/time-off-requests/{timeOffRequest}/deny', [TimeOffRequestController::class, 'deny'])->middleware('role:admin,manager');
 
         /*
         |------------------------------------------------------------------

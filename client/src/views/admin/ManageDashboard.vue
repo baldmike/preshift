@@ -49,27 +49,30 @@ const links = [
   { to: '/manage/menu', label: 'Menu Items', icon: 'menu', key: null, color: 'bg-green-500' },
   { to: '/manage/users', label: 'Users', icon: 'users', key: null, color: 'bg-indigo-500' },
   { to: '/manage/acknowledgments', label: 'Acknowledgments', icon: 'check', key: null, color: 'bg-teal-500' },
+  { to: '/manage/schedule', label: 'Schedule Builder', icon: 'calendar', key: null, color: 'bg-cyan-500' },
+  { to: '/manage/swaps', label: 'Manage Swaps', icon: 'swap', key: null, color: 'bg-orange-500' },
+  { to: '/manage/time-off', label: 'Manage Time Off', icon: 'clock', key: null, color: 'bg-rose-500' },
 ]
 </script>
 
 <template>
   <AppShell>
     <div class="space-y-6">
-      <h1 class="text-2xl font-bold text-gray-900">Management</h1>
+      <h1 class="text-2xl font-bold text-white">Management</h1>
 
       <div class="grid gap-4 sm:grid-cols-2">
         <router-link
           v-for="link in links"
           :key="link.to"
           :to="link.to"
-          class="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow flex items-center gap-4"
+          class="bg-gray-800 rounded-lg shadow p-4 hover:bg-gray-700 transition-colors flex items-center gap-4"
         >
           <div :class="[link.color, 'w-12 h-12 rounded-lg flex items-center justify-center text-white font-bold text-lg']">
             {{ link.label.charAt(0) }}
           </div>
           <div>
-            <div class="font-semibold text-gray-900">{{ link.label }}</div>
-            <div v-if="link.key" class="text-sm text-gray-500">
+            <div class="font-semibold text-white">{{ link.label }}</div>
+            <div v-if="link.key" class="text-sm text-gray-400">
               {{ counts[link.key] }} active
             </div>
           </div>
@@ -78,17 +81,17 @@ const links = [
 
       <!-- Admin Only -->
       <div v-if="isAdmin" class="mt-6">
-        <h2 class="text-lg font-semibold text-gray-700 mb-3">Admin</h2>
+        <h2 class="text-lg font-semibold text-gray-400 mb-3">Admin</h2>
         <router-link
           to="/admin/locations"
-          class="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow flex items-center gap-4"
+          class="bg-gray-800 rounded-lg shadow p-4 hover:bg-gray-700 transition-colors flex items-center gap-4"
         >
-          <div class="bg-gray-700 w-12 h-12 rounded-lg flex items-center justify-center text-white font-bold text-lg">
+          <div class="bg-gray-600 w-12 h-12 rounded-lg flex items-center justify-center text-white font-bold text-lg">
             L
           </div>
           <div>
-            <div class="font-semibold text-gray-900">Locations</div>
-            <div class="text-sm text-gray-500">Manage locations</div>
+            <div class="font-semibold text-white">Locations</div>
+            <div class="text-sm text-gray-400">Manage locations</div>
           </div>
         </router-link>
       </div>

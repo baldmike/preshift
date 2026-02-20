@@ -46,6 +46,7 @@ class Special extends Model
         'starts_at',    // Inclusive start date
         'ends_at',      // Inclusive end date; null = open-ended
         'is_active',    // Allows managers to pause a special without deleting it
+        'quantity',     // Limited quantity available; null = unlimited
         'created_by',   // FK to users table — audit trail for who created the special
     ];
 
@@ -63,6 +64,7 @@ class Special extends Model
             'starts_at' => 'date',
             'ends_at' => 'date',
             'is_active' => 'boolean',
+            'quantity' => 'integer',
         ];
     }
 

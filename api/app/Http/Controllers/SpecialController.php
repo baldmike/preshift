@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Events\SpecialCreated;
 use App\Events\SpecialDeleted;
+use App\Events\SpecialLowStock;
 use App\Events\SpecialUpdated;
 use App\Models\Special;
 use Illuminate\Http\JsonResponse;
@@ -73,6 +74,7 @@ class SpecialController extends Controller
             'ends_at' => 'nullable|date',                           // When the special expires (optional)
             'menu_item_id' => 'nullable|exists:menu_items,id',     // Optional link to a specific menu item
             'is_active' => 'boolean',                               // Whether the special is enabled
+            'quantity' => 'nullable|integer|min:0',                    // Limited quantity; null = unlimited
         ]);
 
         // Create the special, associating it with the user's location and recording the creator.
@@ -109,6 +111,7 @@ class SpecialController extends Controller
             'ends_at' => 'nullable|date',
             'menu_item_id' => 'nullable|exists:menu_items,id',
             'is_active' => 'boolean',
+            'quantity' => 'nullable|integer|min:0',
         ]);
 
         // Apply validated changes to the special record.
@@ -116,6 +119,30 @@ class SpecialController extends Controller
 
         // Broadcast SpecialUpdated event to notify other clients of the change.
         broadcast(new SpecialUpdated($special))->toOthers();
+
+        return response()->json($special);
+    }
+
+    /**
+     * Decrement a special's quantity by 1.
+     *
+     * Guards against going below 0. Broadcasts SpecialUpdated so all clients
+     * see the new quantity, and fires SpecialLowStock when quantity hits 2.
+     */
+    public function decrement(Special $special): JsonResponse
+    {
+        if ($special->quantity === null || $special->quantity <= 0) {
+            return response()->json(['message' => 'Cannot decrement quantity.'], 422);
+        }
+
+        $special->decrement('quantity');
+        $special->refresh();
+
+        broadcast(new SpecialUpdated($special))->toOthers();
+
+        if ($special->quantity === 2) {
+            broadcast(new SpecialLowStock($special));
+        }
 
         return response()->json($special);
     }

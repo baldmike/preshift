@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, computed } from 'vue'
 import { usePreshiftStore } from '@/stores/preshift'
+import { useScheduleStore } from '@/stores/schedule'
 import { useAuth } from '@/composables/useAuth'
+import { useSchedule } from '@/composables/useSchedule'
 import { useLocationChannel } from '@/composables/useReverb'
 import AppShell from '@/components/layout/AppShell.vue'
 import EightySixedCard from '@/components/EightySixedCard.vue'
@@ -10,7 +12,13 @@ import PushItemCard from '@/components/PushItemCard.vue'
 import AnnouncementCard from '@/components/AnnouncementCard.vue'
 
 const store = usePreshiftStore()
+const scheduleStore = useScheduleStore()
 const { locationId } = useAuth()
+const { nextShift, formatShiftTime } = useSchedule()
+
+function toast(message: string, type: string) {
+  window.dispatchEvent(new CustomEvent('toast', { detail: { message, type } }))
+}
 
 let channel: ReturnType<typeof useLocationChannel> | null = null
 
@@ -20,6 +28,8 @@ const hasContent = computed(() =>
 
 onMounted(async () => {
   await store.fetchAll()
+  // Also fetch the user's upcoming shifts for the "My Shifts" widget
+  scheduleStore.fetchMyShifts()
 
   if (locationId.value) {
     channel = useLocationChannel(locationId.value)
@@ -35,6 +45,23 @@ onMounted(async () => {
       .listen('.announcement.posted', (e: any) => store.addAnnouncement(e.announcement || e))
       .listen('.announcement.updated', (e: any) => store.updateAnnouncement(e.announcement || e))
       .listen('.announcement.deleted', (e: any) => store.removeAnnouncement(e.id))
+      .listen('.special.low-stock', (e: any) => {
+        toast(`Only ${e.quantity} left: ${e.title}!`, 'warning')
+      })
+      // Scheduling events
+      .listen('.schedule.published', (e: any) => {
+        scheduleStore.onSchedulePublished(e)
+        toast('A new schedule has been published!', 'success')
+      })
+      .listen('.swap.requested', (e: any) => scheduleStore.upsertSwapRequest(e))
+      .listen('.swap.offered', (e: any) => scheduleStore.upsertSwapRequest(e))
+      .listen('.swap.resolved', (e: any) => {
+        scheduleStore.upsertSwapRequest(e)
+        if (e.status === 'approved') toast('A swap request was approved', 'success')
+      })
+      .listen('.time-off.resolved', (e: any) => {
+        scheduleStore.upsertTimeOffRequest(e)
+      })
   }
 })
 
@@ -51,6 +78,12 @@ onUnmounted(() => {
     channel.stopListening('.announcement.posted')
     channel.stopListening('.announcement.updated')
     channel.stopListening('.announcement.deleted')
+    channel.stopListening('.special.low-stock')
+    channel.stopListening('.schedule.published')
+    channel.stopListening('.swap.requested')
+    channel.stopListening('.swap.offered')
+    channel.stopListening('.swap.resolved')
+    channel.stopListening('.time-off.resolved')
   }
 })
 </script>
@@ -68,8 +101,36 @@ onUnmounted(() => {
       </div>
     </div>
 
+    <!-- My Shifts widget — shows next upcoming shift with link to full schedule -->
+    <div v-else-if="hasContent" class="space-y-3 sm:space-y-4">
+      <section v-if="nextShift" class="rounded-xl bg-emerald-500/5 border border-emerald-500/10 p-3">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <span class="text-xs font-bold text-emerald-400 uppercase tracking-wide">Next Shift</span>
+          </div>
+          <router-link to="/my-schedule" class="text-[10px] text-emerald-500/60 hover:text-emerald-400 transition-colors">
+            View all
+          </router-link>
+        </div>
+        <div class="mt-2 flex items-center gap-3">
+          <p class="text-sm font-semibold text-emerald-300">
+            {{ nextShift.shift_template?.name || 'Shift' }}
+          </p>
+          <span class="text-xs text-emerald-400/70">
+            {{ new Date(nextShift.date + 'T00:00:00').toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' }) }}
+          </span>
+          <span v-if="nextShift.shift_template" class="text-xs text-emerald-500/60">
+            {{ formatShiftTime(nextShift.shift_template.start_time) }} – {{ formatShiftTime(nextShift.shift_template.end_time) }}
+          </span>
+        </div>
+      </section>
+
     <!-- Dashboard grid -->
-    <div v-else-if="hasContent" class="grid grid-cols-2 gap-3 sm:gap-4">
+    <div class="grid grid-cols-2 gap-3 sm:gap-4">
 
       <!-- 86'd Items — top left -->
       <section class="dash-quarter dash-quarter--red">
@@ -146,6 +207,7 @@ onUnmounted(() => {
           <p v-else class="text-gray-600 text-xs text-center py-4">No announcements</p>
         </div>
       </section>
+    </div>
     </div>
 
     <!-- Empty state -->

@@ -22,9 +22,10 @@ function formatDate(dateStr: string | null) {
           <BadgePill v-if="special.type" :label="special.type" color="blue" />
         </div>
         <p v-if="special.description" class="text-xs text-blue-400/70 mt-0.5 line-clamp-2">{{ special.description }}</p>
-        <div class="text-[10px] text-blue-500/60 mt-1.5">
+        <div class="flex items-center gap-2 text-[10px] text-blue-500/60 mt-1.5">
           <span>{{ formatDate(special.starts_at) }}</span>
           <span v-if="special.ends_at"> – {{ formatDate(special.ends_at) }}</span>
+          <span v-if="special.quantity != null" class="text-amber-400/80 font-medium">{{ special.quantity }} left</span>
         </div>
       </div>
       <AcknowledgeButton

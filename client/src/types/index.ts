@@ -164,6 +164,8 @@ export interface Special {
   ends_at: string | null
   /** Whether the special is currently active/visible */
   is_active: boolean
+  /** Limited quantity available; null means unlimited */
+  quantity: number | null
   /** Foreign key (User.id) of the manager/admin who created the special */
   created_by: number
   /** Eagerly-loaded MenuItem relationship (optional) */
@@ -292,4 +294,158 @@ export interface PreShiftData {
   announcements: Announcement[]
   /** Acknowledgment refs for items the current user has already acknowledged */
   acknowledgments: AcknowledgmentRef[]
+}
+
+// ─── Scheduling System Types ─────────────────────────────────────────────
+
+/**
+ * A reusable shift definition (e.g. "Lunch 10:30–3:00").
+ * Created once per location, referenced when building weekly schedules.
+ */
+export interface ShiftTemplate {
+  /** Primary key */
+  id: number
+  /** Foreign key to the owning Location */
+  location_id: number
+  /** Short label (e.g. "Dinner", "Double") */
+  name: string
+  /** HH:MM:SS when the shift begins */
+  start_time: string
+  /** HH:MM:SS when the shift ends */
+  end_time: string
+  /** ISO-8601 creation timestamp */
+  created_at: string
+  /** ISO-8601 last-update timestamp */
+  updated_at: string
+}
+
+/**
+ * A weekly schedule for a location.
+ * Contains shift entries and transitions between draft and published states.
+ */
+export interface Schedule {
+  /** Primary key */
+  id: number
+  /** Foreign key to the owning Location */
+  location_id: number
+  /** Monday of the target week (ISO date string) */
+  week_start: string
+  /** "draft" or "published" */
+  status: 'draft' | 'published'
+  /** ISO-8601 timestamp of last publish; null while still a draft */
+  published_at: string | null
+  /** Foreign key to the User who published; null if never published */
+  published_by: number | null
+  /** Eagerly-loaded publisher relationship (optional) */
+  publisher?: User
+  /** Eagerly-loaded schedule entries (optional) */
+  entries?: ScheduleEntry[]
+  /** Count of entries (when loaded via withCount) */
+  entries_count?: number
+  /** ISO-8601 creation timestamp */
+  created_at: string
+  /** ISO-8601 last-update timestamp */
+  updated_at: string
+}
+
+/**
+ * One staff member assigned to one shift on a specific date.
+ */
+export interface ScheduleEntry {
+  /** Primary key */
+  id: number
+  /** Foreign key to the parent Schedule */
+  schedule_id: number
+  /** Foreign key to the assigned User */
+  user_id: number
+  /** Foreign key to the ShiftTemplate */
+  shift_template_id: number
+  /** The specific calendar day (ISO date string) */
+  date: string
+  /** The role for this shift: "server" or "bartender" */
+  role: 'server' | 'bartender'
+  /** Optional manager notes */
+  notes: string | null
+  /** Eagerly-loaded User relationship (optional) */
+  user?: User
+  /** Eagerly-loaded ShiftTemplate relationship (optional) */
+  shift_template?: ShiftTemplate
+  /** Eagerly-loaded Schedule relationship (optional) */
+  schedule?: Schedule
+  /** ISO-8601 creation timestamp */
+  created_at: string
+  /** ISO-8601 last-update timestamp */
+  updated_at: string
+}
+
+/**
+ * A request by a staff member to swap one of their scheduled shifts.
+ * Lifecycle: pending → offered → approved/denied (or cancelled).
+ */
+export interface SwapRequest {
+  /** Primary key */
+  id: number
+  /** Foreign key to the ScheduleEntry being swapped */
+  schedule_entry_id: number
+  /** Foreign key to the staff member who requested the swap */
+  requested_by: number
+  /** Foreign key to a specific target person (null = open to anyone) */
+  target_user_id: number | null
+  /** Foreign key to the person who offered to pick up the shift */
+  picked_up_by: number | null
+  /** Current lifecycle state */
+  status: 'pending' | 'offered' | 'approved' | 'denied' | 'cancelled'
+  /** Optional reason for the swap */
+  reason: string | null
+  /** Foreign key to the manager who approved/denied */
+  resolved_by: number | null
+  /** ISO-8601 timestamp of when the decision was made */
+  resolved_at: string | null
+  /** Eagerly-loaded schedule entry (optional) */
+  schedule_entry?: ScheduleEntry
+  /** Eagerly-loaded requester (optional) */
+  requester?: User
+  /** Eagerly-loaded target user (optional) */
+  target_user?: User
+  /** Eagerly-loaded picker (optional) */
+  picker?: User
+  /** Eagerly-loaded resolver (optional) */
+  resolver?: User
+  /** ISO-8601 creation timestamp */
+  created_at: string
+  /** ISO-8601 last-update timestamp */
+  updated_at: string
+}
+
+/**
+ * A staff member's request for time off on a date range.
+ * Lifecycle: pending → approved/denied.
+ */
+export interface TimeOffRequest {
+  /** Primary key */
+  id: number
+  /** Foreign key to the requesting User */
+  user_id: number
+  /** Foreign key to the Location */
+  location_id: number
+  /** First day of time off (ISO date string) */
+  start_date: string
+  /** Last day of time off (ISO date string) */
+  end_date: string
+  /** Optional reason */
+  reason: string | null
+  /** Current state */
+  status: 'pending' | 'approved' | 'denied'
+  /** Foreign key to the deciding manager */
+  resolved_by: number | null
+  /** ISO-8601 timestamp of when the decision was made */
+  resolved_at: string | null
+  /** Eagerly-loaded User relationship (optional) */
+  user?: User
+  /** Eagerly-loaded resolver (optional) */
+  resolver?: User
+  /** ISO-8601 creation timestamp */
+  created_at: string
+  /** ISO-8601 last-update timestamp */
+  updated_at: string
 }
