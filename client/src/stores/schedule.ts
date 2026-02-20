@@ -50,6 +50,32 @@ export const useScheduleStore = defineStore('schedule', () => {
     myShifts.value = data
   }
 
+  /** Fetch the published schedule for the current week (if any) */
+  async function fetchCurrentWeekSchedule() {
+    try {
+      const { data } = await api.get<Schedule[]>('/api/schedules')
+      // Find the current week's published schedule
+      const today = new Date()
+      const jsDay = today.getDay()
+      const offset = (jsDay + 6) % 7
+      const monday = new Date(today)
+      monday.setDate(today.getDate() - offset)
+      const mondayISO = `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, '0')}-${String(monday.getDate()).padStart(2, '0')}`
+
+      const match = data.find(
+        (s) => s.week_start.split('T')[0] === mondayISO && s.status === 'published'
+      )
+      if (match) {
+        const { data: full } = await api.get<Schedule>(`/api/schedules/${match.id}`)
+        currentSchedule.value = full
+      } else {
+        currentSchedule.value = null
+      }
+    } catch {
+      currentSchedule.value = null
+    }
+  }
+
   async function fetchShiftDrops() {
     const { data } = await api.get<ShiftDrop[]>('/api/shift-drops')
     shiftDrops.value = data
@@ -101,6 +127,7 @@ export const useScheduleStore = defineStore('schedule', () => {
     fetchShiftTemplates,
     fetchSchedules,
     fetchSchedule,
+    fetchCurrentWeekSchedule,
     fetchMyShifts,
     fetchShiftDrops,
     fetchTimeOffRequests,

@@ -17,6 +17,45 @@ const scheduleStore = useScheduleStore()
 const { locationId } = useAuth()
 const { nextShift, currentWeekShifts, currentWeekRange, formatShiftTime } = useSchedule()
 
+/** Today's date as "YYYY-MM-DD" for filtering schedule entries */
+const todayISO = computed(() => {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+})
+
+/** Human-readable label for today (e.g. "Friday, February 20") */
+const todayLabel = computed(() => {
+  return new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
+})
+
+/** All schedule entries for today, filtered from the published week schedule */
+const todayEntries = computed(() => {
+  const schedule = scheduleStore.currentSchedule
+  if (!schedule?.entries) return []
+  return schedule.entries.filter(e => e.date.split('T')[0] === todayISO.value)
+})
+
+/**
+ * Today's entries grouped by time slot for display.
+ * Each group has a `template` (with start_time/end_time for the heading)
+ * and an `entries` array of staff assigned to that slot.
+ * Uses the eagerly-loaded shift_template from each entry.
+ */
+const todayByShift = computed(() => {
+  const groups: Record<number, { template: any; entries: any[] }> = {}
+  for (const entry of todayEntries.value) {
+    const tid = entry.shift_template_id
+    if (!groups[tid]) {
+      groups[tid] = {
+        template: entry.shift_template || scheduleStore.shiftTemplates.find(t => t.id === tid),
+        entries: [],
+      }
+    }
+    groups[tid].entries.push(entry)
+  }
+  return Object.values(groups)
+})
+
 /**
  * Generates an array of 7 day objects (Monday through Sunday) for the
  * current week.  Each object contains:
@@ -100,8 +139,9 @@ const hasContent = computed(() =>
 
 onMounted(async () => {
   await store.fetchAll()
-  // Also fetch the user's upcoming shifts for the "My Shifts" widget
+  // Fetch the user's shifts + the full current-week published schedule
   scheduleStore.fetchMyShifts()
+  scheduleStore.fetchCurrentWeekSchedule()
 
   if (locationId.value) {
     channel = useLocationChannel(locationId.value)
@@ -176,81 +216,59 @@ onUnmounted(() => {
     <!-- Schedule widget — shows either the full weekly strip or a single "Next Shift" fallback -->
     <div v-else-if="hasContent" class="space-y-3 sm:space-y-4">
 
-      <!-- ═══ "My Week" — full Mon–Sun strip (shown when user has shifts this week) ═══ -->
-      <section v-if="hasCurrentWeekShifts" class="rounded-xl bg-emerald-500/5 border border-emerald-500/10 p-3">
-
-        <!-- Header: calendar icon + "My Week" + date range + "View all" link -->
+      <!-- ═══ Today's Schedule — shows who's working today ═══ -->
+      <section v-if="scheduleStore.currentSchedule" class="rounded-xl bg-emerald-500/5 border border-emerald-500/10 p-3">
         <div class="flex items-center justify-between mb-3">
           <div class="flex items-center gap-2">
             <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
-            <span class="text-xs font-bold text-emerald-400 uppercase tracking-wide">My Week</span>
-            <span class="text-[10px] text-emerald-500/60">{{ weekRangeLabel }}</span>
+            <span class="text-xs font-bold text-emerald-400 uppercase tracking-wide">Today</span>
+            <span class="text-[10px] text-emerald-500/60">{{ todayLabel }}</span>
           </div>
           <router-link to="/my-schedule" class="text-[10px] text-emerald-500/60 hover:text-emerald-400 transition-colors">
-            View all
+            Full week
           </router-link>
         </div>
 
-        <!-- 7-column Mon–Sun strip — scrolls horizontally on narrow screens -->
-        <div class="flex gap-1 overflow-x-auto pb-1 -mx-1 px-1 snap-x">
+        <!-- Today's shifts grouped by time slot -->
+        <div v-if="todayByShift.length" class="space-y-2">
           <div
-            v-for="day in weekDays"
-            :key="day.date"
-            class="week-day-col flex-1 min-w-[4.5rem] rounded-lg p-2 text-center snap-start"
-            :class="{
-              'ring-1 ring-emerald-400/40 bg-emerald-500/10': day.isToday,
-              'bg-white/[0.02]': !day.isToday,
-            }"
+            v-for="group in todayByShift"
+            :key="group.template?.id"
+            class="rounded-lg bg-white/[0.03] border border-white/[0.06] p-2.5"
           >
-            <!-- Day abbreviation (Mon, Tue, …) and calendar date number -->
-            <p class="text-[10px] font-semibold uppercase tracking-wide"
-               :class="day.isToday ? 'text-emerald-300' : 'text-gray-500'">
-              {{ day.dayAbbrev }}
-            </p>
-            <p class="text-sm font-bold"
-               :class="day.isToday ? 'text-emerald-200' : 'text-gray-400'">
-              {{ day.dayNum }}
-            </p>
-
-            <!-- Shift(s) for this day, if any -->
-            <template v-if="currentWeekShifts[day.date]">
-              <div
-                v-for="shift in currentWeekShifts[day.date]"
-                :key="shift.id"
-                class="mt-1.5"
+            <div class="flex items-center gap-2 mb-1.5">
+              <span v-if="group.template" class="text-xs font-bold text-emerald-300">
+                {{ formatShiftTime(group.template.start_time) }} – {{ formatShiftTime(group.template.end_time) }}
+              </span>
+              <span v-else class="text-xs font-bold text-emerald-300">Shift</span>
+            </div>
+            <div class="flex flex-wrap gap-1.5">
+              <span
+                v-for="entry in group.entries"
+                :key="entry.id"
+                class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px]"
+                :class="entry.role === 'bartender'
+                  ? 'bg-green-500/15 text-green-400'
+                  : 'bg-blue-500/15 text-blue-400'"
               >
-                <!-- Shift name (e.g. "Lunch", "Dinner") -->
-                <p class="text-[10px] font-semibold text-emerald-300 truncate">
-                  {{ shift.shift_template?.name || 'Shift' }}
-                </p>
-                <!-- Compact time range (e.g. "10:30 AM – 3:00 PM") -->
-                <p v-if="shift.shift_template" class="text-[9px] text-emerald-500/60 leading-tight">
-                  {{ formatShiftTime(shift.shift_template.start_time) }} – {{ formatShiftTime(shift.shift_template.end_time) }}
-                </p>
-                <!-- Give Up Shift -->
-                <button
-                  @click="giveUpShift(shift.id)"
-                  class="mt-1 text-[8px] text-red-400/70 hover:text-red-300 transition-colors"
-                >Give Up</button>
-              </div>
-            </template>
-
-            <!-- No shifts — dimmed dash indicator -->
-            <p v-else class="mt-1.5 text-[10px] text-gray-700">—</p>
+                {{ entry.user?.name || 'Staff' }}
+                <span class="text-[9px] opacity-60">{{ entry.role }}</span>
+              </span>
+            </div>
           </div>
         </div>
+        <p v-else class="text-gray-600 text-xs text-center py-4">No shifts scheduled today</p>
 
-        <!-- Sub-nav pill links — quick access to related schedule actions -->
+        <!-- Sub-nav pill links -->
         <div class="flex items-center gap-2 mt-3 pt-2 border-t border-emerald-500/10">
           <router-link
             to="/shift-drops"
             class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-medium
                    bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors"
           >
-            <!-- Drop icon (arrow down) -->
             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
@@ -262,40 +280,12 @@ onUnmounted(() => {
             class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-medium
                    bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors"
           >
-            <!-- Calendar-off icon -->
             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
             Time Off
           </router-link>
-        </div>
-      </section>
-
-      <!-- ═══ "Next Shift" fallback — shown when user has no shifts this week but has a future shift ═══ -->
-      <section v-else-if="nextShift" class="rounded-xl bg-emerald-500/5 border border-emerald-500/10 p-3">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-2">
-            <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-            <span class="text-xs font-bold text-emerald-400 uppercase tracking-wide">Next Shift</span>
-          </div>
-          <router-link to="/my-schedule" class="text-[10px] text-emerald-500/60 hover:text-emerald-400 transition-colors">
-            View all
-          </router-link>
-        </div>
-        <div class="mt-2 flex items-center gap-3">
-          <p class="text-sm font-semibold text-emerald-300">
-            {{ nextShift.shift_template?.name || 'Shift' }}
-          </p>
-          <span class="text-xs text-emerald-400/70">
-            {{ new Date(nextShift.date + 'T00:00:00').toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' }) }}
-          </span>
-          <span v-if="nextShift.shift_template" class="text-xs text-emerald-500/60">
-            {{ formatShiftTime(nextShift.shift_template.start_time) }} – {{ formatShiftTime(nextShift.shift_template.end_time) }}
-          </span>
         </div>
       </section>
 

@@ -109,7 +109,7 @@ async function handleLogin() {
 
       <!-- Footer -->
       <p class="text-center text-gray-600 text-xs mt-8">
-        Powered by <span class="text-gray-500">PreShift86</span>
+        &copy; <span class="text-gray-500">BALDMIKE</span>
       </p>
     </div>
   </div>

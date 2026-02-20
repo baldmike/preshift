@@ -3,22 +3,16 @@
  * ScheduleGrid.vue
  *
  * Renders a weekly schedule as a 7-column (Mon–Sun) grid.
- * Each row corresponds to a ShiftTemplate; each cell shows the staff
- * assigned to that shift + day combination.
+ * Each row corresponds to a time slot; each cell shows the staff
+ * assigned to that time + day combination.
  *
  * Props:
- *   - schedule: Schedule          -- the weekly schedule with its entries
- *   - shiftTemplates: ShiftTemplate[] -- all shift templates for the location
+ *   - schedule: Schedule                    -- the weekly schedule with entries
+ *   - shiftTemplates?: ShiftTemplate[]      -- optional; derived from entries if omitted
  *
  * Emits:
  *   - add-entry:    { shiftTemplateId: number, date: string }
- *                   Fired when the "+" button in an empty cell is clicked.
  *   - remove-entry: number
- *                   Fired with the entry id when the "x" button is clicked.
- *
- * The grid calculates the seven dates of the week from schedule.week_start
- * (which is always a Monday) and cross-references schedule.entries to
- * populate each cell.
  */
 import { computed } from 'vue'
 import type { Schedule, ShiftTemplate, ScheduleEntry } from '@/types'
@@ -26,8 +20,25 @@ import BadgePill from '@/components/ui/BadgePill.vue'
 
 const props = defineProps<{
   schedule: Schedule
-  shiftTemplates: ShiftTemplate[]
+  shiftTemplates?: ShiftTemplate[]
 }>()
+
+/**
+ * Derive the list of shift templates to use as rows.
+ * If shiftTemplates prop is provided, use it. Otherwise, extract unique
+ * templates from the schedule's entries (so the grid is self-contained).
+ */
+const effectiveTemplates = computed<ShiftTemplate[]>(() => {
+  if (props.shiftTemplates?.length) return props.shiftTemplates
+  if (!props.schedule.entries) return []
+  const seen = new Map<number, ShiftTemplate>()
+  for (const e of props.schedule.entries) {
+    if (e.shift_template && !seen.has(e.shift_template_id)) {
+      seen.set(e.shift_template_id, e.shift_template)
+    }
+  }
+  return Array.from(seen.values())
+})
 
 const emit = defineEmits<{
   'add-entry': [payload: { shiftTemplateId: number; date: string }]
@@ -117,11 +128,11 @@ function formatShiftTime(time: string): string {
       <!-- ── Column headers: day abbreviation + date ───────────────── -->
       <thead>
         <tr>
-          <!-- Top-left corner: "Shift" label for the row-header column -->
+          <!-- Top-left corner: "Time" label for the row-header column -->
           <th
             class="sticky left-0 z-10 bg-[rgba(255,255,255,0.03)] border-b border-r border-white/[0.06] px-2 py-1.5 text-left text-[10px] uppercase tracking-wider text-gray-500"
           >
-            Shift
+            Time
           </th>
           <th
             v-for="(header, idx) in columnHeaders"
@@ -133,22 +144,21 @@ function formatShiftTime(time: string): string {
         </tr>
       </thead>
 
-      <!-- ── One row per shift template ────────────────────────────── -->
+      <!-- ── One row per time slot ────────────────────────────────── -->
       <tbody>
         <tr
-          v-for="template in shiftTemplates"
+          v-for="template in effectiveTemplates"
           :key="template.id"
           class="group"
         >
           <!--
-            Row header: shift template name and time range.
+            Row header: time range for the shift.
             Sticky on the left so it remains visible when scrolling.
           -->
           <td
             class="sticky left-0 z-10 bg-[rgba(255,255,255,0.03)] border-b border-r border-white/[0.06] px-2 py-1.5 whitespace-nowrap"
           >
-            <div class="font-medium text-gray-300">{{ template.name }}</div>
-            <div class="text-[10px] text-gray-500">
+            <div class="font-medium text-gray-300">
               {{ formatShiftTime(template.start_time) }} – {{ formatShiftTime(template.end_time) }}
             </div>
           </td>
@@ -184,12 +194,8 @@ function formatShiftTime(time: string): string {
               </button>
             </div>
 
-            <!--
-              If no entries exist: show an "add" button so a manager
-              can assign someone to this slot.
-            -->
+            <!-- Add button — always visible so multiple staff can be assigned -->
             <button
-              v-if="entriesFor(template.id, date).length === 0"
               class="flex items-center justify-center w-full rounded border border-dashed border-white/[0.08] text-gray-600 hover:text-gray-400 hover:border-white/[0.15] transition-colors py-1"
               title="Add entry"
               @click="emit('add-entry', { shiftTemplateId: template.id, date })"

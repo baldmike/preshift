@@ -8,15 +8,12 @@
  * schedule's grid, a publish/unpublish toggle, an inline form for adding
  * schedule entries, and a section of approved time-off warnings.
  *
- * A collapsible "Shift Templates" panel at the bottom lets managers CRUD
- * the reusable shift definitions (e.g. "Lunch 10:30–3:00") that are
- * referenced when building the grid.
+ * Time slots are created automatically when adding entries — managers pick
+ * start/end times from dropdowns and the system handles the rest.
  *
  * API endpoints used:
  *   GET    /api/shift-templates
  *   POST   /api/shift-templates
- *   PATCH  /api/shift-templates/:id
- *   DELETE /api/shift-templates/:id
  *   GET    /api/schedules
  *   POST   /api/schedules
  *   GET    /api/schedules/:id
@@ -27,7 +24,7 @@
  *   GET    /api/time-off-requests
  *   GET    /api/users
  */
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import api from '@/composables/useApi'
 import { useSchedule } from '@/composables/useSchedule'
 import AppShell from '@/components/layout/AppShell.vue'
@@ -38,7 +35,7 @@ import type { Schedule, ShiftTemplate, TimeOffRequest, User } from '@/types'
 
 // ── Composables ──────────────────────────────────────────────────────────────
 
-const { formatShiftTime, formatWeekLabel } = useSchedule()
+const { formatWeekLabel } = useSchedule()
 
 // ── State: schedules ─────────────────────────────────────────────────────────
 
@@ -68,32 +65,48 @@ const showEntryForm = ref(false)
 const addingEntry = ref(false)
 // Form fields for adding a new schedule entry
 const entryForm = ref({
-  shift_template_id: null as number | null,
+  start_time: '',
+  end_time: '',
   date: '',
   user_id: null as number | null,
   role: 'server' as 'server' | 'bartender',
   notes: '',
 })
 
-// ── State: shift templates ───────────────────────────────────────────────────
+// Time options for the start/end dropdowns (30-min increments, full day)
+const timeOptions: { label: string; value: string }[] = []
+for (let h = 0; h < 24; h++) {
+  for (const m of [0, 30]) {
+    const hh = String(h).padStart(2, '0')
+    const mm = String(m).padStart(2, '0')
+    const hour12 = h === 0 ? 12 : h > 12 ? h - 12 : h
+    const ampm = h >= 12 ? 'PM' : 'AM'
+    timeOptions.push({ label: `${hour12}:${mm} ${ampm}`, value: `${hh}:${mm}` })
+  }
+}
 
-// List of all shift templates for this location
+// Auto-set the role dropdown to match the selected user's role
+watch(() => entryForm.value.user_id, (uid) => {
+  if (!uid) return
+  const u = users.value.find(u => u.id === uid)
+  if (u && (u.role === 'server' || u.role === 'bartender')) {
+    entryForm.value.role = u.role
+  }
+})
+
+// ── State: shift templates (managed automatically behind the scenes) ────────
+
+// List of all shift templates for this location (used for grid rows)
 const shiftTemplates = ref<ShiftTemplate[]>([])
-// Controls visibility of the shift templates management section
-const showTemplates = ref(false)
-// Controls visibility of the shift template create/edit form
-const showTemplateForm = ref(false)
-// When non-null, the template form is in "edit" mode for this template ID
-const editingTemplateId = ref<number | null>(null)
-// True while a template create/update request is in-flight
-const submittingTemplate = ref(false)
-// Template form fields
-const templateForm = ref({ name: '', start_time: '', end_time: '' })
 
 // ── State: users & time-off ─────────────────────────────────────────────────
 
 // All staff users at this location (for the entry form's user dropdown)
-const users = ref<User[]>([])
+const rawUsers = ref<User[]>([])
+const roleOrder: Record<string, number> = { admin: 0, manager: 1, bartender: 2, server: 3 }
+const users = computed(() =>
+  [...rawUsers.value].sort((a, b) => (roleOrder[a.role] ?? 99) - (roleOrder[b.role] ?? 99) || a.name.localeCompare(b.name))
+)
 // Approved time-off requests (shown as warnings below the grid)
 const timeOffRequests = ref<TimeOffRequest[]>([])
 
@@ -132,7 +145,7 @@ async function fetchShiftTemplates() {
 async function fetchUsers() {
   try {
     const { data } = await api.get<User[]>('/api/users')
-    users.value = data
+    rawUsers.value = data
   } catch {
     toast('Failed to load users', 'error')
   }
@@ -236,11 +249,13 @@ async function unpublishSchedule() {
 
 /**
  * Called when the ScheduleGrid emits "add-entry". Pre-fills the entry form
- * with the shift template ID and date, then shows the form.
+ * with times from the shift template and the date, then shows the form.
  */
 function handleAddEntry(payload: { shiftTemplateId: number; date: string }) {
+  const tmpl = shiftTemplates.value.find(t => t.id === payload.shiftTemplateId)
   entryForm.value = {
-    shift_template_id: payload.shiftTemplateId,
+    start_time: tmpl ? tmpl.start_time.substring(0, 5) : '',
+    end_time: tmpl ? tmpl.end_time.substring(0, 5) : '',
     date: payload.date,
     user_id: null,
     role: 'server',
@@ -250,17 +265,48 @@ function handleAddEntry(payload: { shiftTemplateId: number; date: string }) {
 }
 
 /**
+ * Formats a "HH:MM" string into "H:MM AM/PM" for display.
+ */
+function formatTimeLabel(time: string): string {
+  const [hStr, mStr] = time.split(':')
+  let h = parseInt(hStr, 10)
+  const ampm = h >= 12 ? 'PM' : 'AM'
+  if (h === 0) h = 12
+  else if (h > 12) h -= 12
+  return `${h}:${mStr} ${ampm}`
+}
+
+/**
  * Saves a new schedule entry via POST /api/schedule-entries.
- * On success, re-fetches the active schedule to refresh the grid.
+ * Finds or auto-creates a shift template matching the selected times,
+ * then creates the entry. On success, re-fetches the active schedule.
  */
 async function saveEntry() {
-  if (!activeSchedule.value || !entryForm.value.user_id || !entryForm.value.shift_template_id) return
+  if (!activeSchedule.value || !entryForm.value.user_id || !entryForm.value.start_time || !entryForm.value.end_time) return
   addingEntry.value = true
   try {
+    // Find an existing template with matching start/end times
+    let template = shiftTemplates.value.find(
+      t => t.start_time.substring(0, 5) === entryForm.value.start_time
+        && t.end_time.substring(0, 5) === entryForm.value.end_time
+    )
+
+    // If none found, auto-create one named after the time range
+    if (!template) {
+      const name = `${formatTimeLabel(entryForm.value.start_time)} – ${formatTimeLabel(entryForm.value.end_time)}`
+      const { data } = await api.post<ShiftTemplate>('/api/shift-templates', {
+        name,
+        start_time: entryForm.value.start_time,
+        end_time: entryForm.value.end_time,
+      })
+      shiftTemplates.value.push(data)
+      template = data
+    }
+
     await api.post('/api/schedule-entries', {
       schedule_id: activeSchedule.value.id,
       user_id: entryForm.value.user_id,
-      shift_template_id: entryForm.value.shift_template_id,
+      shift_template_id: template.id,
       date: entryForm.value.date,
       role: entryForm.value.role,
       notes: entryForm.value.notes || null,
@@ -293,71 +339,6 @@ async function handleRemoveEntry(entryId: number) {
   }
 }
 
-// ── Shift template CRUD ──────────────────────────────────────────────────────
-
-/** Resets the template form fields, exits edit mode, and hides the form. */
-function resetTemplateForm() {
-  templateForm.value = { name: '', start_time: '', end_time: '' }
-  editingTemplateId.value = null
-  showTemplateForm.value = false
-}
-
-/** Populates the template form with an existing template's data for editing. */
-function editTemplate(t: ShiftTemplate) {
-  editingTemplateId.value = t.id
-  templateForm.value = {
-    name: t.name,
-    // Strip seconds if present (e.g. "16:00:00" → "16:00") for time inputs
-    start_time: t.start_time.substring(0, 5),
-    end_time: t.end_time.substring(0, 5),
-  }
-  showTemplateForm.value = true
-}
-
-/**
- * Saves a shift template -- creates (POST) or updates (PATCH) based on
- * editingTemplateId. Updates the local list in-place on success.
- */
-async function saveTemplate() {
-  if (!templateForm.value.name.trim() || !templateForm.value.start_time || !templateForm.value.end_time) return
-  submittingTemplate.value = true
-  try {
-    if (editingTemplateId.value) {
-      const { data } = await api.patch<ShiftTemplate>(
-        `/api/shift-templates/${editingTemplateId.value}`,
-        templateForm.value,
-      )
-      const idx = shiftTemplates.value.findIndex((t) => t.id === editingTemplateId.value)
-      if (idx !== -1) shiftTemplates.value[idx] = data
-      toast('Template updated', 'success')
-    } else {
-      const { data } = await api.post<ShiftTemplate>('/api/shift-templates', templateForm.value)
-      shiftTemplates.value.push(data)
-      toast('Template created', 'success')
-    }
-    resetTemplateForm()
-  } catch {
-    toast('Failed to save template', 'error')
-  } finally {
-    submittingTemplate.value = false
-  }
-}
-
-/**
- * Deletes a shift template after user confirmation.
- * Removes the record from the local list on success.
- */
-async function deleteTemplate(id: number) {
-  if (!confirm('Delete this shift template?')) return
-  try {
-    await api.delete(`/api/shift-templates/${id}`)
-    shiftTemplates.value = shiftTemplates.value.filter((t) => t.id !== id)
-    toast('Template deleted', 'success')
-  } catch {
-    toast('Failed to delete template', 'error')
-  }
-}
-
 // ── Computed helpers ─────────────────────────────────────────────────────────
 
 /**
@@ -368,15 +349,6 @@ const approvedTimeOff = computed(() => {
   if (!activeSchedule.value) return []
   return timeOffRequests.value.filter((r) => r.status === 'approved')
 })
-
-/**
- * Returns the name of the shift template that matches the given ID.
- * Used in the entry form to display which shift slot is being assigned.
- */
-function templateName(id: number | null): string {
-  if (!id) return 'Unknown'
-  return shiftTemplates.value.find((t) => t.id === id)?.name ?? 'Unknown'
-}
 
 // ── Toast helper ─────────────────────────────────────────────────────────────
 
@@ -591,9 +563,35 @@ onMounted(() => {
               class="rounded-xl bg-white/[0.03] border border-white/[0.06] p-4"
             >
               <h3 class="text-sm font-semibold text-white mb-3">
-                Add Entry — {{ templateName(entryForm.shift_template_id) }} on {{ entryForm.date }}
+                Add Entry — {{ entryForm.date }}
               </h3>
               <form @submit.prevent="saveEntry" class="space-y-3">
+                <div class="grid grid-cols-2 gap-3">
+                  <!-- Start Time -->
+                  <div>
+                    <label class="block text-[10px] font-medium text-gray-500 uppercase tracking-wide mb-1">Start Time</label>
+                    <select
+                      v-model="entryForm.start_time"
+                      required
+                      class="w-full px-3 py-2 text-sm text-gray-200 bg-white/5 border border-white/10 rounded-md outline-none focus:border-white/25"
+                    >
+                      <option value="" disabled>Select time...</option>
+                      <option v-for="opt in timeOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+                    </select>
+                  </div>
+                  <!-- End Time -->
+                  <div>
+                    <label class="block text-[10px] font-medium text-gray-500 uppercase tracking-wide mb-1">End Time</label>
+                    <select
+                      v-model="entryForm.end_time"
+                      required
+                      class="w-full px-3 py-2 text-sm text-gray-200 bg-white/5 border border-white/10 rounded-md outline-none focus:border-white/25"
+                    >
+                      <option value="" disabled>Select time...</option>
+                      <option v-for="opt in timeOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+                    </select>
+                  </div>
+                </div>
                 <div class="grid grid-cols-2 gap-3">
                   <!-- User selector -->
                   <div>
@@ -604,7 +602,7 @@ onMounted(() => {
                       class="w-full px-3 py-2 text-sm text-gray-200 bg-white/5 border border-white/10 rounded-md outline-none focus:border-white/25"
                     >
                       <option :value="null" disabled>Select staff...</option>
-                      <option v-for="u in users" :key="u.id" :value="u.id">{{ u.name }}{{ availabilityIndicator(u) }}</option>
+                      <option v-for="u in users" :key="u.id" :value="u.id">{{ u.name }} ({{ u.role }}){{ availabilityIndicator(u) }}</option>
                     </select>
                   </div>
                   <!-- Role selector -->
@@ -671,124 +669,6 @@ onMounted(() => {
         </div>
       </div>
 
-      <!-- ════════════════ SHIFT TEMPLATES management ════════════════ -->
-      <div class="rounded-xl bg-white/[0.03] border border-white/[0.06] overflow-hidden">
-        <!-- Collapsible header -->
-        <button
-          class="w-full flex items-center justify-between px-4 py-3 hover:bg-white/[0.02] transition-colors"
-          @click="showTemplates = !showTemplates"
-        >
-          <h2 class="text-xs font-bold uppercase tracking-wider text-gray-400">Shift Templates</h2>
-          <svg
-            class="w-4 h-4 text-gray-500 transition-transform"
-            :class="{ 'rotate-180': showTemplates }"
-            fill="none" stroke="currentColor" viewBox="0 0 24 24"
-          >
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
-
-        <div v-if="showTemplates" class="border-t border-white/[0.06]">
-          <!-- Add template button -->
-          <div class="px-4 py-2 border-b border-white/[0.06] flex justify-end">
-            <button
-              v-if="!showTemplateForm"
-              class="bg-blue-500/25 text-blue-300 hover:bg-blue-500/35 px-3 py-1.5 text-xs font-semibold rounded-md"
-              @click="showTemplateForm = true"
-            >Add Template</button>
-          </div>
-
-          <!-- Template create/edit form -->
-          <div v-if="showTemplateForm" class="px-4 py-3 bg-black/20 border-b border-white/[0.06]">
-            <h3 class="text-sm font-semibold text-white mb-3">
-              {{ editingTemplateId ? 'Edit' : 'Create' }} Shift Template
-            </h3>
-            <form @submit.prevent="saveTemplate" class="space-y-3">
-              <div>
-                <label class="block text-[10px] font-medium text-gray-500 uppercase tracking-wide mb-1">Name</label>
-                <input
-                  v-model="templateForm.name"
-                  placeholder="e.g. Lunch, Dinner, Double"
-                  required
-                  class="w-full px-3 py-2 text-sm text-gray-200 bg-white/5 border border-white/10 rounded-md outline-none focus:border-white/25"
-                />
-              </div>
-              <div class="grid grid-cols-2 gap-3">
-                <div>
-                  <label class="block text-[10px] font-medium text-gray-500 uppercase tracking-wide mb-1">Start Time</label>
-                  <input
-                    v-model="templateForm.start_time"
-                    type="time"
-                    required
-                    class="w-full px-3 py-2 text-sm text-gray-200 bg-white/5 border border-white/10 rounded-md outline-none focus:border-white/25"
-                  />
-                </div>
-                <div>
-                  <label class="block text-[10px] font-medium text-gray-500 uppercase tracking-wide mb-1">End Time</label>
-                  <input
-                    v-model="templateForm.end_time"
-                    type="time"
-                    required
-                    class="w-full px-3 py-2 text-sm text-gray-200 bg-white/5 border border-white/10 rounded-md outline-none focus:border-white/25"
-                  />
-                </div>
-              </div>
-              <div class="flex gap-2">
-                <button
-                  type="submit"
-                  :disabled="submittingTemplate"
-                  class="bg-blue-500/25 text-blue-300 hover:bg-blue-500/35 px-3 py-1.5 text-xs font-semibold rounded-md disabled:opacity-50"
-                >{{ submittingTemplate ? 'Saving...' : (editingTemplateId ? 'Update' : 'Create') }}</button>
-                <button
-                  type="button"
-                  class="bg-transparent text-gray-400 hover:bg-white/5 px-3 py-1.5 text-xs font-semibold rounded-md"
-                  @click="resetTemplateForm"
-                >Cancel</button>
-              </div>
-            </form>
-          </div>
-
-          <!-- Template list -->
-          <div class="divide-y divide-white/[0.04]">
-            <div
-              v-for="t in shiftTemplates"
-              :key="t.id"
-              class="flex items-center gap-3 px-4 py-2.5 hover:bg-white/[0.04] transition-colors"
-            >
-              <!-- Template info -->
-              <div class="flex-1 min-w-0">
-                <p class="text-sm font-medium text-gray-200">{{ t.name }}</p>
-                <p class="text-[10px] text-gray-500">
-                  {{ formatShiftTime(t.start_time) }} – {{ formatShiftTime(t.end_time) }}
-                </p>
-              </div>
-              <!-- Edit / Delete actions -->
-              <button
-                class="text-blue-400 hover:text-blue-300 p-1 rounded hover:bg-white/[0.06] transition-colors"
-                @click="editTemplate(t)"
-                title="Edit"
-              >
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
-              </button>
-              <button
-                class="text-red-400 hover:text-red-300 p-1 rounded hover:bg-white/[0.06] transition-colors"
-                @click="deleteTemplate(t.id)"
-                title="Delete"
-              >
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-              </button>
-            </div>
-            <!-- Empty state -->
-            <p v-if="!shiftTemplates.length" class="text-gray-600 text-xs text-center py-6">
-              No shift templates yet
-            </p>
-          </div>
-        </div>
-      </div>
     </div>
   </AppShell>
 </template>

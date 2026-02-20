@@ -114,6 +114,66 @@ class DatabaseSeeder extends Seeder
             'location_id' => $midtown->id,
         ]);
 
+        // ── Additional staff (rock star last names) ──────────────────────
+
+        // 3 more managers
+        foreach ([
+            ['name' => 'Lisa Mercury',   'email' => 'mercury@preshift.test'],
+            ['name' => 'Dan Bowie',      'email' => 'bowie@preshift.test'],
+            ['name' => 'Rachel Joplin',  'email' => 'joplin@preshift.test'],
+        ] as $m) {
+            User::create([
+                'name' => $m['name'],
+                'email' => $m['email'],
+                'password' => Hash::make('password'),
+                'role' => 'manager',
+                'location_id' => $downtown->id,
+            ]);
+        }
+
+        // 5 more bartenders
+        foreach ([
+            ['name' => 'Kyle Hendrix',    'email' => 'hendrix@preshift.test'],
+            ['name' => 'Nina Cobain',     'email' => 'cobain@preshift.test'],
+            ['name' => 'Alex Morrison',   'email' => 'morrison@preshift.test'],
+            ['name' => 'Casey Jagger',    'email' => 'jagger@preshift.test'],
+            ['name' => 'Jordan Lennon',   'email' => 'lennon@preshift.test'],
+        ] as $b) {
+            User::create([
+                'name' => $b['name'],
+                'email' => $b['email'],
+                'password' => Hash::make('password'),
+                'role' => 'bartender',
+                'location_id' => $downtown->id,
+            ]);
+        }
+
+        // 14 more servers
+        foreach ([
+            ['name' => 'Sam Presley',     'email' => 'presley@preshift.test'],
+            ['name' => 'Avery Townshend', 'email' => 'townshend@preshift.test'],
+            ['name' => 'Riley Plant',     'email' => 'plant@preshift.test'],
+            ['name' => 'Taylor Vedder',   'email' => 'vedder@preshift.test'],
+            ['name' => 'Morgan Grohl',    'email' => 'grohl@preshift.test'],
+            ['name' => 'Jamie Osbourne',  'email' => 'osbourne@preshift.test'],
+            ['name' => 'Drew Hetfield',   'email' => 'hetfield@preshift.test'],
+            ['name' => 'Quinn Rose',      'email' => 'rose@preshift.test'],
+            ['name' => 'Devon Clapton',   'email' => 'clapton@preshift.test'],
+            ['name' => 'Blake Page',      'email' => 'page@preshift.test'],
+            ['name' => 'Skyler Bonham',   'email' => 'bonham@preshift.test'],
+            ['name' => 'Reese Slash',     'email' => 'slash@preshift.test'],
+            ['name' => 'Chris Cornell',   'email' => 'cornell@preshift.test'],
+            ['name' => 'Pat Benatar',     'email' => 'benatar@preshift.test'],
+        ] as $s) {
+            User::create([
+                'name' => $s['name'],
+                'email' => $s['email'],
+                'password' => Hash::make('password'),
+                'role' => 'server',
+                'location_id' => $downtown->id,
+            ]);
+        }
+
         /*
         |------------------------------------------------------------------
         | Categories

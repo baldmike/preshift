@@ -3,15 +3,15 @@
  * ShiftCard.vue
  *
  * Displays a single schedule entry as a compact, blue-themed card.
- * Shows the date, shift template name, formatted time range, role badge,
- * and optional manager notes.
+ * Shows the time range, date, role badge, and optional manager notes.
+ * Includes a "Give Up Shift" button that emits 'give-up' with the entry id.
  *
  * Props:
  *   - entry: ScheduleEntry  -- the schedule entry to render; expects
- *     `shift_template` to be eagerly loaded so the template name and
- *     times are available.
+ *     `shift_template` to be eagerly loaded so start/end times are available.
  *
- * This component is read-only; it does not emit any events.
+ * Emits:
+ *   - 'give-up': [entryId: number]  -- fired when the user clicks "Give Up Shift"
  */
 import { computed } from 'vue'
 import type { ScheduleEntry } from '@/types'
@@ -55,19 +55,12 @@ const formattedDate = computed(() => {
 })
 
 /**
- * The shift template name -- falls back to "Shift" if the relationship
- * was not loaded from the API.
- */
-const shiftName = computed(() => props.entry.shift_template?.name ?? 'Shift')
-
-/**
- * Formatted time range string (e.g. "10:30 AM – 3:00 PM").
- * Returns an empty string when the shift template relationship is
- * not loaded so the UI degrades gracefully.
+ * Formatted time range string used as the card heading (e.g. "10:30 AM – 3:00 PM").
+ * Falls back to "Shift" when the shift_template relationship is not loaded.
  */
 const timeRange = computed(() => {
   const st = props.entry.shift_template
-  if (!st) return ''
+  if (!st) return 'Shift'
   return `${formatShiftTime(st.start_time)} – ${formatShiftTime(st.end_time)}`
 })
 
@@ -85,16 +78,11 @@ const roleColor = computed(() => {
   <!-- Blue-themed card matching SpecialCard styling -->
   <div class="rounded-lg bg-blue-500/5 border border-blue-500/10 p-3">
     <div class="min-w-0">
-      <!-- Top row: shift name + role badge -->
+      <!-- Top row: time range heading + role badge -->
       <div class="flex items-center gap-1.5">
-        <h4 class="font-semibold text-blue-300 text-sm truncate">{{ shiftName }}</h4>
+        <h4 class="font-semibold text-blue-300 text-sm truncate">{{ timeRange }}</h4>
         <BadgePill :label="entry.role" :color="roleColor" />
       </div>
-
-      <!-- Time range (e.g. "10:30 AM – 3:00 PM") -->
-      <p v-if="timeRange" class="text-xs text-blue-400/70 mt-0.5">
-        {{ timeRange }}
-      </p>
 
       <!-- Footer: date + optional notes -->
       <div class="flex items-center gap-2 text-[10px] text-blue-500/60 mt-1.5">

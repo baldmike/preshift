@@ -7,7 +7,7 @@
  * the existing password). A table lists all employees with their role badge,
  * phone, availability summary, and Edit/Remove actions.
  */
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import api from '@/composables/useApi'
 import AppShell from '@/components/layout/AppShell.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
@@ -166,6 +166,43 @@ const roleColor: Record<string, 'red' | 'yellow' | 'blue' | 'green' | 'gray'> = 
   bartender: 'green',
 }
 
+// ── Sorting ─────────────────────────────────────────────────────────────
+type SortKey = 'name' | 'role' | 'availability'
+const sortKey = ref<SortKey>('name')
+const sortAsc = ref(true)
+
+function toggleSort(key: SortKey) {
+  if (sortKey.value === key) {
+    sortAsc.value = !sortAsc.value
+  } else {
+    sortKey.value = key
+    sortAsc.value = true
+  }
+}
+
+const roleOrder: Record<string, number> = { admin: 0, manager: 1, bartender: 2, server: 3 }
+
+function availabilityCount(user: User): number {
+  if (!user.availability) return 7
+  return DAYS.filter(d => user.availability![d]).length
+}
+
+const sortedUsers = computed(() => {
+  const list = [...users.value]
+  const dir = sortAsc.value ? 1 : -1
+  list.sort((a, b) => {
+    if (sortKey.value === 'name') {
+      return dir * a.name.localeCompare(b.name)
+    }
+    if (sortKey.value === 'role') {
+      return dir * ((roleOrder[a.role] ?? 99) - (roleOrder[b.role] ?? 99))
+    }
+    // availability: sort by number of available days
+    return dir * (availabilityCount(a) - availabilityCount(b))
+  })
+  return list
+})
+
 onMounted(fetchUsers)
 </script>
 
@@ -258,16 +295,37 @@ onMounted(fetchUsers)
         <table class="min-w-full divide-y divide-gray-700">
           <thead class="bg-gray-800/50">
             <tr>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">Name</th>
+              <th
+                class="px-4 py-3 text-left text-xs font-medium uppercase cursor-pointer select-none hover:text-white transition-colors"
+                :class="sortKey === 'name' ? 'text-white' : 'text-gray-400'"
+                @click="toggleSort('name')"
+              >
+                Name
+                <span v-if="sortKey === 'name'" class="ml-0.5">{{ sortAsc ? '▲' : '▼' }}</span>
+              </th>
               <th class="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">Email</th>
               <th class="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">Phone</th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">Role</th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">Availability</th>
+              <th
+                class="px-4 py-3 text-left text-xs font-medium uppercase cursor-pointer select-none hover:text-white transition-colors"
+                :class="sortKey === 'role' ? 'text-white' : 'text-gray-400'"
+                @click="toggleSort('role')"
+              >
+                Role
+                <span v-if="sortKey === 'role'" class="ml-0.5">{{ sortAsc ? '▲' : '▼' }}</span>
+              </th>
+              <th
+                class="px-4 py-3 text-left text-xs font-medium uppercase cursor-pointer select-none hover:text-white transition-colors"
+                :class="sortKey === 'availability' ? 'text-white' : 'text-gray-400'"
+                @click="toggleSort('availability')"
+              >
+                Availability
+                <span v-if="sortKey === 'availability'" class="ml-0.5">{{ sortAsc ? '▲' : '▼' }}</span>
+              </th>
               <th class="px-4 py-3 text-right text-xs font-medium text-gray-400 uppercase">Actions</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-700">
-            <tr v-for="user in users" :key="user.id">
+            <tr v-for="user in sortedUsers" :key="user.id">
               <td class="px-4 py-3 text-sm font-medium text-white">{{ user.name }}</td>
               <td class="px-4 py-3 text-sm text-gray-400">{{ user.email }}</td>
               <td class="px-4 py-3 text-sm text-gray-400">{{ user.phone || '—' }}</td>
