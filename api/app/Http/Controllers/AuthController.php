@@ -76,18 +76,13 @@ class AuthController extends Controller
     }
 
     /**
-     * Return the currently authenticated user's profile with their location.
-     *
-     * Eager-loads the related Location model so the client receives the full
-     * user record including location details in a single response.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse  The authenticated user with their location relationship.
-     */
-    /**
      * Change the authenticated user's password.
      *
-     * Validates the current password matches, then updates to the new password.
+     * Validates that the current password matches the stored hash, then
+     * updates to the new password. Requires `password_confirmation` to match.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse  Success message or 422 on validation/mismatch.
      */
     public function changePassword(Request $request): JsonResponse
     {
@@ -108,6 +103,15 @@ class AuthController extends Controller
         return response()->json(['message' => 'Password changed successfully.']);
     }
 
+    /**
+     * Return the currently authenticated user's profile with their location.
+     *
+     * Eager-loads the related Location model so the client receives the full
+     * user record including location details in a single response.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse  The authenticated user with their location relationship.
+     */
     public function user(Request $request): JsonResponse
     {
         // Eager-load the 'location' relationship onto the authenticated user model.

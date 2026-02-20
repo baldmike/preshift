@@ -53,13 +53,18 @@ class ConfigController extends Controller
 
         Schema::disableForeignKeyConstraints();
 
-        // Get all table names and exclude protected tables
-        $tables = collect(DB::select('SHOW TABLES'))
-            ->map(fn ($row) => array_values((array) $row)[0])
+        // Get all table names (DB-agnostic) and exclude protected tables
+        $tables = collect(Schema::getTableListing())
             ->filter(fn ($table) => !in_array($table, ['settings', 'migrations']));
 
         foreach ($tables as $table) {
-            DB::table($table)->truncate();
+            // Use delete for SQLite compatibility (truncate not supported),
+            // truncate for MySQL (resets auto-increment)
+            if (DB::getDriverName() === 'sqlite') {
+                DB::table($table)->delete();
+            } else {
+                DB::table($table)->truncate();
+            }
         }
 
         Schema::enableForeignKeyConstraints();

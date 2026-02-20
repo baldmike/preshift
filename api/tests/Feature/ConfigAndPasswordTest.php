@@ -168,4 +168,38 @@ class ConfigAndPasswordTest extends TestCase
 
         $response->assertStatus(422);
     }
+
+    // ── POST /api/config/reset ──
+
+    public function test_full_reset_blocked_for_non_superadmin(): void
+    {
+        ['regular' => $regular] = $this->seedUsers();
+
+        $response = $this->actingAs($regular)
+            ->postJson('/api/config/reset');
+
+        $response->assertStatus(403);
+    }
+
+    public function test_full_reset_truncates_data_and_recreates_superadmin(): void
+    {
+        ['superadmin' => $superadmin, 'regular' => $regular] = $this->seedUsers();
+
+        // Verify we have 2 users before reset
+        $this->assertEquals(2, User::count());
+
+        $response = $this->actingAs($superadmin)
+            ->postJson('/api/config/reset');
+
+        $response->assertStatus(200)
+            ->assertJson(['message' => 'Database has been reset. You have been re-created as superadmin. Please log in again.']);
+
+        // After reset: only 1 user remains — the re-created superadmin
+        $this->assertEquals(1, User::count());
+
+        $recreated = User::first();
+        $this->assertEquals($superadmin->email, $recreated->email);
+        $this->assertTrue($recreated->is_superadmin);
+        $this->assertTrue(Hash::check('password', $recreated->password));
+    }
 }

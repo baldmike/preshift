@@ -11,6 +11,13 @@ use Illuminate\Http\Request;
  */
 class CheckSuperAdmin
 {
+    /**
+     * Handle an incoming request by verifying the user has the SuperAdmin flag.
+     *
+     * @param  \Illuminate\Http\Request  $request  The incoming HTTP request.
+     * @param  \Closure                  $next     The next middleware or controller in the pipeline.
+     * @return mixed  The response from the next handler, or a 403 JSON error response.
+     */
     public function handle(Request $request, Closure $next)
     {
         if (!$request->user() || !$request->user()->is_superadmin) {
