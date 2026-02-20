@@ -8,12 +8,12 @@ import type { EightySixed, Special, PushItem, Announcement } from '@/types'
 const { isAdmin } = useAuth()
 
 const manageLinks = [
-  { to: '/manage/users', label: 'Employees' },
-  { to: '/manage/schedule', label: 'Schedule Builder' },
-  { to: '/manage/shift-drops', label: 'Shift Drops' },
+  { to: '/manage/users', label: 'Staff' },
+  { to: '/manage/schedule', label: 'Schedule' },
+  { to: '/manage/shift-drops', label: 'Drops' },
   { to: '/manage/time-off', label: 'Time Off' },
-  { to: '/manage/menu', label: 'Menu Items' },
-  { to: '/manage/acknowledgments', label: 'Acknowledgments' },
+  { to: '/manage/menu', label: 'Menu' },
+  { to: '/manage/acknowledgments', label: "Ack's" },
 ]
 
 // ─── 86'd Items ─────────────────────────────────────────────────────────────
@@ -326,19 +326,71 @@ onMounted(() => {
       </div>
       <router-link
         to="/dashboard"
-        class="text-xs text-gray-500 hover:text-gray-300 transition-colors"
-      >View Dashboard</router-link>
+        class="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-semibold whitespace-nowrap bg-white/[0.06] text-gray-400 hover:bg-white/[0.1] hover:text-white transition-colors"
+      >
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        </svg>
+        Corner!
+      </router-link>
     </div>
 
     <!-- Quick-nav to other management pages -->
-    <div class="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 mb-4">
+    <div class="grid grid-cols-3 gap-2 mb-4">
       <router-link
-        v-for="link in manageLinks"
-        :key="link.to"
-        :to="link.to"
-        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-semibold whitespace-nowrap
-               bg-white/[0.06] text-gray-400 hover:bg-white/[0.1] hover:text-white transition-colors"
-      >{{ link.label }}</router-link>
+        to="/manage/users"
+        class="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-semibold whitespace-nowrap bg-white/[0.06] text-gray-400 hover:bg-white/[0.1] hover:text-white transition-colors"
+      >
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+        Staff
+      </router-link>
+      <router-link
+        to="/manage/schedule"
+        class="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-semibold whitespace-nowrap bg-white/[0.06] text-gray-400 hover:bg-white/[0.1] hover:text-white transition-colors"
+      >
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+        Schedule
+      </router-link>
+      <router-link
+        to="/manage/shift-drops"
+        class="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-semibold whitespace-nowrap bg-white/[0.06] text-gray-400 hover:bg-white/[0.1] hover:text-white transition-colors"
+      >
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+        </svg>
+        Drops
+      </router-link>
+      <router-link
+        to="/manage/time-off"
+        class="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-semibold whitespace-nowrap bg-white/[0.06] text-gray-400 hover:bg-white/[0.1] hover:text-white transition-colors"
+      >
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        Time Off
+      </router-link>
+      <router-link
+        to="/manage/menu"
+        class="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-semibold whitespace-nowrap bg-white/[0.06] text-gray-400 hover:bg-white/[0.1] hover:text-white transition-colors"
+      >
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+        </svg>
+        Menu
+      </router-link>
+      <router-link
+        to="/manage/acknowledgments"
+        class="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-semibold whitespace-nowrap bg-white/[0.06] text-gray-400 hover:bg-white/[0.1] hover:text-white transition-colors"
+      >
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        Ack's
+      </router-link>
     </div>
 
     <!-- 2x2 grid -->

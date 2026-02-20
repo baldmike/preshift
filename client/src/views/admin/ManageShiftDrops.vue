@@ -80,9 +80,14 @@ onMounted(fetchDrops)
           <p class="text-xs text-gray-500 mt-0.5">Review and assign dropped shifts to volunteers</p>
         </div>
         <router-link
-          to="/manage"
-          class="text-xs text-gray-500 hover:text-gray-300 transition-colors"
-        >Back</router-link>
+              to="/manage/daily"
+              class="inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-gray-200 text-gray-800 hover:bg-gray-300 transition-colors"
+            >
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              Corner!
+            </router-link>
       </div>
 
       <!-- Loading state -->

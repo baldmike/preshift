@@ -105,7 +105,15 @@ onMounted(fetchLocations)
       <div class="flex items-center justify-between">
         <h1 class="text-2xl font-bold text-gray-900">Manage Locations</h1>
         <div class="flex gap-2">
-          <router-link to="/manage" class="text-sm text-indigo-600 hover:text-indigo-800">Back</router-link>
+          <router-link
+              to="/manage/daily"
+              class="inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-gray-200 text-gray-800 hover:bg-gray-300 transition-colors"
+            >
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              Corner!
+            </router-link>
           <BaseButton v-if="!showForm" size="sm" @click="showForm = true">Add Location</BaseButton>
         </div>
       </div>
