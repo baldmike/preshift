@@ -17,7 +17,7 @@ import AppShell from '@/components/layout/AppShell.vue'
 import ShiftDropCard from '@/components/ShiftDropCard.vue'
 import type { ShiftDrop } from '@/types'
 
-const { user } = useAuth()
+const { user, isStaff } = useAuth()
 const store = useScheduleStore()
 const loading = ref(false)
 const actingOn = ref<Set<number>>(new Set())
@@ -130,7 +130,9 @@ onMounted(async () => {
             <template v-if="availableDrops.length">
               <div v-for="drop in availableDrops" :key="drop.id">
                 <ShiftDropCard :drop="drop" />
-                <div class="mt-2 flex justify-end">
+                <!-- Only staff (servers/bartenders) can volunteer to pick up shifts.
+                     Managers and admins see the drops but cannot volunteer. -->
+                <div v-if="isStaff" class="mt-2 flex justify-end">
                   <button
                     v-if="!hasVolunteered(drop)"
                     @click="volunteer(drop.id)"
