@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreCategoryRequest;
+use App\Http\Resources\CategoryResource;
 use App\Models\Category;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -27,7 +28,7 @@ class CategoryController extends Controller
             ->orderBy('sort_order')
             ->get();
 
-        return response()->json($categories);
+        return response()->json(CategoryResource::collection($categories));
     }
 
     /**
@@ -45,7 +46,7 @@ class CategoryController extends Controller
             'location_id' => $request->user()->location_id,
         ]);
 
-        return response()->json($category, 201);
+        return response()->json(new CategoryResource($category), 201);
     }
 
     /**
@@ -61,7 +62,7 @@ class CategoryController extends Controller
 
         $category->update($validated);
 
-        return response()->json($category);
+        return response()->json(new CategoryResource($category));
     }
 
     /**

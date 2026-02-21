@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreShiftTemplateRequest;
+use App\Http\Resources\ShiftTemplateResource;
 use App\Models\ShiftTemplate;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -29,7 +30,7 @@ class ShiftTemplateController extends Controller
             ->orderBy('start_time')
             ->get();
 
-        return response()->json($templates);
+        return response()->json(ShiftTemplateResource::collection($templates));
     }
 
     /**
@@ -46,7 +47,7 @@ class ShiftTemplateController extends Controller
             'location_id' => $request->user()->location_id,
         ]);
 
-        return response()->json($template, 201);
+        return response()->json(new ShiftTemplateResource($template), 201);
     }
 
     /**
@@ -61,7 +62,7 @@ class ShiftTemplateController extends Controller
 
         $shiftTemplate->update($validated);
 
-        return response()->json($shiftTemplate);
+        return response()->json(new ShiftTemplateResource($shiftTemplate));
     }
 
     /**

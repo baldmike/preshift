@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreMenuItemRequest;
+use App\Http\Resources\MenuItemResource;
 use App\Models\MenuItem;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -29,7 +30,7 @@ class MenuItemController extends Controller
             $query->where('category_id', $request->query('category_id'));
         }
 
-        return response()->json($query->get());
+        return response()->json(MenuItemResource::collection($query->get()));
     }
 
     /**
@@ -47,7 +48,7 @@ class MenuItemController extends Controller
             'location_id' => $request->user()->location_id,
         ]);
 
-        return response()->json($menuItem, 201);
+        return response()->json(new MenuItemResource($menuItem), 201);
     }
 
     /**
@@ -63,7 +64,7 @@ class MenuItemController extends Controller
 
         $menuItem->update($validated);
 
-        return response()->json($menuItem);
+        return response()->json(new MenuItemResource($menuItem));
     }
 
     /**

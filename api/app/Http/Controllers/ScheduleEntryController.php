@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreScheduleEntryRequest;
 use App\Http\Requests\UpdateScheduleEntryRequest;
+use App\Http\Resources\ScheduleEntryResource;
 use App\Models\ScheduleEntry;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
@@ -29,7 +30,7 @@ class ScheduleEntryController extends Controller
         $entry = ScheduleEntry::create($validated);
         $entry->load('user', 'shiftTemplate');
 
-        return response()->json($entry, 201);
+        return response()->json(new ScheduleEntryResource($entry), 201);
     }
 
     /**
@@ -45,7 +46,7 @@ class ScheduleEntryController extends Controller
         $scheduleEntry->update($validated);
         $scheduleEntry->load('user', 'shiftTemplate');
 
-        return response()->json($scheduleEntry);
+        return response()->json(new ScheduleEntryResource($scheduleEntry));
     }
 
     /**

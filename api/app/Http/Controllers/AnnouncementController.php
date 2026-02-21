@@ -6,6 +6,7 @@ use App\Events\AnnouncementDeleted;
 use App\Events\AnnouncementPosted;
 use App\Events\AnnouncementUpdated;
 use App\Http\Requests\StoreAnnouncementRequest;
+use App\Http\Resources\AnnouncementResource;
 use App\Models\Announcement;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -33,7 +34,7 @@ class AnnouncementController extends Controller
             ->with('poster')
             ->get();
 
-        return response()->json($announcements);
+        return response()->json(AnnouncementResource::collection($announcements));
     }
 
     /**
@@ -54,7 +55,7 @@ class AnnouncementController extends Controller
 
         broadcast(new AnnouncementPosted($announcement))->toOthers();
 
-        return response()->json($announcement, 201);
+        return response()->json(new AnnouncementResource($announcement), 201);
     }
 
     /**
@@ -72,7 +73,7 @@ class AnnouncementController extends Controller
 
         broadcast(new AnnouncementUpdated($announcement))->toOthers();
 
-        return response()->json($announcement);
+        return response()->json(new AnnouncementResource($announcement));
     }
 
     /**

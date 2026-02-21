@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\ChangePasswordRequest;
 use App\Http\Requests\LoginRequest;
 use App\Http\Requests\UpdateProfileRequest;
+use App\Http\Resources\UserResource;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -38,7 +39,7 @@ class AuthController extends Controller
         $token = $user->createToken('auth-token')->plainTextToken;
 
         return response()->json([
-            'user' => $user,
+            'user' => new UserResource($user),
             'token' => $token,
         ]);
     }
@@ -91,7 +92,7 @@ class AuthController extends Controller
         $user->fill($validated);
         $user->save();
 
-        return response()->json($user->load('location'));
+        return response()->json(new UserResource($user->load('location')));
     }
 
     /**
@@ -102,6 +103,6 @@ class AuthController extends Controller
      */
     public function user(Request $request): JsonResponse
     {
-        return response()->json($request->user()->load('location'));
+        return response()->json(new UserResource($request->user()->load('location')));
     }
 }

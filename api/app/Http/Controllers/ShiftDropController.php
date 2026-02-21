@@ -6,6 +6,7 @@ use App\Events\ShiftDropFilled;
 use App\Events\ShiftDropRequested;
 use App\Events\ShiftDropVolunteered;
 use App\Http\Requests\StoreShiftDropRequest;
+use App\Http\Resources\ShiftDropResource;
 use App\Models\ScheduleEntry;
 use App\Models\ShiftDrop;
 use App\Models\User;
@@ -45,7 +46,7 @@ class ShiftDropController extends Controller
 
         $drops = $query->orderByDesc('created_at')->get();
 
-        return response()->json($drops);
+        return response()->json(ShiftDropResource::collection($drops));
     }
 
     /**
@@ -74,7 +75,7 @@ class ShiftDropController extends Controller
 
         broadcast(new ShiftDropRequested($drop))->toOthers();
 
-        return response()->json($drop, 201);
+        return response()->json(new ShiftDropResource($drop), 201);
     }
 
     /**
@@ -113,7 +114,7 @@ class ShiftDropController extends Controller
 
         broadcast(new ShiftDropVolunteered($shiftDrop))->toOthers();
 
-        return response()->json($shiftDrop);
+        return response()->json(new ShiftDropResource($shiftDrop));
     }
 
     /**
@@ -149,7 +150,7 @@ class ShiftDropController extends Controller
 
         broadcast(new ShiftDropFilled($shiftDrop))->toOthers();
 
-        return response()->json($shiftDrop);
+        return response()->json(new ShiftDropResource($shiftDrop));
     }
 
     /**
@@ -171,6 +172,6 @@ class ShiftDropController extends Controller
 
         $shiftDrop->update(['status' => 'cancelled']);
 
-        return response()->json($shiftDrop);
+        return response()->json(new ShiftDropResource($shiftDrop));
     }
 }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Events\ItemEightySixed;
 use App\Events\ItemRestored;
 use App\Http\Requests\StoreEightySixedRequest;
+use App\Http\Resources\EightySixedResource;
 use App\Models\EightySixed;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -35,7 +36,7 @@ class EightySixedController extends Controller
             ->with('menuItem', 'user')
             ->get();
 
-        return response()->json($items);
+        return response()->json(EightySixedResource::collection($items));
     }
 
     /**
@@ -56,7 +57,7 @@ class EightySixedController extends Controller
 
         broadcast(new ItemEightySixed($item))->toOthers();
 
-        return response()->json($item, 201);
+        return response()->json(new EightySixedResource($item), 201);
     }
 
     /**
@@ -71,6 +72,6 @@ class EightySixedController extends Controller
 
         broadcast(new ItemRestored($eightySixed))->toOthers();
 
-        return response()->json($eightySixed);
+        return response()->json(new EightySixedResource($eightySixed));
     }
 }

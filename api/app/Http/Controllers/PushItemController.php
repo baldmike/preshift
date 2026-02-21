@@ -6,6 +6,7 @@ use App\Events\PushItemCreated;
 use App\Events\PushItemDeleted;
 use App\Events\PushItemUpdated;
 use App\Http\Requests\StorePushItemRequest;
+use App\Http\Resources\PushItemResource;
 use App\Models\PushItem;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -32,7 +33,7 @@ class PushItemController extends Controller
             ->with('menuItem', 'creator')
             ->get();
 
-        return response()->json($pushItems);
+        return response()->json(PushItemResource::collection($pushItems));
     }
 
     /**
@@ -53,7 +54,7 @@ class PushItemController extends Controller
 
         broadcast(new PushItemCreated($pushItem))->toOthers();
 
-        return response()->json($pushItem, 201);
+        return response()->json(new PushItemResource($pushItem), 201);
     }
 
     /**
@@ -71,7 +72,7 @@ class PushItemController extends Controller
 
         broadcast(new PushItemUpdated($pushItem))->toOthers();
 
-        return response()->json($pushItem);
+        return response()->json(new PushItemResource($pushItem));
     }
 
     /**

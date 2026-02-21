@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreAcknowledgmentRequest;
+use App\Http\Resources\AcknowledgmentResource;
 use App\Models\Acknowledgment;
 use App\Models\Announcement;
 use App\Models\EightySixed;
@@ -48,7 +49,7 @@ class AcknowledgmentController extends Controller
             ]
         );
 
-        return response()->json($acknowledgment);
+        return response()->json(new AcknowledgmentResource($acknowledgment));
     }
 
     /**
