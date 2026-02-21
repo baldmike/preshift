@@ -1,0 +1,132 @@
+# PreShift
+
+A digital pre-shift meeting replacement for restaurants and bars. Managers post daily operational updates — 86'd items, specials, push items, announcements — and staff check in before their shift to see everything they need, tailored to their role. Includes a full scheduling system with shift drops and time-off requests.
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Frontend | Vue 3, Vite, Pinia, Vue Router, Tailwind CSS |
+| Backend | Laravel 11, PHP 8.2+ |
+| Auth | Laravel Sanctum (token-based) |
+| Realtime | Laravel Reverb (WebSockets) |
+| Database | MySQL (SQLite for tests) |
+
+## Project Structure
+
+```
+/api       ← Laravel 11 API
+/client    ← Vue 3 SPA
+```
+
+The API and client are independent applications. The Vue SPA proxies `/api` requests to the Laravel backend during development.
+
+## Prerequisites
+
+- PHP 8.2+
+- Composer
+- Node.js 18+
+- npm
+- MySQL 8+
+
+## Local Setup
+
+### 1. Clone the repo
+
+```bash
+git clone git@github.com:baldmike/preshift.git
+cd preshift
+```
+
+### 2. Set up the API
+
+```bash
+cd api
+composer install
+cp .env.example .env
+php artisan key:generate
+```
+
+Edit `.env` and configure your database:
+
+```
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=preshift
+DB_USERNAME=root
+DB_PASSWORD=
+```
+
+Run migrations and seed demo data:
+
+```bash
+php artisan migrate
+php artisan db:seed
+```
+
+### 3. Set up the client
+
+```bash
+cd ../client
+npm install
+```
+
+### 4. Start the dev servers
+
+In one terminal — API:
+
+```bash
+cd api
+php artisan serve
+```
+
+In another terminal — client:
+
+```bash
+cd client
+npm run dev
+```
+
+The app is now running at **http://localhost:5173**. The Vite dev server proxies API requests to Laravel on port 8000.
+
+### 5. (Optional) Start Reverb for real-time updates
+
+```bash
+cd api
+php artisan reverb:start
+```
+
+## Demo Login
+
+After seeding, log in with the superadmin account:
+
+- **Email:** `prince@theanchor.com`
+- **Password:** `password`
+
+The seeder creates a full demo environment with a location ("The Anchor"), staff across all roles, a menu, sample 86'd items, specials, push items, announcements, and a multi-week schedule.
+
+## Running Tests
+
+### Backend
+
+```bash
+cd api
+php artisan test
+```
+
+### Frontend
+
+```bash
+cd client
+npm test
+```
+
+## Roles
+
+| Role | Access |
+|------|--------|
+| admin | Full access across all locations |
+| manager | CRUD content, build schedules, approve drops/time-off (scoped to location) |
+| server | View pre-shift content, view schedule, request drops/time-off (scoped to location) |
+| bartender | Same as server, plus bar-specific content visibility |
