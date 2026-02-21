@@ -60,6 +60,8 @@ class MenuItemController extends Controller
      */
     public function update(StoreMenuItemRequest $request, MenuItem $menuItem): JsonResponse
     {
+        $this->authorize('update', $menuItem);
+
         $validated = $request->validated();
 
         $menuItem->update($validated);
@@ -75,6 +77,8 @@ class MenuItemController extends Controller
      */
     public function destroy(MenuItem $menuItem): Response
     {
+        $this->authorize('delete', $menuItem);
+
         $menuItem->delete();
 
         return response()->noContent();

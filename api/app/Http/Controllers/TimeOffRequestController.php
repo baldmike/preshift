@@ -69,6 +69,8 @@ class TimeOffRequestController extends Controller
      */
     public function approve(Request $request, TimeOffRequest $timeOffRequest): JsonResponse
     {
+        $this->authorize('approve', $timeOffRequest);
+
         if ($timeOffRequest->status !== 'pending') {
             return response()->json(['message' => 'This request has already been resolved.'], 422);
         }
@@ -94,6 +96,8 @@ class TimeOffRequestController extends Controller
      */
     public function deny(Request $request, TimeOffRequest $timeOffRequest): JsonResponse
     {
+        $this->authorize('deny', $timeOffRequest);
+
         if ($timeOffRequest->status !== 'pending') {
             return response()->json(['message' => 'This request has already been resolved.'], 422);
         }

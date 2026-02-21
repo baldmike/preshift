@@ -66,6 +66,8 @@ class PushItemController extends Controller
      */
     public function update(StorePushItemRequest $request, PushItem $pushItem): JsonResponse
     {
+        $this->authorize('update', $pushItem);
+
         $validated = $request->validated();
 
         $pushItem->update($validated);
@@ -83,6 +85,8 @@ class PushItemController extends Controller
      */
     public function destroy(PushItem $pushItem): Response
     {
+        $this->authorize('delete', $pushItem);
+
         $data = ['id' => $pushItem->id, 'location_id' => $pushItem->location_id];
 
         $pushItem->delete();

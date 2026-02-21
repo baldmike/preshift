@@ -68,6 +68,8 @@ class UserController extends Controller
      */
     public function update(UpdateUserRequest $request, User $user): JsonResponse
     {
+        $this->authorize('update', $user);
+
         $validated = $request->validated();
 
         if (isset($validated['password'])) {
@@ -105,6 +107,8 @@ class UserController extends Controller
      */
     public function destroy(User $user): Response
     {
+        $this->authorize('delete', $user);
+
         $user->delete();
 
         return response()->noContent();

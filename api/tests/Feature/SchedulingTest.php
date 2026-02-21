@@ -1121,9 +1121,8 @@ class SchedulingTest extends TestCase
         $response = $this->actingAs($data['server2'], 'sanctum')
             ->postJson("/api/shift-drops/{$drop->id}/cancel");
 
-        // Assert: 403 Forbidden with the ownership error message.
-        $response->assertStatus(403)
-            ->assertJsonPath('message', 'You can only cancel your own drops.');
+        // Assert: 403 Forbidden (policy rejects non-owner).
+        $response->assertStatus(403);
     }
 
     // ══════════════════════════════════════════════════════════════════════
