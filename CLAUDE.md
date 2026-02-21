@@ -88,6 +88,7 @@ These are settled decisions. Do not revisit or change them without being explici
 ### General
 
 - Be consistent with what already exists in the codebase. If there's an established pattern, follow it.
+- **Conventions in this file apply to NEW code you write.** Do not retroactively refactor existing working code to match these conventions unless explicitly asked. If you see old code that doesn't follow a convention, leave it alone — we'll clean it up in dedicated refactor branches.
 - Keep files focused — one controller per resource, one composable per domain, one store per domain.
 - Name things clearly. `ShiftDropController` not `SDController`. `useSchedule` not `useS`.
 - No magic strings — use enums, constants, or config values.

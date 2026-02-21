@@ -133,7 +133,7 @@ Anything tricky, known limitations, or follow-up needed.
 3. Read through every file diff — take 10 minutes minimum
 4. Look for: leftover console.logs, hardcoded values, missing error handling, auth checks
 5. If you spot something, fix it and push before merging
-6. Merge via "Squash and merge" to keep `develop` history clean
+6. Merge via "Squash and merge" to keep `main` history clean
 
 ---
 
