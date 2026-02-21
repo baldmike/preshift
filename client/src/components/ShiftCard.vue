@@ -46,7 +46,9 @@ function formatShiftTime(time: string): string {
  * avoids timezone drift issues with date-only strings).
  */
 const formattedDate = computed(() => {
-  const d = new Date(props.entry.date + 'T12:00:00')
+  // Extract YYYY-MM-DD from possible ISO timestamp ("2026-02-23T00:00:00.000000Z")
+  const ymd = props.entry.date.substring(0, 10)
+  const d = new Date(ymd + 'T12:00:00')
   return d.toLocaleDateString([], {
     weekday: 'short',
     month: 'short',

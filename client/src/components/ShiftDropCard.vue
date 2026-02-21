@@ -34,7 +34,11 @@ const shiftName = computed(() =>
 const shiftDate = computed(() => {
   const dateStr = props.drop.schedule_entry?.date
   if (!dateStr) return ''
-  const d = new Date(dateStr + 'T12:00:00')
+  // The API returns dates as ISO timestamps (e.g. "2026-02-23T00:00:00.000000Z").
+  // Extract just the YYYY-MM-DD portion before appending a noon time to avoid
+  // timezone-shift issues with date-only strings.
+  const ymd = dateStr.substring(0, 10)
+  const d = new Date(ymd + 'T12:00:00')
   return d.toLocaleDateString([], {
     weekday: 'short',
     month: 'short',

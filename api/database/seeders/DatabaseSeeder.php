@@ -10,6 +10,8 @@ use App\Models\MenuItem;
 use App\Models\PushItem;
 use App\Models\Schedule;
 use App\Models\ScheduleEntry;
+use App\Models\ShiftDrop;
+use App\Models\ShiftDropVolunteer;
 use App\Models\ShiftTemplate;
 use App\Models\Special;
 use App\Models\Setting;
@@ -319,7 +321,7 @@ class DatabaseSeeder extends Seeder
         |------------------------------------------------------------------
         | Three announcements demonstrating the priority tiers and role
         | targeting:
-        |   1. "Staff Meeting Friday" -- priority: important, targets ALL
+        |   1. "Baseball Season" -- priority: important, targets ALL
         |      roles (target_roles is null = everyone). Expires in 5 days.
         |   2. "New Cocktail Training" -- priority: normal, targets only
         |      bartenders. Expires in 3 days.
@@ -329,8 +331,8 @@ class DatabaseSeeder extends Seeder
         */
         Announcement::create([
             'location_id' => $location->id,
-            'title' => 'Staff Meeting Friday',
-            'body' => 'Mandatory all-hands meeting this Friday at 3pm in the back dining room. We\'ll be going over the new spring menu rollout and updated POS procedures.',
+            'title' => 'Baseball Season is Almost Here',
+            'body' => 'Baseball season is almost here, make sure you have a mit.',
             'priority' => 'important',
             'target_roles' => null,     // null = all roles see this announcement
             'posted_by' => $manager->id,
@@ -584,6 +586,98 @@ class DatabaseSeeder extends Seeder
                         ]);
                         $assignedByDate[$dateStr]->push($b->id);
                     }
+                }
+            }
+        }
+
+        /*
+        |------------------------------------------------------------------
+        | Shift Drops
+        |------------------------------------------------------------------
+        | Three open shift drop requests from staff on next week's
+        | schedule, plus one volunteer pickup awaiting manager approval.
+        |
+        | Drop scenarios:
+        |   1. A server dropping a Monday dinner shift — family event
+        |   2. A bartender dropping a Tuesday lunch shift — doctor appt
+        |   3. A server dropping a Wednesday dinner shift — feeling ill
+        |
+        | Drop 3 also has a volunteer: a same-role colleague who isn't
+        | scheduled that day, representing a pickup that needs manager
+        | approval before it's finalized.
+        */
+        $nextMonday = $weekStart->copy()->addWeek();
+        $nextSchedule = Schedule::where('week_start', $nextMonday->toDateString())->first();
+
+        if ($nextSchedule) {
+            $nextWeekEntries = ScheduleEntry::where('schedule_id', $nextSchedule->id)
+                ->orderBy('date')
+                ->get();
+
+            // Helper: filter entries by template, role, and date string.
+            // The date column is cast to Carbon, so we compare via toDateString().
+            $entriesOn = fn ($templateId, $role, $dateStr) => $nextWeekEntries
+                ->filter(fn ($e) =>
+                    $e->shift_template_id === $templateId
+                    && $e->role === $role
+                    && $e->date->toDateString() === $dateStr
+                );
+
+            // Drop 1: server dinner shift on Monday — family birthday dinner
+            $drop1Entry = $entriesOn($dinner->id, 'server', $nextMonday->toDateString())->first();
+
+            if ($drop1Entry) {
+                ShiftDrop::create([
+                    'schedule_entry_id' => $drop1Entry->id,
+                    'requested_by' => $drop1Entry->user_id,
+                    'reason' => 'Family birthday dinner, can\'t miss it.',
+                    'status' => 'open',
+                ]);
+            }
+
+            // Drop 2: bartender lunch shift on Tuesday — doctor appointment
+            $tuesday = $nextMonday->copy()->addDay();
+            $drop2Entry = $entriesOn($lunch->id, 'bartender', $tuesday->toDateString())->first();
+
+            if ($drop2Entry) {
+                ShiftDrop::create([
+                    'schedule_entry_id' => $drop2Entry->id,
+                    'requested_by' => $drop2Entry->user_id,
+                    'reason' => 'Doctor appointment that can\'t be rescheduled.',
+                    'status' => 'open',
+                ]);
+            }
+
+            // Drop 3: server dinner shift on Wednesday — feeling ill
+            // This drop also gets a volunteer pickup awaiting manager approval.
+            $wednesday = $nextMonday->copy()->addDays(2);
+            $drop3Entry = $entriesOn($dinner->id, 'server', $wednesday->toDateString())->first();
+
+            if ($drop3Entry) {
+                $drop3 = ShiftDrop::create([
+                    'schedule_entry_id' => $drop3Entry->id,
+                    'requested_by' => $drop3Entry->user_id,
+                    'reason' => 'Not feeling well, might be coming down with something.',
+                    'status' => 'open',
+                ]);
+
+                // Add a volunteer: a server NOT already scheduled on Wednesday
+                // and NOT the person who requested the drop.
+                $scheduledOnWednesday = $nextWeekEntries
+                    ->filter(fn ($e) => $e->date->toDateString() === $wednesday->toDateString())
+                    ->pluck('user_id');
+
+                $volunteer = $servers
+                    ->filter(fn ($u) => $u->id !== $drop3Entry->user_id)
+                    ->filter(fn ($u) => !$scheduledOnWednesday->contains($u->id))
+                    ->first();
+
+                if ($volunteer) {
+                    ShiftDropVolunteer::create([
+                        'shift_drop_id' => $drop3->id,
+                        'user_id' => $volunteer->id,
+                        'selected' => false,
+                    ]);
                 }
             }
         }
