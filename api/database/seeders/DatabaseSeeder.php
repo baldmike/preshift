@@ -465,12 +465,22 @@ class DatabaseSeeder extends Seeder
                 'published_by' => $manager->id,
             ]);
 
+            // Track which user IDs have already been assigned on each date
+            // so the same person is never scheduled for two shifts on one day.
+            $assignedByDate = [];
+
             // Build entries for each day (Mon=0 through Sun=6)
             for ($dayOffset = 0; $dayOffset < 7; $dayOffset++) {
                 $date = $monday->copy()->addDays($dayOffset);
+                $dateStr = $date->toDateString();
                 $dayName = strtolower($date->format('l')); // 'monday', 'tuesday', etc.
                 $isFriSat = in_array($dayName, ['friday', 'saturday']);
                 $isSunday = $dayName === 'sunday';
+
+                // Initialize the assigned set for this date
+                if (!isset($assignedByDate[$dateStr])) {
+                    $assignedByDate[$dateStr] = collect();
+                }
 
                 // Determine staffing targets
                 $lunchServers = $isSunday ? 4 : 3;
@@ -478,13 +488,17 @@ class DatabaseSeeder extends Seeder
                 $dinnerServers = $isFriSat ? 7 : 5;
                 $dinnerBartenders = $isFriSat ? 3 : 2;
 
-                // Helper: pick N random staff from the pool, preferring those available
-                $pickStaff = function ($pool, $count, $dayName, $shift) {
+                // Helper: pick N random staff from the pool, preferring those available.
+                // Excludes any user IDs already assigned on this date via $excludeIds.
+                $pickStaff = function ($pool, $count, $dayName, $shift, $excludeIds) {
                     $isLunch = $shift === 'lunch';
                     $lunchSlot = '10:30';
 
+                    // Filter out anyone already scheduled on this date
+                    $available = $pool->filter(fn ($u) => !$excludeIds->contains($u->id));
+
                     // Sort: available first, then random
-                    $sorted = $pool->sortByDesc(function ($u) use ($dayName, $isLunch, $lunchSlot) {
+                    $sorted = $available->sortByDesc(function ($u) use ($dayName, $isLunch, $lunchSlot) {
                         $slots = $u->availability[$dayName] ?? [];
                         if (in_array('open', $slots)) return 2 + (rand(0, 100) / 1000);
                         if ($isLunch && in_array($lunchSlot, $slots)) return 1 + (rand(0, 100) / 1000);
@@ -496,73 +510,79 @@ class DatabaseSeeder extends Seeder
                 };
 
                 // Lunch shift entries
-                $lunchServerPicks = $pickStaff($servers, $lunchServers, $dayName, 'lunch');
+                $lunchServerPicks = $pickStaff($servers, $lunchServers, $dayName, 'lunch', $assignedByDate[$dateStr]);
                 foreach ($lunchServerPicks as $s) {
                     ScheduleEntry::create([
                         'schedule_id' => $schedule->id,
                         'user_id' => $s->id,
                         'shift_template_id' => $lunch->id,
-                        'date' => $date->toDateString(),
+                        'date' => $dateStr,
                         'role' => 'server',
                     ]);
+                    $assignedByDate[$dateStr]->push($s->id);
                 }
 
-                $lunchBartenderPicks = $pickStaff($bartenders, $lunchBartenders, $dayName, 'lunch');
+                $lunchBartenderPicks = $pickStaff($bartenders, $lunchBartenders, $dayName, 'lunch', $assignedByDate[$dateStr]);
                 foreach ($lunchBartenderPicks as $b) {
                     ScheduleEntry::create([
                         'schedule_id' => $schedule->id,
                         'user_id' => $b->id,
                         'shift_template_id' => $lunch->id,
-                        'date' => $date->toDateString(),
+                        'date' => $dateStr,
                         'role' => 'bartender',
                     ]);
+                    $assignedByDate[$dateStr]->push($b->id);
                 }
 
                 // Dinner shift entries
-                $dinnerServerPicks = $pickStaff($servers, $dinnerServers, $dayName, 'dinner');
+                $dinnerServerPicks = $pickStaff($servers, $dinnerServers, $dayName, 'dinner', $assignedByDate[$dateStr]);
                 foreach ($dinnerServerPicks as $s) {
                     ScheduleEntry::create([
                         'schedule_id' => $schedule->id,
                         'user_id' => $s->id,
                         'shift_template_id' => $dinner->id,
-                        'date' => $date->toDateString(),
+                        'date' => $dateStr,
                         'role' => 'server',
                     ]);
+                    $assignedByDate[$dateStr]->push($s->id);
                 }
 
-                $dinnerBartenderPicks = $pickStaff($bartenders, $dinnerBartenders, $dayName, 'dinner');
+                $dinnerBartenderPicks = $pickStaff($bartenders, $dinnerBartenders, $dayName, 'dinner', $assignedByDate[$dateStr]);
                 foreach ($dinnerBartenderPicks as $b) {
                     ScheduleEntry::create([
                         'schedule_id' => $schedule->id,
                         'user_id' => $b->id,
                         'shift_template_id' => $dinner->id,
-                        'date' => $date->toDateString(),
+                        'date' => $dateStr,
                         'role' => 'bartender',
                     ]);
+                    $assignedByDate[$dateStr]->push($b->id);
                 }
 
                 // Fri/Sat get a Close shift too
                 if ($isFriSat) {
-                    $closeServerPicks = $pickStaff($servers, 3, $dayName, 'dinner');
+                    $closeServerPicks = $pickStaff($servers, 3, $dayName, 'dinner', $assignedByDate[$dateStr]);
                     foreach ($closeServerPicks as $s) {
                         ScheduleEntry::create([
                             'schedule_id' => $schedule->id,
                             'user_id' => $s->id,
                             'shift_template_id' => $close->id,
-                            'date' => $date->toDateString(),
+                            'date' => $dateStr,
                             'role' => 'server',
                         ]);
+                        $assignedByDate[$dateStr]->push($s->id);
                     }
 
-                    $closeBartenderPicks = $pickStaff($bartenders, 1, $dayName, 'dinner');
+                    $closeBartenderPicks = $pickStaff($bartenders, 1, $dayName, 'dinner', $assignedByDate[$dateStr]);
                     foreach ($closeBartenderPicks as $b) {
                         ScheduleEntry::create([
                             'schedule_id' => $schedule->id,
                             'user_id' => $b->id,
                             'shift_template_id' => $close->id,
-                            'date' => $date->toDateString(),
+                            'date' => $dateStr,
                             'role' => 'bartender',
                         ]);
+                        $assignedByDate[$dateStr]->push($b->id);
                     }
                 }
             }

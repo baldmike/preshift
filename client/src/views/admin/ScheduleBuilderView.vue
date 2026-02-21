@@ -105,11 +105,25 @@ const rawUsers = ref<User[]>([])
 const roleOrder: Record<string, number> = { admin: 0, manager: 1, bartender: 2, server: 3 }
 
 /**
- * Sorted user list: available users first, then unavailable.
+ * Set of user IDs already scheduled on the currently selected entry form date.
+ * Used to filter the staff dropdown so a user can't be assigned twice on the same day.
+ */
+const scheduledUserIdsOnDate = computed<Set<number>>(() => {
+  if (!activeSchedule.value?.entries || !entryForm.value.date) return new Set()
+  const ids = activeSchedule.value.entries
+    .filter((e: any) => e.date === entryForm.value.date)
+    .map((e: any) => e.user_id)
+  return new Set(ids)
+})
+
+/**
+ * Sorted user list: filters out users already scheduled on the selected date,
+ * then sorts available users first, then unavailable.
  * Within each group, sorted by role tier then name.
  */
 const users = computed(() => {
-  const list = [...rawUsers.value]
+  // Exclude users already scheduled on this date
+  const list = rawUsers.value.filter(u => !scheduledUserIdsOnDate.value.has(u.id))
   const dayName = entryForm.value.date ? getDayName(entryForm.value.date) : ''
   const startTime = entryForm.value.start_time
 
