@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ChangePasswordRequest;
+use App\Http\Requests\LoginRequest;
+use App\Http\Requests\UpdateProfileRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -20,37 +23,20 @@ class AuthController extends Controller
     /**
      * Authenticate a user and issue a personal access token.
      *
-     * Validates that the request contains a properly formatted email and a
-     * password string, then attempts credential-based authentication via the
-     * Auth facade. On success, a new Sanctum personal access token named
-     * "auth-token" is created and returned alongside the user model.
-     *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  \App\Http\Requests\LoginRequest  $request
      * @return \Illuminate\Http\JsonResponse  The authenticated user and bearer token, or a 401 error.
      */
-    public function login(Request $request): JsonResponse
+    public function login(LoginRequest $request): JsonResponse
     {
-        // Validate that email is present and well-formed, and password is a non-empty string.
-        $request->validate([
-            'email' => 'required|email',       // Must be a valid email address
-            'password' => 'required|string',   // Must be a non-empty string
-        ]);
+        $validated = $request->validated();
 
-        // Attempt to authenticate using only the email and password fields.
-        // Auth::attempt checks the credentials against the users table.
-        if (! Auth::attempt($request->only('email', 'password'))) {
-            // Return a 401 Unauthorized response if credentials do not match.
+        if (! Auth::attempt($validated)) {
             return response()->json(['message' => 'Invalid credentials.'], 401);
         }
 
-        // Retrieve the now-authenticated user instance from the Auth guard.
         $user = Auth::user();
-
-        // Create a new Sanctum personal access token for stateless API usage.
-        // plainTextToken contains the raw token string to send back to the client.
         $token = $user->createToken('auth-token')->plainTextToken;
 
-        // Return the user object and the plain-text token for the client to store.
         return response()->json([
             'user' => $user,
             'token' => $token,
@@ -60,16 +46,11 @@ class AuthController extends Controller
     /**
      * Log the authenticated user out by revoking their current access token.
      *
-     * This deletes only the token used for the current request, leaving any
-     * other active tokens intact. The client should discard its stored token
-     * after receiving the success response.
-     *
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse  A confirmation message.
      */
     public function logout(Request $request): JsonResponse
     {
-        // Delete the Sanctum token that was used to authenticate this request.
         $request->user()->currentAccessToken()->delete();
 
         return response()->json(['message' => 'Logged out successfully.']);
@@ -78,26 +59,19 @@ class AuthController extends Controller
     /**
      * Change the authenticated user's password.
      *
-     * Validates that the current password matches the stored hash, then
-     * updates to the new password. Requires `password_confirmation` to match.
-     *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  \App\Http\Requests\ChangePasswordRequest  $request
      * @return \Illuminate\Http\JsonResponse  Success message or 422 on validation/mismatch.
      */
-    public function changePassword(Request $request): JsonResponse
+    public function changePassword(ChangePasswordRequest $request): JsonResponse
     {
-        $request->validate([
-            'current_password' => 'required|string',
-            'password' => 'required|string|min:8|confirmed',
-        ]);
-
+        $validated = $request->validated();
         $user = $request->user();
 
-        if (!Hash::check($request->current_password, $user->password)) {
+        if (!Hash::check($validated['current_password'], $user->password)) {
             return response()->json(['message' => 'Current password is incorrect.'], 422);
         }
 
-        $user->password = Hash::make($request->password);
+        $user->password = Hash::make($validated['password']);
         $user->save();
 
         return response()->json(['message' => 'Password changed successfully.']);
@@ -106,60 +80,28 @@ class AuthController extends Controller
     /**
      * Update the authenticated user's profile.
      *
-     * Allows staff to edit their own name and weekly availability without
-     * exposing sensitive fields. Only the validated fields are updated --
-     * any attempt to send role, email, location_id, or password in the
-     * request body is silently ignored because the validation rules only
-     * permit `name` and `availability`.
-     *
-     * Validation rules:
-     * - name:         sometimes|required|string|max:255 -- only validated when present.
-     * - availability: sometimes|nullable|array          -- weekly availability grid
-     *                 (keys are day names, values are arrays of time slot strings).
-     *
-     * Returns the updated user with the location relationship eager-loaded
-     * so the client can refresh its auth store in a single call.
-     *
-     * Route: PUT /api/profile
-     * Middleware: auth:sanctum (no location middleware -- works for any user)
-     *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  \App\Http\Requests\UpdateProfileRequest  $request
      * @return \Illuminate\Http\JsonResponse  The updated user with location.
      */
-    public function updateProfile(Request $request): JsonResponse
+    public function updateProfile(UpdateProfileRequest $request): JsonResponse
     {
-        // Only allow updating safe, self-service fields.
-        // role, email, location_id, and password are NOT in this list
-        // and will be stripped out by Laravel's validated() output.
-        $validated = $request->validate([
-            'name'         => 'sometimes|required|string|max:255',
-            'availability' => 'sometimes|nullable|array',
-        ]);
-
+        $validated = $request->validated();
         $user = $request->user();
 
-        // fill() only sets attributes present in the $validated array,
-        // so missing keys are left unchanged on the model.
         $user->fill($validated);
         $user->save();
 
-        // Return the full user with location so the frontend can update
-        // its auth store without a separate GET /api/user call.
         return response()->json($user->load('location'));
     }
 
     /**
      * Return the currently authenticated user's profile with their location.
      *
-     * Eager-loads the related Location model so the client receives the full
-     * user record including location details in a single response.
-     *
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse  The authenticated user with their location relationship.
      */
     public function user(Request $request): JsonResponse
     {
-        // Eager-load the 'location' relationship onto the authenticated user model.
         return response()->json($request->user()->load('location'));
     }
 }

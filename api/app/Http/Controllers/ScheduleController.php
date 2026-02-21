@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Events\SchedulePublished;
+use App\Http\Requests\StoreScheduleRequest;
 use App\Models\Schedule;
 use App\Models\ScheduleEntry;
 use Illuminate\Http\JsonResponse;
@@ -21,9 +22,6 @@ class ScheduleController extends Controller
     /**
      * List schedules for the authenticated user's location.
      *
-     * Returns current and upcoming weeks (week_start >= 2 weeks ago) with
-     * a count of entries. Ordered by week_start ascending.
-     *
      * @return \Illuminate\Http\JsonResponse  JSON array of Schedule records.
      */
     public function index(Request $request): JsonResponse
@@ -40,9 +38,6 @@ class ScheduleController extends Controller
     /**
      * Show a single schedule with all its entries and related data.
      *
-     * Eager-loads each entry's user and shift template so the schedule
-     * builder can render the full grid without N+1 queries.
-     *
      * @param  Schedule $schedule  Resolved via route model binding.
      * @return \Illuminate\Http\JsonResponse  The schedule with entries.
      */
@@ -56,19 +51,11 @@ class ScheduleController extends Controller
     /**
      * Create a new weekly schedule.
      *
-     * Validation:
-     *   - week_start: required, valid date — should be a Monday.
-     *
-     * The schedule is created in "draft" status. A unique constraint on
-     * (location_id, week_start) prevents duplicates.
-     *
      * @return \Illuminate\Http\JsonResponse  The created schedule with 201 status.
      */
-    public function store(Request $request): JsonResponse
+    public function store(StoreScheduleRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'week_start' => 'required|date',
-        ]);
+        $validated = $request->validated();
 
         $schedule = Schedule::create([
             'location_id' => $request->user()->location_id,
@@ -85,11 +72,9 @@ class ScheduleController extends Controller
      * @param  Schedule $schedule  Resolved via route model binding.
      * @return \Illuminate\Http\JsonResponse  The updated schedule.
      */
-    public function update(Request $request, Schedule $schedule): JsonResponse
+    public function update(StoreScheduleRequest $request, Schedule $schedule): JsonResponse
     {
-        $validated = $request->validate([
-            'week_start' => 'required|date',
-        ]);
+        $validated = $request->validated();
 
         $schedule->update($validated);
 
@@ -98,10 +83,6 @@ class ScheduleController extends Controller
 
     /**
      * Publish a schedule, making it visible to all staff at the location.
-     *
-     * Sets the status to "published", records who published and when, and
-     * broadcasts a SchedulePublished event via Reverb so connected staff
-     * see the schedule immediately.
      *
      * @param  Schedule $schedule  Resolved via route model binding.
      * @return \Illuminate\Http\JsonResponse  The published schedule.
@@ -122,8 +103,6 @@ class ScheduleController extends Controller
     /**
      * Unpublish a schedule, reverting it to draft status for editing.
      *
-     * Staff will no longer see this schedule until it is republished.
-     *
      * @param  Schedule $schedule  Resolved via route model binding.
      * @return \Illuminate\Http\JsonResponse  The updated schedule.
      */
@@ -136,10 +115,6 @@ class ScheduleController extends Controller
 
     /**
      * Get the authenticated staff member's upcoming shifts.
-     *
-     * Returns schedule entries for the current user across all published
-     * schedules where the shift date is today or in the future. Eager-loads
-     * the shift template and parent schedule for display.
      *
      * @return \Illuminate\Http\JsonResponse  JSON array of ScheduleEntry records.
      */

@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreScheduleEntryRequest;
+use App\Http\Requests\UpdateScheduleEntryRequest;
 use App\Models\ScheduleEntry;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
 /**
@@ -19,26 +20,11 @@ class ScheduleEntryController extends Controller
     /**
      * Create a new schedule entry (assign staff to a shift).
      *
-     * Validation:
-     *   - schedule_id: required, must exist in schedules table.
-     *   - user_id: required, must exist in users table.
-     *   - shift_template_id: required, must exist in shift_templates table.
-     *   - date: required, valid date — the specific calendar day.
-     *   - role: required, must be "server" or "bartender".
-     *   - notes: optional, max 255 chars — manager notes (e.g. "training").
-     *
      * @return \Illuminate\Http\JsonResponse  The created entry with relations, 201 status.
      */
-    public function store(Request $request): JsonResponse
+    public function store(StoreScheduleEntryRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'schedule_id'       => 'required|exists:schedules,id',
-            'user_id'           => 'required|exists:users,id',
-            'shift_template_id' => 'required|exists:shift_templates,id',
-            'date'              => 'required|date',
-            'role'              => 'required|in:server,bartender',
-            'notes'             => 'nullable|string|max:255',
-        ]);
+        $validated = $request->validated();
 
         $entry = ScheduleEntry::create($validated);
         $entry->load('user', 'shiftTemplate');
@@ -49,21 +35,12 @@ class ScheduleEntryController extends Controller
     /**
      * Update an existing schedule entry.
      *
-     * Allows the manager to change the assigned user, shift template, date,
-     * role, or notes for an existing entry.
-     *
      * @param  ScheduleEntry $scheduleEntry  Resolved via route model binding.
      * @return \Illuminate\Http\JsonResponse  The updated entry with relations.
      */
-    public function update(Request $request, ScheduleEntry $scheduleEntry): JsonResponse
+    public function update(UpdateScheduleEntryRequest $request, ScheduleEntry $scheduleEntry): JsonResponse
     {
-        $validated = $request->validate([
-            'user_id'           => 'required|exists:users,id',
-            'shift_template_id' => 'required|exists:shift_templates,id',
-            'date'              => 'required|date',
-            'role'              => 'required|in:server,bartender',
-            'notes'             => 'nullable|string|max:255',
-        ]);
+        $validated = $request->validated();
 
         $scheduleEntry->update($validated);
         $scheduleEntry->load('user', 'shiftTemplate');

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreShiftTemplateRequest;
 use App\Models\ShiftTemplate;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -34,20 +35,11 @@ class ShiftTemplateController extends Controller
     /**
      * Create a new shift template.
      *
-     * Validation:
-     *   - name: required, max 255 chars — label for the shift (e.g. "Brunch").
-     *   - start_time: required, valid time format — when the shift begins.
-     *   - end_time: required, valid time format — when the shift ends.
-     *
      * @return \Illuminate\Http\JsonResponse  The created template with 201 status.
      */
-    public function store(Request $request): JsonResponse
+    public function store(StoreShiftTemplateRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'name'       => 'required|string|max:255',
-            'start_time' => 'required|date_format:H:i',
-            'end_time'   => 'required|date_format:H:i',
-        ]);
+        $validated = $request->validated();
 
         $template = ShiftTemplate::create([
             ...$validated,
@@ -63,13 +55,9 @@ class ShiftTemplateController extends Controller
      * @param  ShiftTemplate $shiftTemplate  Resolved via route model binding.
      * @return \Illuminate\Http\JsonResponse  The updated template.
      */
-    public function update(Request $request, ShiftTemplate $shiftTemplate): JsonResponse
+    public function update(StoreShiftTemplateRequest $request, ShiftTemplate $shiftTemplate): JsonResponse
     {
-        $validated = $request->validate([
-            'name'       => 'required|string|max:255',
-            'start_time' => 'required|date_format:H:i',
-            'end_time'   => 'required|date_format:H:i',
-        ]);
+        $validated = $request->validated();
 
         $shiftTemplate->update($validated);
 
@@ -78,8 +66,6 @@ class ShiftTemplateController extends Controller
 
     /**
      * Delete a shift template permanently.
-     *
-     * Note: cascade-deletes any schedule entries referencing this template.
      *
      * @param  ShiftTemplate $shiftTemplate  Resolved via route model binding.
      * @return \Illuminate\Http\Response      204 No Content.
