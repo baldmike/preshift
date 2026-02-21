@@ -4,35 +4,34 @@
  * have acknowledged the current pre-shift information. Displays a summary
  * grid of total active items across all categories (86'd, specials, push
  * items, announcements) and a table of all users with their acknowledgment
- * progress. Fetches users, pre-shift data, and acknowledgment status in
- * parallel on mount.
- *
- * Note: The per-user acknowledgment count is a placeholder ('-') because
- * the current API only returns the authenticated user's own ack status.
- * A production implementation would require a manager-scoped endpoint
- * that returns ack counts for all users.
+ * progress. Uses the /api/acknowledgments/summary endpoint for per-user data.
  */
 import { ref, onMounted, computed } from 'vue'
 import api from '@/composables/useApi'
 import AppShell from '@/components/layout/AppShell.vue'
 import BadgePill from '@/components/ui/BadgePill.vue'
-import type { User, PreShiftData } from '@/types'
+import type { PreShiftData } from '@/types'
 
-// Shape of a user's acknowledgment status (reserved for future API expansion)
-interface AckStatus {
-  user: User
-  eightySixed: number[]   // IDs of 86'd items this user has acknowledged
-  specials: number[]       // IDs of specials this user has acknowledged
-  pushItems: number[]      // IDs of push items this user has acknowledged
-  announcements: number[]  // IDs of announcements this user has acknowledged
+/** Shape of a single user entry returned by GET /api/acknowledgments/summary */
+interface AckSummaryUser {
+  user_id: number
+  user_name: string
+  role: string
+  total_items: number
+  acknowledged_count: number
+  percentage: number
 }
 
-// Reactive list of all staff users
-const users = ref<User[]>([])
+/** Top-level shape of the GET /api/acknowledgments/summary response */
+interface AckSummary {
+  total_items: number
+  users: AckSummaryUser[]
+}
+
 // Current pre-shift data used to calculate totals for the summary grid
 const preshift = ref<PreShiftData | null>(null)
-// Per-user acknowledgment statuses (currently unused -- see note above)
-const ackStatuses = ref<AckStatus[]>([])
+// Per-user acknowledgment summary from the manager-scoped API
+const summary = ref<AckSummary | null>(null)
 // True while the initial data is being loaded
 const loading = ref(false)
 
@@ -49,34 +48,33 @@ const totalItems = computed(() => {
 })
 
 /**
- * Fetches users, pre-shift data, and acknowledgment status in parallel.
- * The ack status endpoint currently returns only the logged-in user's
- * acks, so ackStatuses remains empty until the API is expanded.
+ * Fetches acknowledgment summary and pre-shift data in parallel.
+ * The summary endpoint returns per-user ack counts; the preshift
+ * endpoint populates the category summary cards at the top.
  */
 async function fetchData() {
   loading.value = true
   try {
-    const [usersRes, preshiftRes, ackRes] = await Promise.all([
-      api.get<User[]>('/api/users'),
+    const [summaryRes, preshiftRes] = await Promise.all([
+      api.get<AckSummary>('/api/acknowledgments/summary'),
       api.get<PreShiftData>('/api/preshift'),
-      api.get('/api/acknowledgments/status'),
     ])
 
-    users.value = usersRes.data
+    summary.value = summaryRes.data
     preshift.value = preshiftRes.data
-
-    // Placeholder: the current API does not provide per-user ack data.
-    // When a manager-scoped endpoint is available, this would be populated
-    // with each user's acknowledged item IDs.
-    ackStatuses.value = []
   } finally {
     loading.value = false
   }
 }
 
-// Placeholder function returning '-' until the API supports per-user ack counts
-function getUserAckCount(user: User): string {
-  return '-'
+/**
+ * Maps an acknowledgment percentage to a BadgePill color.
+ * Green = fully acknowledged, yellow = partial, red = none.
+ */
+function percentageColor(pct: number): 'green' | 'yellow' | 'red' {
+  if (pct === 100) return 'green'
+  if (pct > 0) return 'yellow'
+  return 'red'
 }
 
 // Fetch all data on component mount
@@ -99,7 +97,7 @@ onMounted(fetchData)
             </router-link>
       </div>
 
-      <!-- Summary -->
+      <!-- Summary: one card per content category showing active item counts -->
       <div v-if="preshift" class="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div class="bg-white rounded-lg shadow p-4 text-center">
           <div class="text-2xl font-bold text-red-600">{{ preshift.eighty_sixed.length }}</div>
@@ -119,7 +117,7 @@ onMounted(fetchData)
         </div>
       </div>
 
-      <!-- Users Table -->
+      <!-- Loading spinner while fetching data -->
       <div v-if="loading" class="flex justify-center py-8">
         <svg class="animate-spin h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
@@ -127,7 +125,8 @@ onMounted(fetchData)
         </svg>
       </div>
 
-      <div v-else class="bg-white rounded-lg shadow overflow-hidden">
+      <!-- Per-user acknowledgment table (populated from /api/acknowledgments/summary) -->
+      <div v-else-if="summary" class="bg-white rounded-lg shadow overflow-hidden">
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
             <tr>
@@ -139,19 +138,25 @@ onMounted(fetchData)
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-200">
-            <tr v-for="user in users" :key="user.id">
-              <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ user.name }}</td>
+            <tr v-for="user in summary.users" :key="user.user_id">
+              <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ user.user_name }}</td>
               <td class="px-4 py-3">
                 <BadgePill
                   :label="user.role"
                   :color="user.role === 'admin' ? 'red' : user.role === 'manager' ? 'yellow' : 'blue'"
                 />
               </td>
-              <td class="px-4 py-3 text-center text-sm text-gray-500">
-                {{ getUserAckCount(user) }}
+              <!-- Fraction + color-coded percentage badge (green=100%, yellow=partial, red=0%) -->
+              <td class="px-4 py-3 text-center text-sm">
+                <span class="text-gray-700 font-medium">{{ user.acknowledged_count }} / {{ user.total_items }}</span>
+                <BadgePill
+                  class="ml-2"
+                  :label="`${user.percentage}%`"
+                  :color="percentageColor(user.percentage)"
+                />
               </td>
             </tr>
-            <tr v-if="!users.length">
+            <tr v-if="!summary.users.length">
               <td colspan="3" class="px-4 py-8 text-center text-gray-500">No staff members</td>
             </tr>
           </tbody>

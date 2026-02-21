@@ -89,7 +89,8 @@ function availabilitySummary(availability: Record<string, string[]> | null): str
     if (slots.includes('open')) {
       parts.push(`${DAY_LABELS[d]}`)
     } else {
-      const labels = slots.map(s => s === '10:30' ? '10:30' : '4:30')
+      const slotLabels: Record<string, string> = { '10:30': '10:30', '16:30': '4:30', '18:00': '6:00', '19:00': '7:00' }
+      const labels = slots.map(s => slotLabels[s] ?? s)
       parts.push(`${DAY_LABELS[d]} (${labels.join(', ')})`)
     }
   }

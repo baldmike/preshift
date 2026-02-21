@@ -7,6 +7,7 @@ use App\Models\Announcement;
 use App\Models\EightySixed;
 use App\Models\PushItem;
 use App\Models\Special;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -104,5 +105,122 @@ class AcknowledgmentController extends Controller
             });
 
         return response()->json($acknowledgments);
+    }
+
+    /**
+     * Return a per-user acknowledgment summary for the authenticated manager's location.
+     *
+     * Gathers all currently active acknowledgeable items across the four content
+     * types (86'd items, specials, push items, announcements) scoped to the
+     * manager's location, then counts how many of those each user at the location
+     * has acknowledged. This powers the manager's Acknowledgment Tracker view.
+     *
+     * Response shape:
+     *   {
+     *     "total_items": 12,
+     *     "users": [
+     *       {
+     *         "user_id": 1,
+     *         "user_name": "Jane Doe",
+     *         "role": "server",
+     *         "total_items": 12,
+     *         "acknowledged_count": 10,
+     *         "percentage": 83
+     *       },
+     *       ...
+     *     ]
+     *   }
+     *
+     * Guards against division by zero when no active items exist (returns 0%).
+     *
+     * Route: GET /api/acknowledgments/summary
+     * Middleware: auth:sanctum, location, role:admin,manager
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse  Summary with total_items and per-user ack data.
+     */
+    public function summary(Request $request): JsonResponse
+    {
+        $locationId = $request->user()->location_id;
+
+        // ── Gather IDs of all active acknowledgeable items at this location ──
+        // Each content type has its own "active" criteria:
+        //   - 86'd: not yet restored (restored_at IS NULL)
+        //   - Specials: explicitly marked active (is_active = true)
+        //   - Push Items: explicitly marked active (is_active = true)
+        //   - Announcements: not expired (expires_at IS NULL or in the future)
+        $eightySixedIds = EightySixed::where('location_id', $locationId)
+            ->whereNull('restored_at')
+            ->pluck('id');
+
+        $specialIds = Special::where('location_id', $locationId)
+            ->where('is_active', true)
+            ->pluck('id');
+
+        $pushItemIds = PushItem::where('location_id', $locationId)
+            ->where('is_active', true)
+            ->pluck('id');
+
+        $announcementIds = Announcement::where('location_id', $locationId)
+            ->where(function ($query) {
+                // Include announcements that either never expire or haven't expired yet.
+                $query->whereNull('expires_at')
+                      ->orWhere('expires_at', '>', now());
+            })
+            ->pluck('id');
+
+        // Map each polymorphic model class to its active item IDs.
+        // Used below to count per-user acknowledgments across all four types.
+        $itemMap = [
+            EightySixed::class => $eightySixedIds,
+            Special::class     => $specialIds,
+            PushItem::class    => $pushItemIds,
+            Announcement::class => $announcementIds,
+        ];
+
+        // Total number of active items across all categories.
+        $totalItems = $eightySixedIds->count()
+                    + $specialIds->count()
+                    + $pushItemIds->count()
+                    + $announcementIds->count();
+
+        // ── Build per-user summary ──────────────────────────────────────────
+        // For every user at this location, count how many of the active items
+        // they have acknowledged by querying the polymorphic acknowledgments table.
+        $users = User::where('location_id', $locationId)->get();
+
+        $usersData = $users->map(function (User $user) use ($itemMap, $totalItems) {
+            $acknowledgedCount = 0;
+
+            // For each content type, count how many of the active IDs this user
+            // has a matching acknowledgment record for.
+            foreach ($itemMap as $type => $ids) {
+                if ($ids->isEmpty()) {
+                    continue;
+                }
+
+                $acknowledgedCount += Acknowledgment::where('user_id', $user->id)
+                    ->where('acknowledgable_type', $type)
+                    ->whereIn('acknowledgable_id', $ids)
+                    ->count();
+            }
+
+            return [
+                'user_id'            => $user->id,
+                'user_name'          => $user->name,
+                'role'               => $user->role,
+                'total_items'        => $totalItems,
+                'acknowledged_count' => $acknowledgedCount,
+                // Guard against division by zero when there are no active items.
+                'percentage'         => $totalItems > 0
+                    ? round(($acknowledgedCount / $totalItems) * 100)
+                    : 0,
+            ];
+        });
+
+        return response()->json([
+            'total_items' => $totalItems,
+            'users'       => $usersData,
+        ]);
     }
 }

@@ -6,8 +6,7 @@
  * grid of 86'd items, specials, push items, and announcements, plus a
  * "Today's Schedule" section showing who is working each shift. Subscribes
  * to real-time Reverb events on the location channel so cards update live
- * as managers make changes. Also surfaces quick-nav links to the shift
- * drop board and time-off requests.
+ * as managers make changes.
  */
 import { onMounted, onUnmounted, computed } from 'vue'
 import { usePreshiftStore } from '@/stores/preshift'
@@ -272,28 +271,18 @@ onUnmounted(() => {
         </div>
         <p v-else class="text-gray-600 text-xs text-center py-4">No shifts scheduled today</p>
 
-        <!-- Sub-nav pill links -->
-        <div class="flex items-center gap-2 mt-3 pt-2 border-t border-emerald-500/10">
+        <!-- Sub-nav pill links: secondary navigation to shift drops and time-off -->
+        <div class="flex gap-2 mt-2">
           <router-link
             to="/shift-drops"
-            class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-medium
-                   bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors"
+            class="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-semibold rounded-full bg-amber-500/15 text-amber-400 hover:bg-amber-500/25 transition-colors"
           >
-            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-            </svg>
             Drop Board
           </router-link>
           <router-link
             to="/time-off"
-            class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-medium
-                   bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors"
+            class="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-semibold rounded-full bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 transition-colors"
           >
-            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
             Time Off
           </router-link>
         </div>
