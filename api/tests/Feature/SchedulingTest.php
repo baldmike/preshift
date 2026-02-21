@@ -108,7 +108,6 @@ class SchedulingTest extends TestCase
             'location_id' => $seed['location']->id,
             'name' => 'Lunch',
             'start_time' => '10:30',
-            'end_time' => '15:00',
         ]);
 
         // Create a "Dinner" shift template — starts at 16:00, ends at 23:00.
@@ -116,7 +115,6 @@ class SchedulingTest extends TestCase
             'location_id' => $seed['location']->id,
             'name' => 'Dinner',
             'start_time' => '16:00',
-            'end_time' => '23:00',
         ]);
 
         // Act: authenticate as the manager and request the list of templates.
@@ -136,7 +134,7 @@ class SchedulingTest extends TestCase
      * Test 2: Manager can create a shift template.
      *
      * Verifies that POST /api/shift-templates creates a new ShiftTemplate record
-     * with the correct name, start_time (H:i format), and end_time. The controller
+     * with the correct name and start_time (H:i format). The controller
      * automatically assigns the authenticated user's location_id. Expects a 201
      * Created response with the template data in the JSON body.
      */
@@ -147,19 +145,17 @@ class SchedulingTest extends TestCase
 
         // Act: authenticate as the manager and POST a new shift template.
         // The controller validates name (required|string|max:255),
-        // start_time (required|date_format:H:i), and end_time (required|date_format:H:i).
+        // start_time (required|date_format:H:i).
         $response = $this->actingAs($seed['manager'], 'sanctum')
             ->postJson('/api/shift-templates', [
                 'name' => 'Brunch',
                 'start_time' => '09:00',
-                'end_time' => '14:00',
             ]);
 
         // Assert: 201 Created status, and the returned JSON matches our input.
         $response->assertStatus(201)
             ->assertJsonPath('name', 'Brunch')
-            ->assertJsonPath('start_time', '09:00')
-            ->assertJsonPath('end_time', '14:00');
+            ->assertJsonPath('start_time', '09:00');
 
         // Also verify the record was persisted to the database with the correct
         // location_id (automatically set by the controller from the auth user).
@@ -173,9 +169,8 @@ class SchedulingTest extends TestCase
      * Test 3: Manager can update a shift template.
      *
      * Verifies that PATCH /api/shift-templates/{id} allows a manager to modify
-     * an existing template's name and time range. The controller expects all
-     * three fields (name, start_time, end_time) in the request body since they
-     * are all required in validation.
+     * an existing template's name and start time. The controller expects name
+     * and start_time in the request body since they are required in validation.
      */
     public function test_manager_can_update_shift_template(): void
     {
@@ -186,23 +181,20 @@ class SchedulingTest extends TestCase
             'location_id' => $seed['location']->id,
             'name' => 'Lunch',
             'start_time' => '10:30',
-            'end_time' => '15:00',
         ]);
 
         // Act: authenticate as the manager and PATCH the template with new values.
-        // We're changing the name from "Lunch" to "Late Lunch" and adjusting times.
+        // We're changing the name from "Lunch" to "Late Lunch" and adjusting the start time.
         $response = $this->actingAs($seed['manager'], 'sanctum')
             ->patchJson("/api/shift-templates/{$template->id}", [
                 'name' => 'Late Lunch',
                 'start_time' => '11:00',
-                'end_time' => '15:30',
             ]);
 
         // Assert: 200 OK with the updated values reflected in the JSON response.
         $response->assertOk()
             ->assertJsonPath('name', 'Late Lunch')
-            ->assertJsonPath('start_time', '11:00')
-            ->assertJsonPath('end_time', '15:30');
+            ->assertJsonPath('start_time', '11:00');
 
         // Verify the database record was actually updated (not just returned).
         $this->assertDatabaseHas('shift_templates', [
@@ -227,7 +219,6 @@ class SchedulingTest extends TestCase
             'location_id' => $seed['location']->id,
             'name' => 'Closing',
             'start_time' => '20:00',
-            'end_time' => '02:00',
         ]);
 
         // Act: authenticate as the manager and DELETE the template.
@@ -348,7 +339,6 @@ class SchedulingTest extends TestCase
             'location_id' => $seed['location']->id,
             'name' => 'Lunch',
             'start_time' => '10:30',
-            'end_time' => '15:00',
         ]);
 
         // Create a schedule entry assigning the staff user to the Lunch shift.
@@ -499,7 +489,6 @@ class SchedulingTest extends TestCase
             'location_id' => $seed['location']->id,
             'name' => 'Dinner',
             'start_time' => '16:00',
-            'end_time' => '23:00',
         ]);
 
         // Create a future entry in the published schedule assigned to staff.
@@ -596,7 +585,6 @@ class SchedulingTest extends TestCase
             'location_id' => $seed['location']->id,
             'name' => 'Lunch',
             'start_time' => '10:30',
-            'end_time' => '15:00',
         ]);
 
         // Act: authenticate as the manager and create an entry assigning the
@@ -654,7 +642,6 @@ class SchedulingTest extends TestCase
             'location_id' => $seed['location']->id,
             'name' => 'Dinner',
             'start_time' => '16:00',
-            'end_time' => '23:00',
         ]);
 
         $entry = ScheduleEntry::create([
@@ -700,7 +687,6 @@ class SchedulingTest extends TestCase
             'location_id' => $seed['location']->id,
             'name' => 'Lunch',
             'start_time' => '10:30',
-            'end_time' => '15:00',
         ]);
 
         // Act: authenticate as the staff user and attempt to create an entry.
@@ -785,7 +771,6 @@ class SchedulingTest extends TestCase
             'location_id' => $location->id,
             'name' => 'Dinner',
             'start_time' => '16:00',
-            'end_time' => '23:00',
         ]);
 
         // Create a published schedule — shift drops only make sense for published schedules

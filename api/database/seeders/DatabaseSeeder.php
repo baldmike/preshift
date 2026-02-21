@@ -420,21 +420,18 @@ class DatabaseSeeder extends Seeder
             'location_id' => $location->id,
             'name' => 'Lunch',
             'start_time' => '10:30:00',
-            'end_time' => '16:00:00',
         ]);
 
         $dinner = ShiftTemplate::create([
             'location_id' => $location->id,
             'name' => 'Dinner',
             'start_time' => '16:30:00',
-            'end_time' => '23:00:00',
         ]);
 
         $close = ShiftTemplate::create([
             'location_id' => $location->id,
             'name' => 'Close',
             'start_time' => '18:00:00',
-            'end_time' => '00:00:00',
         ]);
 
         /*

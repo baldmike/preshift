@@ -151,14 +151,12 @@ class MissingCoverageTest extends TestCase
             'location_id' => $seed['locationA']->id,
             'name' => 'Lunch',
             'start_time' => '10:30',
-            'end_time' => '15:00',
         ]);
 
         $dinnerTemplate = ShiftTemplate::create([
             'location_id' => $seed['locationA']->id,
             'name' => 'Dinner',
             'start_time' => '16:00',
-            'end_time' => '23:00',
         ]);
 
         $entry = ScheduleEntry::create([
@@ -205,7 +203,6 @@ class MissingCoverageTest extends TestCase
             'location_id' => $seed['locationA']->id,
             'name' => 'Lunch',
             'start_time' => '10:30',
-            'end_time' => '15:00',
         ]);
 
         $entryA = ScheduleEntry::create([
@@ -250,7 +247,6 @@ class MissingCoverageTest extends TestCase
             'location_id' => $seed['locationA']->id,
             'name' => 'Dinner',
             'start_time' => '16:00',
-            'end_time' => '23:00',
         ]);
 
         $entry = ScheduleEntry::create([
@@ -302,7 +298,6 @@ class MissingCoverageTest extends TestCase
             'location_id' => $seed['locationA']->id,
             'name' => 'Dinner',
             'start_time' => '16:00',
-            'end_time' => '23:00',
         ]);
 
         // Entry for staffA
@@ -364,7 +359,6 @@ class MissingCoverageTest extends TestCase
             'location_id' => $seed['locationA']->id,
             'name' => 'Dinner',
             'start_time' => '16:00',
-            'end_time' => '23:00',
         ]);
 
         $entryA = ScheduleEntry::create([
@@ -545,7 +539,6 @@ class MissingCoverageTest extends TestCase
             'location_id' => $seed['locationA']->id,
             'name' => 'Lunch',
             'start_time' => '10:30',
-            'end_time' => '15:00',
         ]);
 
         $response = $this->actingAs($seed['managerB'], 'sanctum')
@@ -589,7 +582,6 @@ class MissingCoverageTest extends TestCase
             'location_id' => $seed['locationA']->id,
             'name' => 'Dinner',
             'start_time' => '16:00',
-            'end_time' => '23:00',
         ]);
 
         $entry = ScheduleEntry::create([

@@ -55,13 +55,13 @@ const formattedDate = computed(() => {
 })
 
 /**
- * Formatted time range string used as the card heading (e.g. "10:30 AM – 3:00 PM").
+ * Formatted start time string used as the card heading (e.g. "10:30 AM").
  * Falls back to "Shift" when the shift_template relationship is not loaded.
  */
 const timeRange = computed(() => {
   const st = props.entry.shift_template
   if (!st) return 'Shift'
-  return `${formatShiftTime(st.start_time)} – ${formatShiftTime(st.end_time)}`
+  return formatShiftTime(st.start_time)
 })
 
 /**

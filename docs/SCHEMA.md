@@ -138,7 +138,6 @@
 | location_id | FK → locations | |
 | name | varchar(255) | "Lunch", "Dinner", etc. |
 | start_time | time | e.g. 10:30:00 |
-| end_time | time | e.g. 15:00:00 |
 | created_at | timestamp | |
 | updated_at | timestamp | |
 

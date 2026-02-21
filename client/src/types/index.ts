@@ -311,8 +311,10 @@ export interface PreShiftData {
 // ─── Scheduling System Types ─────────────────────────────────────────────
 
 /**
- * A reusable shift definition (e.g. "Lunch 10:30–3:00").
+ * A reusable shift definition (e.g. "Lunch 10:30").
  * Created once per location, referenced when building weekly schedules.
+ * Only stores start_time — shift names already communicate what the shift
+ * is, and rigid end times don't reflect how restaurant shifts actually work.
  */
 export interface ShiftTemplate {
   /** Primary key */
@@ -323,8 +325,6 @@ export interface ShiftTemplate {
   name: string
   /** HH:MM:SS when the shift begins */
   start_time: string
-  /** HH:MM:SS when the shift ends */
-  end_time: string
   /** ISO-8601 creation timestamp */
   created_at: string
   /** ISO-8601 last-update timestamp */

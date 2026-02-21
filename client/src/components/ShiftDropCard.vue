@@ -55,7 +55,7 @@ function formatShiftTime(time: string): string {
 const timeRange = computed(() => {
   const st = props.drop.schedule_entry?.shift_template
   if (!st) return ''
-  return `${formatShiftTime(st.start_time)} – ${formatShiftTime(st.end_time)}`
+  return formatShiftTime(st.start_time)
 })
 
 const volunteerCount = computed(() => props.drop.volunteers?.length ?? 0)

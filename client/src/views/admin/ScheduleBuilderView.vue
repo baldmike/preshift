@@ -66,7 +66,6 @@ const addingEntry = ref(false)
 // Form fields for adding a new schedule entry
 const entryForm = ref({
   start_time: '',
-  end_time: '',
   date: '',
   user_id: null as number | null,
   role: 'server' as 'server' | 'bartender',
@@ -275,7 +274,6 @@ function handleAddEntry(payload: { shiftTemplateId: number; date: string }) {
   const tmpl = shiftTemplates.value.find(t => t.id === payload.shiftTemplateId)
   entryForm.value = {
     start_time: tmpl ? tmpl.start_time.substring(0, 5) : '',
-    end_time: tmpl ? tmpl.end_time.substring(0, 5) : '',
     date: payload.date,
     user_id: null,
     role: 'server',
@@ -302,22 +300,20 @@ function formatTimeLabel(time: string): string {
  * then creates the entry. On success, re-fetches the active schedule.
  */
 async function saveEntry() {
-  if (!activeSchedule.value || !entryForm.value.user_id || !entryForm.value.start_time || !entryForm.value.end_time) return
+  if (!activeSchedule.value || !entryForm.value.user_id || !entryForm.value.start_time) return
   addingEntry.value = true
   try {
-    // Find an existing template with matching start/end times
+    // Find an existing template with matching start time
     let template = shiftTemplates.value.find(
       t => t.start_time.substring(0, 5) === entryForm.value.start_time
-        && t.end_time.substring(0, 5) === entryForm.value.end_time
     )
 
-    // If none found, auto-create one named after the time range
+    // If none found, auto-create one named after the start time
     if (!template) {
-      const name = `${formatTimeLabel(entryForm.value.start_time)} – ${formatTimeLabel(entryForm.value.end_time)}`
+      const name = formatTimeLabel(entryForm.value.start_time)
       const { data } = await api.post<ShiftTemplate>('/api/shift-templates', {
         name,
         start_time: entryForm.value.start_time,
-        end_time: entryForm.value.end_time,
       })
       shiftTemplates.value.push(data)
       template = data
@@ -612,31 +608,17 @@ onMounted(() => {
                 Add Entry — {{ entryForm.date }}
               </h3>
               <form @submit.prevent="saveEntry" class="space-y-3">
-                <div class="grid grid-cols-2 gap-3">
-                  <!-- Start Time -->
-                  <div>
-                    <label class="block text-[10px] font-medium text-gray-500 uppercase tracking-wide mb-1">Start Time</label>
-                    <select
-                      v-model="entryForm.start_time"
-                      required
-                      class="w-full px-3 py-2 text-sm text-gray-200 bg-white/5 border border-white/10 rounded-md outline-none focus:border-white/25"
-                    >
-                      <option value="" disabled>Select time...</option>
-                      <option v-for="opt in timeOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-                    </select>
-                  </div>
-                  <!-- End Time -->
-                  <div>
-                    <label class="block text-[10px] font-medium text-gray-500 uppercase tracking-wide mb-1">End Time</label>
-                    <select
-                      v-model="entryForm.end_time"
-                      required
-                      class="w-full px-3 py-2 text-sm text-gray-200 bg-white/5 border border-white/10 rounded-md outline-none focus:border-white/25"
-                    >
-                      <option value="" disabled>Select time...</option>
-                      <option v-for="opt in timeOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-                    </select>
-                  </div>
+                <!-- Start Time -->
+                <div>
+                  <label class="block text-[10px] font-medium text-gray-500 uppercase tracking-wide mb-1">Start Time</label>
+                  <select
+                    v-model="entryForm.start_time"
+                    required
+                    class="w-full px-3 py-2 text-sm text-gray-200 bg-white/5 border border-white/10 rounded-md outline-none focus:border-white/25"
+                  >
+                    <option value="" disabled>Select time...</option>
+                    <option v-for="opt in timeOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+                  </select>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                   <!-- User selector -->

@@ -553,7 +553,6 @@ class ModelTest extends TestCase
             'location_id' => $location->id,
             'name'        => 'Dinner',
             'start_time'  => '16:00:00',
-            'end_time'    => '23:00:00',
         ]);
 
         // Create a published schedule with a publisher.
@@ -655,7 +654,6 @@ class ModelTest extends TestCase
             'location_id' => $location->id,
             'name'        => 'Lunch',
             'start_time'  => '10:30:00',
-            'end_time'    => '15:00:00',
         ]);
         $schedule = Schedule::create([
             'location_id' => $location->id,
@@ -708,7 +706,6 @@ class ModelTest extends TestCase
             'location_id' => $location->id,
             'name'        => 'Dinner',
             'start_time'  => '16:00:00',
-            'end_time'    => '23:00:00',
         ]);
         $schedule = Schedule::create([
             'location_id' => $location->id,
@@ -758,7 +755,6 @@ class ModelTest extends TestCase
             'location_id' => $location->id,
             'name'        => 'Brunch',
             'start_time'  => '09:00:00',
-            'end_time'    => '14:00:00',
         ]);
         $schedule = Schedule::create([
             'location_id' => $location->id,
@@ -805,7 +801,6 @@ class ModelTest extends TestCase
             'location_id' => $location->id,
             'name'        => 'Dinner',
             'start_time'  => '16:00:00',
-            'end_time'    => '23:00:00',
         ]);
         $schedule = Schedule::create([
             'location_id' => $location->id,
@@ -868,7 +863,6 @@ class ModelTest extends TestCase
             'location_id' => $location->id,
             'name'        => 'Lunch',
             'start_time'  => '10:30:00',
-            'end_time'    => '15:00:00',
         ]);
         $schedule = Schedule::create([
             'location_id' => $location->id,
@@ -922,7 +916,6 @@ class ModelTest extends TestCase
             'location_id' => $location->id,
             'name'        => 'Dinner',
             'start_time'  => '16:00:00',
-            'end_time'    => '23:00:00',
         ]);
         $schedule = Schedule::create([
             'location_id' => $location->id,
@@ -982,7 +975,6 @@ class ModelTest extends TestCase
             'location_id' => $location->id,
             'name'        => 'Dinner',
             'start_time'  => '16:00:00',
-            'end_time'    => '23:00:00',
         ]);
         $schedule = Schedule::create([
             'location_id' => $location->id,
@@ -1037,7 +1029,6 @@ class ModelTest extends TestCase
             'location_id' => $location->id,
             'name'        => 'Lunch',
             'start_time'  => '10:30:00',
-            'end_time'    => '15:00:00',
         ]);
         $schedule = Schedule::create([
             'location_id' => $location->id,

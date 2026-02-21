@@ -46,7 +46,7 @@ const todayEntries = computed(() => {
 
 /**
  * Today's entries grouped by time slot for display.
- * Each group has a `template` (with start_time/end_time for the heading)
+ * Each group has a `template` (with start_time for the heading)
  * and an `entries` array of staff assigned to that slot.
  * Uses the eagerly-loaded shift_template from each entry.
  */
@@ -250,7 +250,7 @@ onUnmounted(() => {
           >
             <div class="flex items-center gap-2 mb-1.5">
               <span v-if="group.template" class="text-xs font-bold text-emerald-300">
-                {{ formatShiftTime(group.template.start_time) }} – {{ formatShiftTime(group.template.end_time) }}
+                {{ formatShiftTime(group.template.start_time) }}
               </span>
               <span v-else class="text-xs font-bold text-emerald-300">Shift</span>
             </div>

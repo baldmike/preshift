@@ -226,7 +226,7 @@ class ConfigAndPasswordTest extends TestCase
     {
         ['superadmin' => $superadmin, 'location' => $location] = $this->seedUsers();
 
-        $template = ShiftTemplate::create(['name' => 'Lunch', 'location_id' => $location->id, 'start_time' => '10:30', 'end_time' => '16:00']);
+        $template = ShiftTemplate::create(['name' => 'Lunch', 'location_id' => $location->id, 'start_time' => '10:30']);
         $schedule = Schedule::create(['location_id' => $location->id, 'week_start' => '2026-02-16', 'status' => 'draft']);
         ScheduleEntry::create([
             'schedule_id' => $schedule->id,
