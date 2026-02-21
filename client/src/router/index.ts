@@ -91,7 +91,24 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/staff/MyScheduleView.vue'),
     meta: { requiresAuth: true },
   },
-  // Staff shift-drop and time-off routes removed for now
+  {
+    path: '/profile',
+    name: 'Profile',
+    component: () => import('@/views/staff/ProfileView.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/shift-drops',
+    name: 'ShiftDropBoard',
+    component: () => import('@/views/staff/ShiftDropBoardView.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/time-off',
+    name: 'TimeOffRequest',
+    component: () => import('@/views/staff/TimeOffRequestView.vue'),
+    meta: { requiresAuth: true },
+  },
 
   // -----------------------------------------------------------------------
   // Management routes (admin + manager roles only)
