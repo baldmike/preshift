@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Events\TimeOffResolved;
 use App\Http\Requests\StoreTimeOffRequestRequest;
+use App\Http\Resources\TimeOffRequestResource;
 use App\Models\TimeOffRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -36,7 +37,7 @@ class TimeOffRequestController extends Controller
             $query->where('user_id', $user->id);
         }
 
-        return response()->json($query->get());
+        return response()->json(TimeOffRequestResource::collection($query->get()));
     }
 
     /**
@@ -57,7 +58,7 @@ class TimeOffRequestController extends Controller
 
         $timeOff->load('user');
 
-        return response()->json($timeOff, 201);
+        return response()->json(new TimeOffRequestResource($timeOff), 201);
     }
 
     /**
@@ -82,7 +83,7 @@ class TimeOffRequestController extends Controller
 
         broadcast(new TimeOffResolved($timeOffRequest))->toOthers();
 
-        return response()->json($timeOffRequest);
+        return response()->json(new TimeOffRequestResource($timeOffRequest));
     }
 
     /**
@@ -107,6 +108,6 @@ class TimeOffRequestController extends Controller
 
         broadcast(new TimeOffResolved($timeOffRequest))->toOthers();
 
-        return response()->json($timeOffRequest);
+        return response()->json(new TimeOffRequestResource($timeOffRequest));
     }
 }

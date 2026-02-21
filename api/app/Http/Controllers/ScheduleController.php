@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Events\SchedulePublished;
 use App\Http\Requests\StoreScheduleRequest;
+use App\Http\Resources\ScheduleEntryResource;
+use App\Http\Resources\ScheduleResource;
 use App\Models\Schedule;
 use App\Models\ScheduleEntry;
 use Illuminate\Http\JsonResponse;
@@ -32,7 +34,7 @@ class ScheduleController extends Controller
             ->orderBy('week_start')
             ->get();
 
-        return response()->json($schedules);
+        return response()->json(ScheduleResource::collection($schedules));
     }
 
     /**
@@ -45,7 +47,7 @@ class ScheduleController extends Controller
     {
         $schedule->load('entries.user', 'entries.shiftTemplate', 'publisher');
 
-        return response()->json($schedule);
+        return response()->json(new ScheduleResource($schedule));
     }
 
     /**
@@ -63,7 +65,7 @@ class ScheduleController extends Controller
             'status'      => 'draft',
         ]);
 
-        return response()->json($schedule, 201);
+        return response()->json(new ScheduleResource($schedule), 201);
     }
 
     /**
@@ -78,7 +80,7 @@ class ScheduleController extends Controller
 
         $schedule->update($validated);
 
-        return response()->json($schedule);
+        return response()->json(new ScheduleResource($schedule));
     }
 
     /**
@@ -97,7 +99,7 @@ class ScheduleController extends Controller
 
         broadcast(new SchedulePublished($schedule))->toOthers();
 
-        return response()->json($schedule);
+        return response()->json(new ScheduleResource($schedule));
     }
 
     /**
@@ -110,7 +112,7 @@ class ScheduleController extends Controller
     {
         $schedule->update(['status' => 'draft']);
 
-        return response()->json($schedule);
+        return response()->json(new ScheduleResource($schedule));
     }
 
     /**
@@ -130,6 +132,6 @@ class ScheduleController extends Controller
             ->orderBy('date')
             ->get();
 
-        return response()->json($entries);
+        return response()->json(ScheduleEntryResource::collection($entries));
     }
 }

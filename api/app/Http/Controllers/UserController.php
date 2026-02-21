@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateMyAvailabilityRequest;
 use App\Http\Requests\UpdateUserRequest;
+use App\Http\Resources\UserResource;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -34,7 +35,7 @@ class UserController extends Controller
             $users = User::where('location_id', $user->location_id)->get();
         }
 
-        return response()->json($users);
+        return response()->json(UserResource::collection($users));
     }
 
     /**
@@ -55,7 +56,7 @@ class UserController extends Controller
 
         $user = User::create($validated);
 
-        return response()->json($user, 201);
+        return response()->json(new UserResource($user), 201);
     }
 
     /**
@@ -77,7 +78,7 @@ class UserController extends Controller
 
         $user->update($validated);
 
-        return response()->json($user);
+        return response()->json(new UserResource($user));
     }
 
     /**
@@ -93,7 +94,7 @@ class UserController extends Controller
         $user = $request->user();
         $user->update(['availability' => $validated['availability']]);
 
-        return response()->json($user);
+        return response()->json(new UserResource($user));
     }
 
     /**

@@ -2,6 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\AnnouncementResource;
+use App\Http\Resources\EightySixedResource;
+use App\Http\Resources\PushItemResource;
+use App\Http\Resources\SpecialResource;
 use App\Models\Announcement;
 use App\Models\EightySixed;
 use App\Models\PushItem;
@@ -80,10 +84,10 @@ class PreShiftController extends Controller
 
         // Return all pre-shift data in a single consolidated response.
         return response()->json([
-            'eighty_sixed' => $eightySixed,
-            'specials' => $specials,
-            'push_items' => $pushItems,
-            'announcements' => $announcements,
+            'eighty_sixed' => EightySixedResource::collection($eightySixed),
+            'specials' => SpecialResource::collection($specials),
+            'push_items' => PushItemResource::collection($pushItems),
+            'announcements' => AnnouncementResource::collection($announcements),
             'acknowledgments' => $acknowledgments,
         ]);
     }

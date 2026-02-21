@@ -7,6 +7,7 @@ use App\Events\SpecialDeleted;
 use App\Events\SpecialLowStock;
 use App\Events\SpecialUpdated;
 use App\Http\Requests\StoreSpecialRequest;
+use App\Http\Resources\SpecialResource;
 use App\Models\Special;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -38,7 +39,7 @@ class SpecialController extends Controller
             ->with('menuItem', 'creator')
             ->get();
 
-        return response()->json($specials);
+        return response()->json(SpecialResource::collection($specials));
     }
 
     /**
@@ -59,7 +60,7 @@ class SpecialController extends Controller
 
         broadcast(new SpecialCreated($special))->toOthers();
 
-        return response()->json($special, 201);
+        return response()->json(new SpecialResource($special), 201);
     }
 
     /**
@@ -77,7 +78,7 @@ class SpecialController extends Controller
 
         broadcast(new SpecialUpdated($special))->toOthers();
 
-        return response()->json($special);
+        return response()->json(new SpecialResource($special));
     }
 
     /**
@@ -101,7 +102,7 @@ class SpecialController extends Controller
             broadcast(new SpecialLowStock($special));
         }
 
-        return response()->json($special);
+        return response()->json(new SpecialResource($special));
     }
 
     /**
