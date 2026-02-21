@@ -4,13 +4,31 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
+/**
+ * Form request for creating a new user.
+ *
+ * Used by UserController::store(). Validates required fields like name,
+ * unique email, password (min 8 chars), and role (admin, manager, server,
+ * or bartender), plus optional location_id, phone, and nested availability
+ * array with time-slot values.
+ */
 class StoreUserRequest extends FormRequest
 {
+    /**
+     * Determine if the user is authorized to make this request.
+     *
+     * @return bool
+     */
     public function authorize(): bool
     {
         return true;
     }
 
+    /**
+     * Get the validation rules that apply to the request.
+     *
+     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     */
     public function rules(): array
     {
         return [
