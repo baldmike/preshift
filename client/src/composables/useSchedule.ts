@@ -13,10 +13,12 @@ import type { ScheduleEntry } from '@/types'
 export function useSchedule() {
   const store = useScheduleStore()
 
+  /** The user's next upcoming shift entry, or null if none. */
   const nextShift = computed(() => {
     return store.myShifts.length > 0 ? store.myShifts[0] : null
   })
 
+  /** Monday–Sunday ISO date strings for the current calendar week. */
   const currentWeekRange = computed(() => {
     const today = new Date()
     const jsDay = today.getDay()
@@ -34,6 +36,7 @@ export function useSchedule() {
     return { monday: toISO(monday), sunday: toISO(sunday) }
   })
 
+  /** The user's shifts for the current week, grouped by ISO date string. */
   const currentWeekShifts = computed<Record<string, ScheduleEntry[]>>(() => {
     const { monday, sunday } = currentWeekRange.value
     const result: Record<string, ScheduleEntry[]> = {}
@@ -61,6 +64,7 @@ export function useSchedule() {
     return store.timeOffRequests.filter((r) => r.status === 'pending').length
   })
 
+  /** Format a 24h time string (e.g. "14:30") into 12h display (e.g. "2:30 PM"). */
   function formatShiftTime(time: string): string {
     const [h, m] = time.split(':').map(Number)
     const period = h >= 12 ? 'PM' : 'AM'
@@ -68,6 +72,7 @@ export function useSchedule() {
     return `${hour}:${String(m).padStart(2, '0')} ${period}`
   }
 
+  /** Format a week_start date into a human-readable range like "Feb 17 – Feb 23". */
   function formatWeekLabel(weekStart: string): string {
     const start = new Date(weekStart.split('T')[0] + 'T00:00:00')
     const end = new Date(start)

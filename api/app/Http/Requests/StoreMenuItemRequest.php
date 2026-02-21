@@ -4,13 +4,31 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
+/**
+ * Form request for creating or updating a menu item.
+ *
+ * Used by MenuItemController::store() and MenuItemController::update().
+ * Validates required fields like name and type (food, drink, or both),
+ * plus optional description, price, category_id, is_new, is_active,
+ * and allergens array.
+ */
 class StoreMenuItemRequest extends FormRequest
 {
+    /**
+     * Determine if the user is authorized to make this request.
+     *
+     * @return bool
+     */
     public function authorize(): bool
     {
         return true;
     }
 
+    /**
+     * Get the validation rules that apply to the request.
+     *
+     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     */
     public function rules(): array
     {
         return [

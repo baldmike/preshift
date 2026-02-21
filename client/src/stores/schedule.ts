@@ -30,27 +30,31 @@ export const useScheduleStore = defineStore('schedule', () => {
 
   // ── Fetch actions ──────────────────────────────────────────────────────
 
+  /** Fetch all shift templates for the current location. */
   async function fetchShiftTemplates() {
     const { data } = await api.get<ShiftTemplate[]>('/api/shift-templates')
     shiftTemplates.value = data
   }
 
+  /** Fetch all schedules for the current location. */
   async function fetchSchedules() {
     const { data } = await api.get<Schedule[]>('/api/schedules')
     schedules.value = data
   }
 
+  /** Fetch a single schedule by ID, including its entries. */
   async function fetchSchedule(id: number) {
     const { data } = await api.get<Schedule>(`/api/schedules/${id}`)
     currentSchedule.value = data
   }
 
+  /** Fetch the authenticated user's upcoming shift entries. */
   async function fetchMyShifts() {
     const { data } = await api.get<ScheduleEntry[]>('/api/my-shifts')
     myShifts.value = data
   }
 
-  /** Fetch the published schedule for the current week (if any) */
+  /** Fetch the published schedule for the current week (if any). */
   async function fetchCurrentWeekSchedule() {
     try {
       const { data } = await api.get<Schedule[]>('/api/schedules')
@@ -76,11 +80,13 @@ export const useScheduleStore = defineStore('schedule', () => {
     }
   }
 
+  /** Fetch all shift drop requests visible to the current user. */
   async function fetchShiftDrops() {
     const { data } = await api.get<ShiftDrop[]>('/api/shift-drops')
     shiftDrops.value = data
   }
 
+  /** Fetch all time-off requests visible to the current user. */
   async function fetchTimeOffRequests() {
     const { data } = await api.get<TimeOffRequest[]>('/api/time-off-requests')
     timeOffRequests.value = data
@@ -88,6 +94,7 @@ export const useScheduleStore = defineStore('schedule', () => {
 
   // ── Realtime mutations ─────────────────────────────────────────────────
 
+  /** Handle a SchedulePublished Reverb event by upserting the schedule and refreshing shifts. */
   function onSchedulePublished(schedule: Schedule) {
     const idx = schedules.value.findIndex((s) => s.id === schedule.id)
     if (idx !== -1) {
@@ -98,6 +105,7 @@ export const useScheduleStore = defineStore('schedule', () => {
     fetchMyShifts()
   }
 
+  /** Insert or update a shift drop in the local store (used by Reverb events). */
   function upsertShiftDrop(drop: ShiftDrop) {
     const idx = shiftDrops.value.findIndex((d) => d.id === drop.id)
     if (idx !== -1) {
@@ -107,6 +115,7 @@ export const useScheduleStore = defineStore('schedule', () => {
     }
   }
 
+  /** Insert or update a time-off request in the local store (used by Reverb events). */
   function upsertTimeOffRequest(request: TimeOffRequest) {
     const idx = timeOffRequests.value.findIndex((r) => r.id === request.id)
     if (idx !== -1) {
