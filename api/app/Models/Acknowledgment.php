@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
@@ -29,6 +30,8 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
  */
 class Acknowledgment extends Model
 {
+    use HasFactory;
+
     /**
      * Disable automatic created_at / updated_at columns.
      * This model only uses the explicit acknowledged_at timestamp.
