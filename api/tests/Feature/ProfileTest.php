@@ -8,10 +8,23 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
+/**
+ * Feature tests for PUT /api/profile.
+ *
+ * This endpoint lets any authenticated user update their own name and
+ * availability. It must NOT allow changes to sensitive fields like role,
+ * email, or location_id. Tests cover authentication, each updatable field,
+ * the safety guard on restricted fields, and the response shape.
+ */
 class ProfileTest extends TestCase
 {
     use RefreshDatabase;
 
+    /**
+     * Seed a location with one server user for profile tests.
+     *
+     * @return array{location: Location, staff: User}
+     */
     private function seedLocationAndUsers(): array
     {
         $location = Location::create([
@@ -31,6 +44,9 @@ class ProfileTest extends TestCase
         return compact('location', 'staff');
     }
 
+    /**
+     * Verify that unauthenticated requests receive 401 Unauthorized.
+     */
     public function test_unauthenticated_cannot_update_profile(): void
     {
         $response = $this->putJson('/api/profile', ['name' => 'New Name']);
@@ -38,6 +54,9 @@ class ProfileTest extends TestCase
         $response->assertStatus(401);
     }
 
+    /**
+     * Verify that an authenticated user can update their display name.
+     */
     public function test_update_name(): void
     {
         $seed = $this->seedLocationAndUsers();
@@ -48,10 +67,14 @@ class ProfileTest extends TestCase
         $response->assertOk()
             ->assertJsonPath('name', 'Updated Name');
 
+        // Confirm the change persisted to the database.
         $seed['staff']->refresh();
         $this->assertEquals('Updated Name', $seed['staff']->name);
     }
 
+    /**
+     * Verify that an authenticated user can update their weekly availability.
+     */
     public function test_update_availability(): void
     {
         $seed = $this->seedLocationAndUsers();
@@ -69,6 +92,11 @@ class ProfileTest extends TestCase
             ->assertJsonPath('availability.tuesday', ['open']);
     }
 
+    /**
+     * Verify that sending role, email, or location_id in the request body
+     * has no effect -- these fields are not in the validation whitelist
+     * and are silently ignored.
+     */
     public function test_ignores_role_email_and_location_id(): void
     {
         $seed = $this->seedLocationAndUsers();
@@ -76,22 +104,27 @@ class ProfileTest extends TestCase
         $response = $this->actingAs($seed['staff'], 'sanctum')
             ->putJson('/api/profile', [
                 'name' => 'New Name',
-                'role' => 'admin',
-                'email' => 'hacker@evil.com',
-                'location_id' => 999,
+                'role' => 'admin',            // Should be ignored
+                'email' => 'hacker@evil.com', // Should be ignored
+                'location_id' => 999,         // Should be ignored
             ]);
 
         $response->assertOk()
             ->assertJsonPath('name', 'New Name')
-            ->assertJsonPath('role', 'server')
-            ->assertJsonPath('email', 'server@test.com');
+            ->assertJsonPath('role', 'server')           // Unchanged
+            ->assertJsonPath('email', 'server@test.com'); // Unchanged
 
+        // Double-check the database wasn't modified.
         $seed['staff']->refresh();
         $this->assertEquals('server', $seed['staff']->role);
         $this->assertEquals('server@test.com', $seed['staff']->email);
         $this->assertEquals($seed['location']->id, $seed['staff']->location_id);
     }
 
+    /**
+     * Verify the response includes the user's location relationship
+     * so the frontend can refresh its auth store in one call.
+     */
     public function test_returns_location_relationship(): void
     {
         $seed = $this->seedLocationAndUsers();

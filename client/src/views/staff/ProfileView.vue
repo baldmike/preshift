@@ -1,8 +1,13 @@
 <script setup lang="ts">
 /**
- * ProfileView -- staff profile page for editing name and availability.
- * Read-only display for email, role, and location. Uses the same
- * AvailabilityGrid component as MyScheduleView.
+ * ProfileView -- staff profile page for viewing and editing personal info.
+ *
+ * Read-only display: email, role (badge), location name.
+ * Editable inline: name (pencil icon toggle), availability (AvailabilityGrid).
+ *
+ * All edits are saved via PUT /api/profile, which only accepts `name` and
+ * `availability` -- role, email, and location_id are silently ignored by
+ * the backend even if tampered with in the request body.
  */
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
@@ -14,20 +19,30 @@ import AvailabilityGrid from '@/components/AvailabilityGrid.vue'
 const authStore = useAuthStore()
 
 // ── Name editing ────────────────────────────────────────────────────
+// Controls whether the name field is in display or edit mode.
 const editingName = ref(false)
+// Temporary input value for the name field while editing.
 const nameInput = ref('')
+// True while the PUT /api/profile call for name is in-flight.
 const savingName = ref(false)
 
+/** Enter name edit mode with the current name pre-filled. */
 function startEditName() {
   nameInput.value = authStore.user?.name || ''
   editingName.value = true
 }
 
+/**
+ * Save the edited name via PUT /api/profile.
+ * Updates the auth store with the response so the TopBar reflects
+ * the change immediately without a page reload.
+ */
 async function saveName() {
   if (!nameInput.value.trim()) return
   savingName.value = true
   try {
     const { data } = await api.put('/api/profile', { name: nameInput.value.trim() })
+    // Update the auth store so the TopBar initials and dropdown name refresh.
     authStore.user = data
     editingName.value = false
     toast('Name updated', 'success')
@@ -39,30 +54,45 @@ async function saveName() {
 }
 
 // ── Availability ────────────────────────────────────────────────────
+// Reuses the same AvailabilityGrid component and pattern from MyScheduleView.
 const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const
 
+/** Build an empty availability map (no slots selected for any day). */
 function emptyAvailability(): Record<string, string[]> {
   return Object.fromEntries(DAYS.map(d => [d, []]))
 }
 
+// The working copy of availability bound to the AvailabilityGrid v-model.
 const availability = ref<Record<string, string[]>>(emptyAvailability())
+// True while the PUT /api/profile call for availability is in-flight.
 const savingAvailability = ref(false)
+// Controls whether the availability grid is expanded or collapsed.
 const editingAvailability = ref(false)
 
+/** Check if the user has any availability slots set. */
 function hasAvailability(): boolean {
   const a = authStore.user?.availability
   if (!a) return false
   return DAYS.some(d => (a[d] ?? []).length > 0)
 }
 
+/**
+ * Hydrate the local availability ref from the auth store's user.
+ * If availability is already set, start with the grid collapsed.
+ */
 function loadAvailability() {
   const user = authStore.user
   if (user?.availability) {
     availability.value = { ...emptyAvailability(), ...user.availability }
   }
+  // Start collapsed if availability already set, expanded if not.
   editingAvailability.value = !hasAvailability()
 }
 
+/**
+ * Save availability via PUT /api/profile.
+ * Updates the auth store with the full user response.
+ */
 async function saveAvailability() {
   savingAvailability.value = true
   try {
@@ -77,10 +107,12 @@ async function saveAvailability() {
   }
 }
 
+/** Dispatch a global toast notification via CustomEvent. */
 function toast(message: string, type: string) {
   window.dispatchEvent(new CustomEvent('toast', { detail: { message, type } }))
 }
 
+// Hydrate availability from the auth store on component mount.
 onMounted(loadAvailability)
 </script>
 
@@ -100,13 +132,14 @@ onMounted(loadAvailability)
         <p class="text-xs text-gray-500 mt-0.5">Manage your name and availability</p>
       </div>
 
-      <!-- Profile Info -->
+      <!-- Profile Info Card -->
       <section class="rounded-xl border border-white/[0.06] bg-white/[0.03] p-4 space-y-4">
 
-        <!-- Name (editable) -->
+        <!-- Name (editable via pencil icon toggle) -->
         <div class="flex items-center justify-between">
           <div>
             <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Name</label>
+            <!-- Display mode: show name + pencil icon to enter edit mode -->
             <div v-if="!editingName" class="flex items-center gap-2 mt-0.5">
               <span class="text-sm text-white font-medium">{{ authStore.user?.name }}</span>
               <button
@@ -119,6 +152,7 @@ onMounted(loadAvailability)
                 </svg>
               </button>
             </div>
+            <!-- Edit mode: inline text input with save/cancel buttons -->
             <div v-else class="flex items-center gap-2 mt-0.5">
               <input
                 v-model="nameInput"
@@ -171,8 +205,9 @@ onMounted(loadAvailability)
         </div>
       </section>
 
-      <!-- Availability Section -->
+      <!-- Availability Section (reuses AvailabilityGrid from MyScheduleView) -->
       <section class="rounded-xl border border-white/[0.06] bg-white/[0.03] p-4 space-y-3">
+        <!-- Collapsed state: summary text + edit button -->
         <div v-if="!editingAvailability" class="flex items-center justify-between">
           <div>
             <h2 class="text-sm font-bold text-gray-400 uppercase tracking-wide">My Availability</h2>
@@ -191,6 +226,7 @@ onMounted(loadAvailability)
           </button>
         </div>
 
+        <!-- Expanded state: full interactive grid editor -->
         <template v-else>
           <div>
             <h2 class="text-sm font-bold text-gray-400 uppercase tracking-wide">My Availability</h2>

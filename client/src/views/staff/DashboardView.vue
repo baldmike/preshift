@@ -271,7 +271,7 @@ onUnmounted(() => {
         </div>
         <p v-else class="text-gray-600 text-xs text-center py-4">No shifts scheduled today</p>
 
-        <!-- Sub-nav pill links -->
+        <!-- Sub-nav pill links: secondary navigation to shift drops and time-off -->
         <div class="flex gap-2 mt-2">
           <router-link
             to="/shift-drops"

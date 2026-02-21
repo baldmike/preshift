@@ -104,25 +104,47 @@ class AuthController extends Controller
     }
 
     /**
-     * Update the authenticated user's profile (name and/or availability).
+     * Update the authenticated user's profile.
      *
-     * Only allows updating safe fields -- role, email, location_id, and
-     * password are ignored even if sent.
+     * Allows staff to edit their own name and weekly availability without
+     * exposing sensitive fields. Only the validated fields are updated --
+     * any attempt to send role, email, location_id, or password in the
+     * request body is silently ignored because the validation rules only
+     * permit `name` and `availability`.
+     *
+     * Validation rules:
+     * - name:         sometimes|required|string|max:255 -- only validated when present.
+     * - availability: sometimes|nullable|array          -- weekly availability grid
+     *                 (keys are day names, values are arrays of time slot strings).
+     *
+     * Returns the updated user with the location relationship eager-loaded
+     * so the client can refresh its auth store in a single call.
+     *
+     * Route: PUT /api/profile
+     * Middleware: auth:sanctum (no location middleware -- works for any user)
      *
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse  The updated user with location.
      */
     public function updateProfile(Request $request): JsonResponse
     {
+        // Only allow updating safe, self-service fields.
+        // role, email, location_id, and password are NOT in this list
+        // and will be stripped out by Laravel's validated() output.
         $validated = $request->validate([
-            'name' => 'sometimes|required|string|max:255',
+            'name'         => 'sometimes|required|string|max:255',
             'availability' => 'sometimes|nullable|array',
         ]);
 
         $user = $request->user();
+
+        // fill() only sets attributes present in the $validated array,
+        // so missing keys are left unchanged on the model.
         $user->fill($validated);
         $user->save();
 
+        // Return the full user with location so the frontend can update
+        // its auth store without a separate GET /api/user call.
         return response()->json($user->load('location'));
     }
 

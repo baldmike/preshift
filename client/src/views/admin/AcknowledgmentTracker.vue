@@ -12,6 +12,7 @@ import AppShell from '@/components/layout/AppShell.vue'
 import BadgePill from '@/components/ui/BadgePill.vue'
 import type { PreShiftData } from '@/types'
 
+/** Shape of a single user entry returned by GET /api/acknowledgments/summary */
 interface AckSummaryUser {
   user_id: number
   user_name: string
@@ -21,6 +22,7 @@ interface AckSummaryUser {
   percentage: number
 }
 
+/** Top-level shape of the GET /api/acknowledgments/summary response */
 interface AckSummary {
   total_items: number
   users: AckSummaryUser[]
@@ -28,12 +30,13 @@ interface AckSummary {
 
 // Current pre-shift data used to calculate totals for the summary grid
 const preshift = ref<PreShiftData | null>(null)
-// Per-user acknowledgment summary from the API
+// Per-user acknowledgment summary from the manager-scoped API
 const summary = ref<AckSummary | null>(null)
 // True while the initial data is being loaded
 const loading = ref(false)
 
 // Computed total of all active pre-shift items across all categories.
+// Displayed in the table header to show "Acknowledged (X items)".
 const totalItems = computed(() => {
   if (!preshift.value) return 0
   return (
@@ -46,6 +49,8 @@ const totalItems = computed(() => {
 
 /**
  * Fetches acknowledgment summary and pre-shift data in parallel.
+ * The summary endpoint returns per-user ack counts; the preshift
+ * endpoint populates the category summary cards at the top.
  */
 async function fetchData() {
   loading.value = true
@@ -63,7 +68,8 @@ async function fetchData() {
 }
 
 /**
- * Returns color class for percentage badge.
+ * Maps an acknowledgment percentage to a BadgePill color.
+ * Green = fully acknowledged, yellow = partial, red = none.
  */
 function percentageColor(pct: number): 'green' | 'yellow' | 'red' {
   if (pct === 100) return 'green'
@@ -91,7 +97,7 @@ onMounted(fetchData)
             </router-link>
       </div>
 
-      <!-- Summary -->
+      <!-- Summary: one card per content category showing active item counts -->
       <div v-if="preshift" class="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div class="bg-white rounded-lg shadow p-4 text-center">
           <div class="text-2xl font-bold text-red-600">{{ preshift.eighty_sixed.length }}</div>
@@ -111,7 +117,7 @@ onMounted(fetchData)
         </div>
       </div>
 
-      <!-- Users Table -->
+      <!-- Loading spinner while fetching data -->
       <div v-if="loading" class="flex justify-center py-8">
         <svg class="animate-spin h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
@@ -119,6 +125,7 @@ onMounted(fetchData)
         </svg>
       </div>
 
+      <!-- Per-user acknowledgment table (populated from /api/acknowledgments/summary) -->
       <div v-else-if="summary" class="bg-white rounded-lg shadow overflow-hidden">
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
@@ -139,6 +146,7 @@ onMounted(fetchData)
                   :color="user.role === 'admin' ? 'red' : user.role === 'manager' ? 'yellow' : 'blue'"
                 />
               </td>
+              <!-- Fraction + color-coded percentage badge (green=100%, yellow=partial, red=0%) -->
               <td class="px-4 py-3 text-center text-sm">
                 <span class="text-gray-700 font-medium">{{ user.acknowledged_count }} / {{ user.total_items }}</span>
                 <BadgePill

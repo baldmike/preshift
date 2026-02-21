@@ -138,7 +138,7 @@ onMounted(() => {
         <p class="text-xs text-gray-500 mt-0.5">This week's full schedule</p>
       </div>
 
-      <!-- Sub-navigation -->
+      <!-- Sub-navigation: pill links to shift drop board and time-off request views -->
       <div class="flex gap-2">
         <router-link
           to="/shift-drops"

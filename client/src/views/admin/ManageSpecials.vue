@@ -31,7 +31,7 @@ const form = ref({
   type: '',       // Category of special (e.g. "food", "drink")
   starts_at: '',  // Start date (ISO date string)
   ends_at: '',    // End date (ISO date string)
-  quantity: null as number | null,
+  quantity: null as number | null, // Optional limited quantity (null = unlimited)
 })
 
 // Clears all form fields, exits edit mode, and hides the form panel
@@ -50,7 +50,7 @@ function editSpecial(special: Special) {
     type: special.type || '',
     starts_at: special.starts_at || '',
     ends_at: special.ends_at || '',
-    quantity: special.quantity ?? null,
+    quantity: special.quantity ?? null, // Preserve existing quantity; null = unlimited
   }
   showForm.value = true
 }
@@ -76,7 +76,7 @@ async function fetchSpecials() {
 async function saveSpecial() {
   if (!form.value.title.trim()) return
   submitting.value = true
-  // Coerce empty string to null for quantity
+  // Coerce empty string → null so the API receives null (unlimited) instead of "".
   const payload = { ...form.value, quantity: form.value.quantity === ('' as any) ? null : form.value.quantity }
   try {
     if (editingId.value) {
@@ -117,7 +117,8 @@ async function deleteSpecial(id: number) {
 
 /**
  * Decrements a special's quantity by 1 via PATCH /api/specials/{id}/decrement.
- * Updates the local list with the response data.
+ * The backend guards against null/zero quantities. On success, updates the
+ * local specials list with the response data so the UI reflects the change.
  */
 async function decrementQuantity(special: Special) {
   try {
@@ -169,6 +170,8 @@ onMounted(fetchSpecials)
             <BaseInput v-model="form.starts_at" label="Starts" type="date" />
             <BaseInput v-model="form.ends_at" label="Ends" type="date" />
           </div>
+          <!-- Quantity: optional limited stock. Uses native input because BaseInput
+               doesn't forward the `min` attribute needed to prevent negative values. -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Quantity <span class="text-gray-400 font-normal">(optional)</span></label>
             <input
@@ -213,9 +216,11 @@ onMounted(fetchSpecials)
               <td class="px-4 py-3 text-sm text-gray-500">
                 {{ special.starts_at }}{{ special.ends_at ? ` - ${special.ends_at}` : '' }}
               </td>
+              <!-- Quantity cell: shows count + decrement button when set, infinity when null -->
               <td class="px-4 py-3 text-center text-sm">
                 <template v-if="special.quantity != null">
                   <span class="inline-flex items-center gap-1">
+                    <!-- Amber highlight when quantity is low (2 or fewer remaining) -->
                     <span :class="special.quantity <= 2 ? 'text-amber-600 font-bold' : 'text-gray-700 font-medium'">
                       {{ special.quantity }}
                     </span>

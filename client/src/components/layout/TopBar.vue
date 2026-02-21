@@ -198,7 +198,7 @@ async function changePassword() {
 
                 <!-- Menu items -->
                 <div class="py-1">
-                  <!-- My Profile link -->
+                  <!-- My Profile link — navigates to /profile and closes the dropdown -->
                   <router-link
                     to="/profile"
                     @click="menuOpen = false"

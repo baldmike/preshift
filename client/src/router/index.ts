@@ -94,18 +94,21 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/profile',
     name: 'Profile',
+    // Self-service profile page for editing name + availability
     component: () => import('@/views/staff/ProfileView.vue'),
     meta: { requiresAuth: true },
   },
   {
     path: '/shift-drops',
     name: 'ShiftDropBoard',
+    // Staff view: browse available drops, volunteer to pick up shifts
     component: () => import('@/views/staff/ShiftDropBoardView.vue'),
     meta: { requiresAuth: true },
   },
   {
     path: '/time-off',
     name: 'TimeOffRequest',
+    // Staff view: submit time-off requests, view request history
     component: () => import('@/views/staff/TimeOffRequestView.vue'),
     meta: { requiresAuth: true },
   },

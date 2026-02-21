@@ -13,10 +13,23 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
+/**
+ * Feature tests for GET /api/acknowledgments/summary.
+ *
+ * This endpoint returns per-user acknowledgment counts for a manager's
+ * location. Tests cover role-based access control, happy paths with
+ * real ack data, zero-ack users, fully-acked users, and the edge case
+ * of zero active items (division-by-zero guard).
+ */
 class AcknowledgmentSummaryTest extends TestCase
 {
     use RefreshDatabase;
 
+    /**
+     * Seed a location with one manager and one server user.
+     *
+     * @return array{location: Location, manager: User, staff: User}
+     */
     private function seedLocationAndUsers(): array
     {
         $location = Location::create([
@@ -44,6 +57,10 @@ class AcknowledgmentSummaryTest extends TestCase
         return compact('location', 'manager', 'staff');
     }
 
+    /**
+     * Verify that a server (non-manager) receives 403 Forbidden
+     * when trying to access the summary endpoint.
+     */
     public function test_server_cannot_access_summary(): void
     {
         $seed = $this->seedLocationAndUsers();
@@ -54,6 +71,10 @@ class AcknowledgmentSummaryTest extends TestCase
         $response->assertStatus(403);
     }
 
+    /**
+     * Verify that a manager can access the summary endpoint and
+     * receives the expected JSON structure.
+     */
     public function test_manager_can_access_summary(): void
     {
         $seed = $this->seedLocationAndUsers();
@@ -70,11 +91,15 @@ class AcknowledgmentSummaryTest extends TestCase
             ]);
     }
 
+    /**
+     * Verify that a user who has not acknowledged any items shows
+     * acknowledged_count = 0 and percentage = 0.
+     */
     public function test_summary_shows_zero_for_unacked_user(): void
     {
         $seed = $this->seedLocationAndUsers();
 
-        // Create an active 86'd item
+        // Create a single active 86'd item -- no one has acknowledged it.
         EightySixed::create([
             'location_id' => $seed['location']->id,
             'item_name' => 'Salmon',
@@ -87,20 +112,25 @@ class AcknowledgmentSummaryTest extends TestCase
         $response->assertOk();
         $data = $response->json();
 
+        // One active item across the location.
         $this->assertEquals(1, $data['total_items']);
 
-        // Find the staff user in the response
+        // The server user should show 0 acknowledged out of 1.
         $staffData = collect($data['users'])->firstWhere('user_id', $seed['staff']->id);
         $this->assertNotNull($staffData);
         $this->assertEquals(0, $staffData['acknowledged_count']);
         $this->assertEquals(0, $staffData['percentage']);
     }
 
+    /**
+     * Verify that a user who has acknowledged every active item shows
+     * acknowledged_count = total_items and percentage = 100.
+     */
     public function test_summary_shows_100_for_fully_acked_user(): void
     {
         $seed = $this->seedLocationAndUsers();
 
-        // Create one active item of each type
+        // Create one active item of each of two types.
         $eightySixed = EightySixed::create([
             'location_id' => $seed['location']->id,
             'item_name' => 'Salmon',
@@ -116,7 +146,7 @@ class AcknowledgmentSummaryTest extends TestCase
             'created_by' => $seed['manager']->id,
         ]);
 
-        // Staff acknowledges both items
+        // Staff acknowledges both items via polymorphic acknowledgments.
         Acknowledgment::create([
             'user_id' => $seed['staff']->id,
             'acknowledgable_type' => EightySixed::class,
@@ -137,13 +167,19 @@ class AcknowledgmentSummaryTest extends TestCase
         $response->assertOk();
         $data = $response->json();
 
+        // Two active items total (one 86'd + one special).
         $this->assertEquals(2, $data['total_items']);
 
+        // Staff user should show 2/2 = 100%.
         $staffData = collect($data['users'])->firstWhere('user_id', $seed['staff']->id);
         $this->assertEquals(2, $staffData['acknowledged_count']);
         $this->assertEquals(100, $staffData['percentage']);
     }
 
+    /**
+     * Verify the division-by-zero guard: when no active items exist,
+     * total_items = 0 and every user shows percentage = 0 (not NaN/error).
+     */
     public function test_summary_returns_zero_percentage_when_no_items_exist(): void
     {
         $seed = $this->seedLocationAndUsers();
@@ -156,7 +192,7 @@ class AcknowledgmentSummaryTest extends TestCase
 
         $this->assertEquals(0, $data['total_items']);
 
-        // All users should show 0%
+        // Every user should safely show 0% rather than a division error.
         foreach ($data['users'] as $userData) {
             $this->assertEquals(0, $userData['percentage']);
         }
