@@ -31,11 +31,12 @@ const form = ref({
   type: '',       // Category of special (e.g. "food", "drink")
   starts_at: '',  // Start date (ISO date string)
   ends_at: '',    // End date (ISO date string)
+  quantity: null as number | null,
 })
 
 // Clears all form fields, exits edit mode, and hides the form panel
 function resetForm() {
-  form.value = { title: '', description: '', type: '', starts_at: '', ends_at: '' }
+  form.value = { title: '', description: '', type: '', starts_at: '', ends_at: '', quantity: null }
   editingId.value = null
   showForm.value = false
 }
@@ -49,6 +50,7 @@ function editSpecial(special: Special) {
     type: special.type || '',
     starts_at: special.starts_at || '',
     ends_at: special.ends_at || '',
+    quantity: special.quantity ?? null,
   }
   showForm.value = true
 }
@@ -74,16 +76,18 @@ async function fetchSpecials() {
 async function saveSpecial() {
   if (!form.value.title.trim()) return
   submitting.value = true
+  // Coerce empty string to null for quantity
+  const payload = { ...form.value, quantity: form.value.quantity === ('' as any) ? null : form.value.quantity }
   try {
     if (editingId.value) {
-      const { data } = await api.patch(`/api/specials/${editingId.value}`, form.value)
+      const { data } = await api.patch(`/api/specials/${editingId.value}`, payload)
       const idx = specials.value.findIndex((s) => s.id === editingId.value)
       if (idx !== -1) specials.value[idx] = data
       toast('Special updated', 'success')
     } else {
       const { data } = await api.post('/api/specials', {
-        ...form.value,
-        starts_at: form.value.starts_at || new Date().toISOString().split('T')[0],
+        ...payload,
+        starts_at: payload.starts_at || new Date().toISOString().split('T')[0],
       })
       specials.value.push(data)
       toast('Special created', 'success')
@@ -108,6 +112,21 @@ async function deleteSpecial(id: number) {
     toast('Special deleted', 'success')
   } catch {
     toast('Failed to delete special', 'error')
+  }
+}
+
+/**
+ * Decrements a special's quantity by 1 via PATCH /api/specials/{id}/decrement.
+ * Updates the local list with the response data.
+ */
+async function decrementQuantity(special: Special) {
+  try {
+    const { data } = await api.patch(`/api/specials/${special.id}/decrement`)
+    const idx = specials.value.findIndex((s) => s.id === special.id)
+    if (idx !== -1) specials.value[idx] = data
+    toast('Quantity decremented', 'success')
+  } catch {
+    toast('Failed to decrement quantity', 'error')
   }
 }
 
@@ -150,6 +169,17 @@ onMounted(fetchSpecials)
             <BaseInput v-model="form.starts_at" label="Starts" type="date" />
             <BaseInput v-model="form.ends_at" label="Ends" type="date" />
           </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Quantity <span class="text-gray-400 font-normal">(optional)</span></label>
+            <input
+              type="number"
+              min="0"
+              v-model.number="form.quantity"
+              placeholder="Leave blank for unlimited"
+              class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm
+                     focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none"
+            />
+          </div>
           <div class="flex gap-2">
             <BaseButton type="submit" :loading="submitting">{{ editingId ? 'Update' : 'Create' }}</BaseButton>
             <BaseButton variant="secondary" @click="resetForm">Cancel</BaseButton>
@@ -172,6 +202,7 @@ onMounted(fetchSpecials)
               <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Title</th>
               <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
               <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Dates</th>
+              <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Qty</th>
               <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
             </tr>
           </thead>
@@ -182,13 +213,34 @@ onMounted(fetchSpecials)
               <td class="px-4 py-3 text-sm text-gray-500">
                 {{ special.starts_at }}{{ special.ends_at ? ` - ${special.ends_at}` : '' }}
               </td>
+              <td class="px-4 py-3 text-center text-sm">
+                <template v-if="special.quantity != null">
+                  <span class="inline-flex items-center gap-1">
+                    <span :class="special.quantity <= 2 ? 'text-amber-600 font-bold' : 'text-gray-700 font-medium'">
+                      {{ special.quantity }}
+                    </span>
+                    <button
+                      @click="decrementQuantity(special)"
+                      :disabled="special.quantity <= 0"
+                      class="inline-flex items-center justify-center w-5 h-5 rounded bg-gray-200 text-gray-600
+                             hover:bg-gray-300 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                      title="Decrement quantity"
+                    >
+                      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
+                      </svg>
+                    </button>
+                  </span>
+                </template>
+                <span v-else class="text-gray-400 text-lg" title="Unlimited">&infin;</span>
+              </td>
               <td class="px-4 py-3 text-right space-x-2">
                 <BaseButton size="sm" variant="secondary" @click="editSpecial(special)">Edit</BaseButton>
                 <BaseButton size="sm" variant="danger" @click="deleteSpecial(special.id)">Delete</BaseButton>
               </td>
             </tr>
             <tr v-if="!specials.length">
-              <td colspan="4" class="px-4 py-8 text-center text-gray-500">No specials</td>
+              <td colspan="5" class="px-4 py-8 text-center text-gray-500">No specials</td>
             </tr>
           </tbody>
         </table>

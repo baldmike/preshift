@@ -7,6 +7,7 @@ use App\Models\Announcement;
 use App\Models\EightySixed;
 use App\Models\PushItem;
 use App\Models\Special;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -104,5 +105,70 @@ class AcknowledgmentController extends Controller
             });
 
         return response()->json($acknowledgments);
+    }
+
+    /**
+     * Return per-user acknowledgment summary for the manager's location.
+     *
+     * Counts all active acknowledgeable items (86'd, specials, push items,
+     * announcements) and for each user at the location, returns how many
+     * of those items they have acknowledged.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function summary(Request $request): JsonResponse
+    {
+        $locationId = $request->user()->location_id;
+
+        // Gather IDs of all active acknowledgeable items at this location
+        $eightySixedIds = EightySixed::where('location_id', $locationId)->whereNull('restored_at')->pluck('id');
+        $specialIds = Special::where('location_id', $locationId)->where('is_active', true)->pluck('id');
+        $pushItemIds = PushItem::where('location_id', $locationId)->where('is_active', true)->pluck('id');
+        $announcementIds = Announcement::where('location_id', $locationId)->whereNull('expires_at')
+            ->orWhere(function ($q) use ($locationId) {
+                $q->where('location_id', $locationId)->where('expires_at', '>', now());
+            })->pluck('id');
+
+        // Build a map of type => IDs for lookup
+        $itemMap = [
+            EightySixed::class => $eightySixedIds,
+            Special::class => $specialIds,
+            PushItem::class => $pushItemIds,
+            Announcement::class => $announcementIds,
+        ];
+
+        $totalItems = $eightySixedIds->count() + $specialIds->count() + $pushItemIds->count() + $announcementIds->count();
+
+        // Get all users at this location
+        $users = User::where('location_id', $locationId)->get();
+
+        // For each user, count how many active items they've acknowledged
+        $usersData = $users->map(function ($user) use ($itemMap, $totalItems) {
+            $acknowledgedCount = 0;
+
+            foreach ($itemMap as $type => $ids) {
+                if ($ids->isEmpty()) continue;
+
+                $acknowledgedCount += Acknowledgment::where('user_id', $user->id)
+                    ->where('acknowledgable_type', $type)
+                    ->whereIn('acknowledgable_id', $ids)
+                    ->count();
+            }
+
+            return [
+                'user_id' => $user->id,
+                'user_name' => $user->name,
+                'role' => $user->role,
+                'total_items' => $totalItems,
+                'acknowledged_count' => $acknowledgedCount,
+                'percentage' => $totalItems > 0 ? round(($acknowledgedCount / $totalItems) * 100) : 0,
+            ];
+        });
+
+        return response()->json([
+            'total_items' => $totalItems,
+            'users' => $usersData,
+        ]);
     }
 }

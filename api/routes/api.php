@@ -63,6 +63,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', [AuthController::class, 'user']);
     // POST /api/change-password -- Change the authenticated user's password.
     Route::post('/change-password', [AuthController::class, 'changePassword']);
+    // PUT /api/profile -- Update the authenticated user's name/availability.
+    Route::put('/profile', [AuthController::class, 'updateProfile']);
 
     /*
     |----------------------------------------------------------------------
@@ -175,6 +177,7 @@ Route::middleware('auth:sanctum')->group(function () {
         */
         Route::post('/acknowledge', [AcknowledgmentController::class, 'store']);
         Route::get('/acknowledgments/status', [AcknowledgmentController::class, 'status']);
+        Route::get('/acknowledgments/summary', [AcknowledgmentController::class, 'summary'])->middleware('role:admin,manager');
 
         /*
         |------------------------------------------------------------------

@@ -104,6 +104,29 @@ class AuthController extends Controller
     }
 
     /**
+     * Update the authenticated user's profile (name and/or availability).
+     *
+     * Only allows updating safe fields -- role, email, location_id, and
+     * password are ignored even if sent.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse  The updated user with location.
+     */
+    public function updateProfile(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'name' => 'sometimes|required|string|max:255',
+            'availability' => 'sometimes|nullable|array',
+        ]);
+
+        $user = $request->user();
+        $user->fill($validated);
+        $user->save();
+
+        return response()->json($user->load('location'));
+    }
+
+    /**
      * Return the currently authenticated user's profile with their location.
      *
      * Eager-loads the related Location model so the client receives the full
