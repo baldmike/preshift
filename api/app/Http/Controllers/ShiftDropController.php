@@ -87,6 +87,8 @@ class ShiftDropController extends Controller
      */
     public function volunteer(Request $request, ShiftDrop $shiftDrop): JsonResponse
     {
+        $this->authorize('volunteer', $shiftDrop);
+
         if ($shiftDrop->status !== 'open') {
             return response()->json(['message' => 'This shift drop is no longer available.'], 422);
         }
@@ -127,6 +129,8 @@ class ShiftDropController extends Controller
      */
     public function select(Request $request, ShiftDrop $shiftDrop, User $user): JsonResponse
     {
+        $this->authorize('select', $shiftDrop);
+
         if ($shiftDrop->status !== 'open') {
             return response()->json(['message' => 'This shift drop is no longer available.'], 422);
         }
@@ -162,9 +166,7 @@ class ShiftDropController extends Controller
      */
     public function cancel(Request $request, ShiftDrop $shiftDrop): JsonResponse
     {
-        if ($shiftDrop->requested_by !== $request->user()->id) {
-            return response()->json(['message' => 'You can only cancel your own drops.'], 403);
-        }
+        $this->authorize('cancel', $shiftDrop);
 
         if ($shiftDrop->status !== 'open') {
             return response()->json(['message' => 'This drop can no longer be cancelled.'], 422);

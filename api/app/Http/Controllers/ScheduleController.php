@@ -45,6 +45,8 @@ class ScheduleController extends Controller
      */
     public function show(Schedule $schedule): JsonResponse
     {
+        $this->authorize('view', $schedule);
+
         $schedule->load('entries.user', 'entries.shiftTemplate', 'publisher');
 
         return response()->json(new ScheduleResource($schedule));
@@ -76,6 +78,8 @@ class ScheduleController extends Controller
      */
     public function update(StoreScheduleRequest $request, Schedule $schedule): JsonResponse
     {
+        $this->authorize('update', $schedule);
+
         $validated = $request->validated();
 
         $schedule->update($validated);
@@ -91,6 +95,8 @@ class ScheduleController extends Controller
      */
     public function publish(Request $request, Schedule $schedule): JsonResponse
     {
+        $this->authorize('publish', $schedule);
+
         $schedule->update([
             'status'       => 'published',
             'published_at' => now(),
@@ -110,6 +116,8 @@ class ScheduleController extends Controller
      */
     public function unpublish(Schedule $schedule): JsonResponse
     {
+        $this->authorize('unpublish', $schedule);
+
         $schedule->update(['status' => 'draft']);
 
         return response()->json(new ScheduleResource($schedule));

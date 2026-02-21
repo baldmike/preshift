@@ -68,6 +68,8 @@ class EightySixedController extends Controller
      */
     public function restore(EightySixed $eightySixed): JsonResponse
     {
+        $this->authorize('restore', $eightySixed);
+
         $eightySixed->update(['restored_at' => now()]);
 
         broadcast(new ItemRestored($eightySixed))->toOthers();

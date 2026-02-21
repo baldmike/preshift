@@ -67,6 +67,8 @@ class AnnouncementController extends Controller
      */
     public function update(StoreAnnouncementRequest $request, Announcement $announcement): JsonResponse
     {
+        $this->authorize('update', $announcement);
+
         $validated = $request->validated();
 
         $announcement->update($validated);
@@ -84,6 +86,8 @@ class AnnouncementController extends Controller
      */
     public function destroy(Announcement $announcement): Response
     {
+        $this->authorize('delete', $announcement);
+
         $data = ['id' => $announcement->id, 'location_id' => $announcement->location_id];
 
         $announcement->delete();

@@ -41,6 +41,8 @@ class ScheduleEntryController extends Controller
      */
     public function update(UpdateScheduleEntryRequest $request, ScheduleEntry $scheduleEntry): JsonResponse
     {
+        $this->authorize('update', $scheduleEntry);
+
         $validated = $request->validated();
 
         $scheduleEntry->update($validated);
@@ -57,6 +59,8 @@ class ScheduleEntryController extends Controller
      */
     public function destroy(ScheduleEntry $scheduleEntry): Response
     {
+        $this->authorize('delete', $scheduleEntry);
+
         $scheduleEntry->delete();
 
         return response()->noContent();

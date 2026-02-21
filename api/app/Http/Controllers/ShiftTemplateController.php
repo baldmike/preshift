@@ -58,6 +58,8 @@ class ShiftTemplateController extends Controller
      */
     public function update(StoreShiftTemplateRequest $request, ShiftTemplate $shiftTemplate): JsonResponse
     {
+        $this->authorize('update', $shiftTemplate);
+
         $validated = $request->validated();
 
         $shiftTemplate->update($validated);
@@ -73,6 +75,8 @@ class ShiftTemplateController extends Controller
      */
     public function destroy(ShiftTemplate $shiftTemplate): Response
     {
+        $this->authorize('delete', $shiftTemplate);
+
         $shiftTemplate->delete();
 
         return response()->noContent();

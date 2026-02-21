@@ -72,6 +72,8 @@ class SpecialController extends Controller
      */
     public function update(StoreSpecialRequest $request, Special $special): JsonResponse
     {
+        $this->authorize('update', $special);
+
         $validated = $request->validated();
 
         $special->update($validated);
@@ -89,6 +91,8 @@ class SpecialController extends Controller
      */
     public function decrement(Special $special): JsonResponse
     {
+        $this->authorize('decrement', $special);
+
         if ($special->quantity === null || $special->quantity <= 0) {
             return response()->json(['message' => 'Cannot decrement quantity.'], 422);
         }
@@ -113,6 +117,8 @@ class SpecialController extends Controller
      */
     public function destroy(Special $special): Response
     {
+        $this->authorize('delete', $special);
+
         $data = ['id' => $special->id, 'location_id' => $special->location_id];
 
         $special->delete();
