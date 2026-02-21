@@ -173,6 +173,7 @@ These are settled decisions. Do not revisit or change them without being explici
 
 - **Never commit directly to `main`**
 - **Before starting ANY new feature, fix, or change:** always run `git checkout main && git pull origin main && git checkout -b <branch-name>` to create a fresh branch. Do this EVERY time — no exceptions. Do not reuse old branches.
+- **Do not merge any branch. Create a PR and I will review and merge it myself.**
 - All work happens in feature branches off `main`
 - Branch naming: `feature/`, `fix/`, `chore/`, `refactor/` + short hyphenated description
 - When done, open a PR: feature branch → `main`, review the diff, squash and merge
