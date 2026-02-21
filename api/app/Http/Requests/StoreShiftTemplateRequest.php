@@ -8,7 +8,7 @@ use Illuminate\Foundation\Http\FormRequest;
  * Form request for creating or updating a reusable shift template.
  *
  * Used by ShiftTemplateController::store() and ShiftTemplateController::update().
- * Validates the required template name and start/end times in H:i format
+ * Validates the required template name and start time in H:i format
  * (e.g., "10:30", "22:00").
  */
 class StoreShiftTemplateRequest extends FormRequest
@@ -33,7 +33,6 @@ class StoreShiftTemplateRequest extends FormRequest
         return [
             'name' => 'required|string|max:255',
             'start_time' => 'required|date_format:H:i',
-            'end_time' => 'required|date_format:H:i',
         ];
     }
 }

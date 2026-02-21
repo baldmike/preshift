@@ -58,7 +58,6 @@ function makeShiftTemplate(overrides: Partial<ShiftTemplate> = {}): ShiftTemplat
     location_id: 1,
     name: 'Lunch',
     start_time: '10:30:00',
-    end_time: '15:00:00',
     created_at: '2026-01-01T00:00:00Z',
     updated_at: '2026-01-01T00:00:00Z',
     ...overrides,

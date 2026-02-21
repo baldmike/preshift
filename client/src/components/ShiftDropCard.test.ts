@@ -75,7 +75,7 @@ function makeShiftDrop(overrides: Partial<ShiftDrop> = {}): ShiftDrop {
     },
     // Eagerly-loaded schedule entry with its own nested shift_template.
     // The component reads schedule_entry.shift_template.name for the
-    // shift label and start_time / end_time for the time range.
+    // shift label and start_time for the time display.
     schedule_entry: {
       id: 10,
       schedule_id: 1,
@@ -89,7 +89,6 @@ function makeShiftDrop(overrides: Partial<ShiftDrop> = {}): ShiftDrop {
         location_id: 1,
         name: 'Lunch',
         start_time: '10:30:00',
-        end_time: '15:00:00',
         created_at: '2026-01-01T00:00:00Z',
         updated_at: '2026-01-01T00:00:00Z',
       },

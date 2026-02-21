@@ -159,7 +159,7 @@ function formatShiftTime(time: string): string {
             class="sticky left-0 z-10 bg-[rgba(255,255,255,0.03)] border-b border-r border-white/[0.06] px-2 py-1.5 whitespace-nowrap"
           >
             <div class="font-medium text-gray-300">
-              {{ formatShiftTime(template.start_time) }} – {{ formatShiftTime(template.end_time) }}
+              {{ formatShiftTime(template.start_time) }}
             </div>
           </td>
 

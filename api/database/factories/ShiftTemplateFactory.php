@@ -18,7 +18,6 @@ class ShiftTemplateFactory extends Factory
             'location_id' => Location::factory(),
             'name' => fake()->randomElement(['Lunch', 'Dinner', 'Brunch', 'Happy Hour', 'Close']),
             'start_time' => sprintf('%02d:00', $startHour),
-            'end_time' => sprintf('%02d:00', $startHour + fake()->numberBetween(4, 8)),
         ];
     }
 }

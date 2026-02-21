@@ -50,7 +50,6 @@ function makeEntry(overrides: Partial<ScheduleEntry> = {}): ScheduleEntry {
       location_id: 1,
       name: 'Opening',
       start_time: '10:30:00',
-      end_time: '15:00:00',
       created_at: '2026-01-01T00:00:00Z',
       updated_at: '2026-01-01T00:00:00Z',
     },
@@ -62,13 +61,13 @@ function makeEntry(overrides: Partial<ScheduleEntry> = {}): ScheduleEntry {
 
 describe('ShiftCard.vue', () => {
   /**
-   * Test 1 — Renders the time range as the heading
+   * Test 1 — Renders the start time as the heading
    *
-   * The card heading should show the formatted time range from the
-   * shift_template's start_time and end_time (e.g. "10:30 AM – 3:00 PM")
-   * rather than a template name.
+   * The card heading should show the formatted start time from the
+   * shift_template's start_time (e.g. "10:30 AM") rather than a
+   * template name.
    */
-  it('renders time range as the heading', () => {
+  it('renders start time as the heading', () => {
     const entry = makeEntry()
 
     const wrapper = mount(ShiftCard, {
@@ -77,9 +76,8 @@ describe('ShiftCard.vue', () => {
     })
 
     const heading = wrapper.find('h4')
-    // Should show the formatted time range, NOT a template name
+    // Should show the formatted start time, NOT a template name
     expect(heading.text()).toContain('10:30 AM')
-    expect(heading.text()).toContain('3:00 PM')
   })
 
   /**

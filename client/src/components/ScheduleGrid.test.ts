@@ -60,14 +60,13 @@ const mockSchedule: Schedule = {
   updated_at: '2026-01-01T00:00:00Z',
 }
 
-/** Two time slots: Opening (10:30–6 PM) and Evening (4:30 PM–12 AM) */
+/** Two time slots: Opening (10:30 AM) and Evening (4:30 PM) */
 const mockTemplates: ShiftTemplate[] = [
   {
     id: 1,
     location_id: 1,
     name: 'Opening',
     start_time: '10:30:00',
-    end_time: '18:00:00',
     created_at: '2026-01-01T00:00:00Z',
     updated_at: '2026-01-01T00:00:00Z',
   },
@@ -76,7 +75,6 @@ const mockTemplates: ShiftTemplate[] = [
     location_id: 1,
     name: 'Evening',
     start_time: '16:30:00',
-    end_time: '00:00:00',
     created_at: '2026-01-01T00:00:00Z',
     updated_at: '2026-01-01T00:00:00Z',
   },
@@ -200,21 +198,19 @@ describe('ScheduleGrid.vue', () => {
   })
 
   /**
-   * Test 4 — Row headers show time range instead of template name
+   * Test 4 — Row headers show start time instead of template name
    *
    * Since we removed template names from the UI, row headers should
-   * display the formatted time range (e.g. "10:30 AM – 6:00 PM")
-   * rather than a template name like "Opening".
+   * display the formatted start time (e.g. "10:30 AM") rather than
+   * a template name like "Opening".
    */
-  it('row headers show time range instead of template name', () => {
+  it('row headers show start time instead of template name', () => {
     const wrapper = mountGrid({ shiftTemplates: mockTemplates })
     const text = wrapper.text()
 
-    // Should show formatted times
+    // Should show formatted start times
     expect(text).toContain('10:30 AM')
-    expect(text).toContain('6:00 PM')
     expect(text).toContain('4:30 PM')
-    expect(text).toContain('12:00 AM')
 
     // Should NOT show template names
     expect(text).not.toContain('Opening')
