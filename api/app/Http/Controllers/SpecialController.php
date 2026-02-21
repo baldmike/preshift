@@ -6,6 +6,7 @@ use App\Events\SpecialCreated;
 use App\Events\SpecialDeleted;
 use App\Events\SpecialLowStock;
 use App\Events\SpecialUpdated;
+use App\Http\Requests\StoreSpecialRequest;
 use App\Models\Special;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -25,19 +26,13 @@ class SpecialController extends Controller
     /**
      * List all current specials for the authenticated user's location.
      *
-     * Uses the `current()` scope on the Special model to return only specials
-     * whose date range includes the present time. Eager-loads the related
-     * MenuItem and the User who created the special.
-     *
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse  A JSON array of current specials.
      */
     public function index(Request $request): JsonResponse
     {
-        // Scope to the authenticated user's location.
         $locationId = $request->user()->location_id;
 
-        // Retrieve only current (time-relevant) specials with their relationships.
         $specials = Special::where('location_id', $locationId)
             ->current()
             ->with('menuItem', 'creator')
@@ -49,42 +44,19 @@ class SpecialController extends Controller
     /**
      * Create a new menu special.
      *
-     * Validates the request payload, creates the special record associated with the
-     * user's location, and broadcasts a SpecialCreated event for real-time updates.
-     *
-     * Validation rules:
-     * - title: required, string, max 255 chars -- the special's display name.
-     * - description: optional free-text description of the special.
-     * - type: required, must be one of: daily, weekly, monthly, limited_time.
-     * - starts_at: required, must be a valid date -- when the special begins.
-     * - ends_at: optional date -- when the special expires (null = open-ended).
-     * - menu_item_id: optional FK to menu_items table for linking to a specific dish/drink.
-     * - is_active: optional boolean flag to enable/disable the special.
-     *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  \App\Http\Requests\StoreSpecialRequest  $request
      * @return \Illuminate\Http\JsonResponse  The newly created special with a 201 status.
      */
-    public function store(Request $request): JsonResponse
+    public function store(StoreSpecialRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',                   // Display title of the special
-            'description' => 'nullable|string',                     // Detailed description
-            'type' => 'required|in:daily,weekly,monthly,limited_time', // Recurrence/duration type
-            'starts_at' => 'required|date',                         // When the special becomes active
-            'ends_at' => 'nullable|date',                           // When the special expires (optional)
-            'menu_item_id' => 'nullable|exists:menu_items,id',     // Optional link to a specific menu item
-            'is_active' => 'boolean',                               // Whether the special is enabled
-            'quantity' => 'nullable|integer|min:0',                    // Limited quantity; null = unlimited
-        ]);
+        $validated = $request->validated();
 
-        // Create the special, associating it with the user's location and recording the creator.
         $special = Special::create([
             ...$validated,
             'location_id' => $request->user()->location_id,
             'created_by' => $request->user()->id,
         ]);
 
-        // Broadcast SpecialCreated event via WebSocket to all other connected clients.
         broadcast(new SpecialCreated($special))->toOthers();
 
         return response()->json($special, 201);
@@ -93,31 +65,16 @@ class SpecialController extends Controller
     /**
      * Update an existing special.
      *
-     * Validates the same fields as store(), applies the changes to the given
-     * Special model (resolved via route model binding), and broadcasts a
-     * SpecialUpdated event for real-time client synchronization.
-     *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  \App\Http\Requests\StoreSpecialRequest  $request
      * @param  \App\Models\Special       $special  The special to update (via route model binding).
      * @return \Illuminate\Http\JsonResponse  The updated special.
      */
-    public function update(Request $request, Special $special): JsonResponse
+    public function update(StoreSpecialRequest $request, Special $special): JsonResponse
     {
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'type' => 'required|in:daily,weekly,monthly,limited_time',
-            'starts_at' => 'required|date',
-            'ends_at' => 'nullable|date',
-            'menu_item_id' => 'nullable|exists:menu_items,id',
-            'is_active' => 'boolean',
-            'quantity' => 'nullable|integer|min:0',
-        ]);
+        $validated = $request->validated();
 
-        // Apply validated changes to the special record.
         $special->update($validated);
 
-        // Broadcast SpecialUpdated event to notify other clients of the change.
         broadcast(new SpecialUpdated($special))->toOthers();
 
         return response()->json($special);
@@ -125,12 +82,6 @@ class SpecialController extends Controller
 
     /**
      * Decrement a special's quantity by 1.
-     *
-     * Guards against going below zero or decrementing specials with unlimited
-     * (null) quantity. After a successful decrement, broadcasts a SpecialUpdated
-     * event so all connected clients see the new quantity. When the quantity
-     * reaches the low-stock threshold (2), a SpecialLowStock event is also
-     * broadcast to alert staff that the special is nearly sold out.
      *
      * @param  \App\Models\Special  $special  The special to decrement (via route model binding).
      * @return \Illuminate\Http\JsonResponse  The updated special with the decremented quantity.
@@ -156,22 +107,15 @@ class SpecialController extends Controller
     /**
      * Delete a special permanently.
      *
-     * Captures the special's ID and location_id before deletion so they can be
-     * included in the SpecialDeleted broadcast event, allowing clients to remove
-     * the correct item from their local state.
-     *
      * @param  \App\Models\Special  $special  The special to delete (via route model binding).
      * @return \Illuminate\Http\Response  A 204 No Content response.
      */
     public function destroy(Special $special): Response
     {
-        // Capture identifiers before deletion for the broadcast payload.
         $data = ['id' => $special->id, 'location_id' => $special->location_id];
 
-        // Permanently delete the special record from the database.
         $special->delete();
 
-        // Broadcast SpecialDeleted event so other clients can remove the item from their UI.
         broadcast(new SpecialDeleted($data))->toOthers();
 
         return response()->noContent();

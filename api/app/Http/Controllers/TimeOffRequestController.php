@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Events\TimeOffResolved;
+use App\Http\Requests\StoreTimeOffRequestRequest;
 use App\Models\TimeOffRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -21,9 +22,6 @@ class TimeOffRequestController extends Controller
     /**
      * List time-off requests.
      *
-     * - Managers see all requests for their location.
-     * - Staff see only their own requests.
-     *
      * @return \Illuminate\Http\JsonResponse  JSON array of TimeOffRequest records.
      */
     public function index(Request $request): JsonResponse
@@ -34,7 +32,6 @@ class TimeOffRequestController extends Controller
             ->with('user', 'resolver')
             ->orderByDesc('created_at');
 
-        // Staff only see their own requests
         if ($user->isStaff()) {
             $query->where('user_id', $user->id);
         }
@@ -45,20 +42,11 @@ class TimeOffRequestController extends Controller
     /**
      * Submit a new time-off request.
      *
-     * Validation:
-     *   - start_date: required, valid date, today or later.
-     *   - end_date: required, valid date, on or after start_date.
-     *   - reason: optional, max 255 chars.
-     *
      * @return \Illuminate\Http\JsonResponse  The created request with 201 status.
      */
-    public function store(Request $request): JsonResponse
+    public function store(StoreTimeOffRequestRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'start_date' => 'required|date|after_or_equal:today',
-            'end_date'   => 'required|date|after_or_equal:start_date',
-            'reason'     => 'nullable|string|max:255',
-        ]);
+        $validated = $request->validated();
 
         $timeOff = TimeOffRequest::create([
             ...$validated,
@@ -74,9 +62,6 @@ class TimeOffRequestController extends Controller
 
     /**
      * Approve a time-off request (manager action).
-     *
-     * Marks the request as approved and broadcasts the resolution so the
-     * staff member is notified in real time.
      *
      * @param  TimeOffRequest $timeOffRequest  Resolved via route model binding.
      * @return \Illuminate\Http\JsonResponse    The approved request.
