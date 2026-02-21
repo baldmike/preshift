@@ -63,6 +63,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', [AuthController::class, 'user']);
     // POST /api/change-password -- Change the authenticated user's password.
     Route::post('/change-password', [AuthController::class, 'changePassword']);
+    // PUT  /api/profile -- Update own name/availability (any authenticated user).
+    //                      Lives outside `location` middleware because it only
+    //                      touches the authenticated user's own record.
+    Route::put('/profile', [AuthController::class, 'updateProfile']);
 
     /*
     |----------------------------------------------------------------------
@@ -175,6 +179,9 @@ Route::middleware('auth:sanctum')->group(function () {
         */
         Route::post('/acknowledge', [AcknowledgmentController::class, 'store']);
         Route::get('/acknowledgments/status', [AcknowledgmentController::class, 'status']);
+        // GET /api/acknowledgments/summary -- Manager-scoped: per-user ack counts
+        //                                     for all staff at the location.
+        Route::get('/acknowledgments/summary', [AcknowledgmentController::class, 'summary'])->middleware('role:admin,manager');
 
         /*
         |------------------------------------------------------------------
