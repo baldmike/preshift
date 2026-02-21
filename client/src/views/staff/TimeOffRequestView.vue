@@ -62,7 +62,9 @@ function toast(message: string, type: string) {
  */
 function formatDate(dateStr: string | null): string {
   if (!dateStr) return 'N/A'
-  const d = new Date(dateStr + 'T12:00:00')
+  // Extract YYYY-MM-DD from possible ISO timestamp ("2026-02-23T00:00:00.000000Z")
+  const ymd = dateStr.substring(0, 10)
+  const d = new Date(ymd + 'T12:00:00')
   return d.toLocaleDateString([], {
     month: 'short',
     day: 'numeric',
