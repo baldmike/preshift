@@ -665,7 +665,308 @@ class SchedulingTest extends TestCase
     }
 
     /**
-     * Test 3: Staff cannot create schedule entries (403 Forbidden).
+     * Test 3: Creating a second entry for the same user on the same date returns 422.
+     *
+     * Verifies that the unique constraint on (user_id, date) is enforced at the
+     * validation layer. If a user is already scheduled on a given date, a second
+     * POST /api/schedule-entries for the same user + date combo should fail with
+     * a 422 status and a clear error message.
+     */
+    public function test_duplicate_user_date_entry_returns_422(): void
+    {
+        // Arrange: seed location/users, create a schedule and two shift templates
+        // so the second entry uses a different template (proving it's the user+date
+        // combo that's blocked, not template duplication).
+        $seed = $this->seedLocationAndUsers();
+        $nextMonday = now()->next('Monday')->toDateString();
+
+        $schedule = Schedule::create([
+            'location_id' => $seed['location']->id,
+            'week_start' => $nextMonday,
+            'status' => 'draft',
+        ]);
+
+        $lunch = ShiftTemplate::create([
+            'location_id' => $seed['location']->id,
+            'name' => 'Lunch',
+            'start_time' => '10:30',
+        ]);
+
+        $dinner = ShiftTemplate::create([
+            'location_id' => $seed['location']->id,
+            'name' => 'Dinner',
+            'start_time' => '16:00',
+        ]);
+
+        // Create the first entry — this should succeed normally.
+        ScheduleEntry::create([
+            'schedule_id' => $schedule->id,
+            'user_id' => $seed['staff']->id,
+            'shift_template_id' => $lunch->id,
+            'date' => $nextMonday,
+            'role' => 'server',
+        ]);
+
+        // Act: authenticate as the manager and attempt to create a second entry
+        // for the same user on the same date, but with a different shift template.
+        $response = $this->actingAs($seed['manager'], 'sanctum')
+            ->postJson('/api/schedule-entries', [
+                'schedule_id' => $schedule->id,
+                'user_id' => $seed['staff']->id,
+                'shift_template_id' => $dinner->id,
+                'date' => $nextMonday,
+                'role' => 'server',
+            ]);
+
+        // Assert: 422 Unprocessable Entity with a validation error on user_id.
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors('user_id');
+    }
+
+    /**
+     * Test 4: Same user on different dates is allowed.
+     *
+     * Verifies that the unique constraint is scoped to (user_id, date) — a user
+     * CAN work on Monday AND Tuesday, just not two shifts on the same day.
+     * Both entries should be created successfully with 201 responses.
+     */
+    public function test_same_user_on_different_dates_is_allowed(): void
+    {
+        // Arrange: seed location/users, create a schedule and a shift template.
+        $seed = $this->seedLocationAndUsers();
+        $nextMonday = now()->next('Monday')->toDateString();
+        $nextTuesday = now()->next('Monday')->addDay()->toDateString();
+
+        $schedule = Schedule::create([
+            'location_id' => $seed['location']->id,
+            'week_start' => $nextMonday,
+            'status' => 'draft',
+        ]);
+
+        $template = ShiftTemplate::create([
+            'location_id' => $seed['location']->id,
+            'name' => 'Dinner',
+            'start_time' => '16:00',
+        ]);
+
+        // Act: create an entry for Monday, then another for Tuesday — same user, different dates.
+        $responseMonday = $this->actingAs($seed['manager'], 'sanctum')
+            ->postJson('/api/schedule-entries', [
+                'schedule_id' => $schedule->id,
+                'user_id' => $seed['staff']->id,
+                'shift_template_id' => $template->id,
+                'date' => $nextMonday,
+                'role' => 'server',
+            ]);
+
+        $responseTuesday = $this->actingAs($seed['manager'], 'sanctum')
+            ->postJson('/api/schedule-entries', [
+                'schedule_id' => $schedule->id,
+                'user_id' => $seed['staff']->id,
+                'shift_template_id' => $template->id,
+                'date' => $nextTuesday,
+                'role' => 'server',
+            ]);
+
+        // Assert: both entries are created successfully.
+        $responseMonday->assertStatus(201);
+        $responseTuesday->assertStatus(201);
+
+        // Verify both entries exist in the database. The user now has 2 entries
+        // (one per date). We check count rather than matching the date column
+        // directly because SQLite stores date-cast values with a time component.
+        $entryCount = ScheduleEntry::where('user_id', $seed['staff']->id)->count();
+        $this->assertEquals(2, $entryCount);
+    }
+
+    /**
+     * Test 5: Different users on the same date is allowed.
+     *
+     * Verifies that the unique constraint is per-user — multiple different staff
+     * members can all be scheduled on the same day. Only the same user appearing
+     * twice on the same date is blocked.
+     */
+    public function test_different_users_on_same_date_is_allowed(): void
+    {
+        // Arrange: seed location/users (gives us manager + staff).
+        // Create a second staff user so we have two people to schedule.
+        $seed = $this->seedLocationAndUsers();
+        $nextMonday = now()->next('Monday')->toDateString();
+
+        $staff2 = User::create([
+            'name' => 'Bartender User',
+            'email' => 'bartender@test.com',
+            'password' => Hash::make('password'),
+            'role' => 'bartender',
+            'location_id' => $seed['location']->id,
+        ]);
+
+        $schedule = Schedule::create([
+            'location_id' => $seed['location']->id,
+            'week_start' => $nextMonday,
+            'status' => 'draft',
+        ]);
+
+        $template = ShiftTemplate::create([
+            'location_id' => $seed['location']->id,
+            'name' => 'Dinner',
+            'start_time' => '16:00',
+        ]);
+
+        // Act: schedule both users on the same date.
+        $response1 = $this->actingAs($seed['manager'], 'sanctum')
+            ->postJson('/api/schedule-entries', [
+                'schedule_id' => $schedule->id,
+                'user_id' => $seed['staff']->id,
+                'shift_template_id' => $template->id,
+                'date' => $nextMonday,
+                'role' => 'server',
+            ]);
+
+        $response2 = $this->actingAs($seed['manager'], 'sanctum')
+            ->postJson('/api/schedule-entries', [
+                'schedule_id' => $schedule->id,
+                'user_id' => $staff2->id,
+                'shift_template_id' => $template->id,
+                'date' => $nextMonday,
+                'role' => 'bartender',
+            ]);
+
+        // Assert: both are created successfully — different users, same date is fine.
+        $response1->assertStatus(201);
+        $response2->assertStatus(201);
+
+        // Verify both entries exist in the database. We check each user has
+        // exactly one entry rather than matching the date column directly
+        // because SQLite stores date-cast values with a time component.
+        $this->assertDatabaseHas('schedule_entries', [
+            'user_id' => $seed['staff']->id,
+            'schedule_id' => $schedule->id,
+        ]);
+        $this->assertDatabaseHas('schedule_entries', [
+            'user_id' => $staff2->id,
+            'schedule_id' => $schedule->id,
+        ]);
+    }
+
+    /**
+     * Test 6: Duplicate entry returns the custom error message.
+     *
+     * Verifies that the validation error message for the user_id.unique rule
+     * is the human-readable message we defined: "This user is already scheduled
+     * on this date." rather than the default Laravel unique message.
+     */
+    public function test_duplicate_entry_returns_custom_error_message(): void
+    {
+        // Arrange: seed location/users, create a schedule and template.
+        $seed = $this->seedLocationAndUsers();
+        $nextMonday = now()->next('Monday')->toDateString();
+
+        $schedule = Schedule::create([
+            'location_id' => $seed['location']->id,
+            'week_start' => $nextMonday,
+            'status' => 'draft',
+        ]);
+
+        $lunch = ShiftTemplate::create([
+            'location_id' => $seed['location']->id,
+            'name' => 'Lunch',
+            'start_time' => '10:30',
+        ]);
+
+        $dinner = ShiftTemplate::create([
+            'location_id' => $seed['location']->id,
+            'name' => 'Dinner',
+            'start_time' => '16:00',
+        ]);
+
+        // Create the first entry.
+        ScheduleEntry::create([
+            'schedule_id' => $schedule->id,
+            'user_id' => $seed['staff']->id,
+            'shift_template_id' => $lunch->id,
+            'date' => $nextMonday,
+            'role' => 'server',
+        ]);
+
+        // Act: attempt a second entry for the same user + date.
+        $response = $this->actingAs($seed['manager'], 'sanctum')
+            ->postJson('/api/schedule-entries', [
+                'schedule_id' => $schedule->id,
+                'user_id' => $seed['staff']->id,
+                'shift_template_id' => $dinner->id,
+                'date' => $nextMonday,
+                'role' => 'server',
+            ]);
+
+        // Assert: 422 with the custom message on the user_id field.
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors('user_id');
+
+        // Verify the exact error message text.
+        $errors = $response->json('errors.user_id');
+        $this->assertContains('This user is already scheduled on this date.', $errors);
+    }
+
+    /**
+     * Test 7: Duplicate constraint applies across different schedules.
+     *
+     * Verifies that the unique index on (user_id, date) is not scoped to a
+     * single schedule. If a user is scheduled on 2026-03-02 in Schedule A,
+     * they cannot also be scheduled on 2026-03-02 in Schedule B. Dates within
+     * a location should never overlap between schedules anyway, but the DB
+     * constraint enforces this regardless.
+     */
+    public function test_duplicate_constraint_applies_across_schedules(): void
+    {
+        // Arrange: seed location/users, create two schedules.
+        $seed = $this->seedLocationAndUsers();
+        $nextMonday = now()->next('Monday')->toDateString();
+
+        $scheduleA = Schedule::create([
+            'location_id' => $seed['location']->id,
+            'week_start' => $nextMonday,
+            'status' => 'draft',
+        ]);
+
+        $scheduleB = Schedule::create([
+            'location_id' => $seed['location']->id,
+            'week_start' => now()->next('Monday')->addWeek()->toDateString(),
+            'status' => 'draft',
+        ]);
+
+        $template = ShiftTemplate::create([
+            'location_id' => $seed['location']->id,
+            'name' => 'Dinner',
+            'start_time' => '16:00',
+        ]);
+
+        // Create an entry in Schedule A for the staff user on nextMonday.
+        ScheduleEntry::create([
+            'schedule_id' => $scheduleA->id,
+            'user_id' => $seed['staff']->id,
+            'shift_template_id' => $template->id,
+            'date' => $nextMonday,
+            'role' => 'server',
+        ]);
+
+        // Act: attempt to create an entry in Schedule B for the same user on the same date.
+        $response = $this->actingAs($seed['manager'], 'sanctum')
+            ->postJson('/api/schedule-entries', [
+                'schedule_id' => $scheduleB->id,
+                'user_id' => $seed['staff']->id,
+                'shift_template_id' => $template->id,
+                'date' => $nextMonday,
+                'role' => 'server',
+            ]);
+
+        // Assert: 422 — the user is already scheduled on this date (in Schedule A).
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors('user_id');
+    }
+
+    /**
+     * Test 8: Staff cannot create schedule entries (403 Forbidden).
      *
      * Verifies that the POST /api/schedule-entries endpoint is guarded by the
      * `role:admin,manager` middleware. Staff users should not be able to assign

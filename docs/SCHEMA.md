@@ -168,6 +168,8 @@
 | created_at | timestamp | |
 | updated_at | timestamp | |
 
+**Unique constraint:** user_id + date (one shift per person per day)
+
 ### shift_drops
 | Column | Type | Notes |
 |--------|------|-------|
