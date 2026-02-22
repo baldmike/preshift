@@ -112,6 +112,13 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/staff/TimeOffRequestView.vue'),
     meta: { requiresAuth: true },
   },
+  {
+    path: '/tonights-schedule',
+    name: 'TonightsSchedule',
+    // Staff view: see all staff working today, grouped by shift
+    component: () => import('@/views/staff/TonightsScheduleView.vue'),
+    meta: { requiresAuth: true },
+  },
 
   // -----------------------------------------------------------------------
   // Management routes (admin + manager roles only)

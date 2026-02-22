@@ -144,6 +144,28 @@ onMounted(async () => {
         <p class="text-xs text-gray-500 mt-0.5">Request and manage your time off</p>
       </div>
 
+      <!-- Sub-navigation: pill links to schedule-related views -->
+      <div class="flex gap-2">
+        <router-link
+          to="/tonights-schedule"
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full bg-teal-500/20 text-teal-300 hover:bg-teal-500/30 transition-colors"
+        >
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          Tonight's Schedule
+        </router-link>
+        <router-link
+          to="/shift-drops"
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 transition-colors"
+        >
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+          </svg>
+          Drop Board
+        </router-link>
+      </div>
+
       <!-- ── New Request Form ─────────────────────────────────────────── -->
       <!-- Styled to match the form pattern from EightySixedBoard and
            DailyManageView: rounded container with subtle glass background,
