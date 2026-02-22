@@ -40,6 +40,10 @@ class ConfigController extends Controller
 
         Setting::set('establishment_name', $validated['establishment_name']);
 
+        if (array_key_exists('time_off_advance_days', $validated)) {
+            Setting::set('time_off_advance_days', (string) $validated['time_off_advance_days']);
+        }
+
         return response()->json(['message' => 'Settings updated.']);
     }
 

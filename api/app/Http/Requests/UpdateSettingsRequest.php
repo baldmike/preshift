@@ -31,6 +31,7 @@ class UpdateSettingsRequest extends FormRequest
     {
         return [
             'establishment_name' => 'required|string|max:100',
+            'time_off_advance_days' => 'sometimes|integer|min:0|max:90',
         ];
     }
 }

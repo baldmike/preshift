@@ -21,7 +21,7 @@
  *
  * Route: /time-off (staff only)
  */
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useScheduleStore } from '@/stores/schedule'
 import api from '@/composables/useApi'
 import AppShell from '@/components/layout/AppShell.vue'
@@ -33,6 +33,9 @@ const store = useScheduleStore()
 // ── Local State ────────────────────────────────────────────────────────
 // True while the initial list of time-off requests is being fetched
 const loading = ref(false)
+
+// Advance notice requirement (fetched from settings)
+const advanceDays = ref(14)
 
 // True while a new request is being submitted to the API
 const submitting = ref(false)
@@ -117,10 +120,23 @@ async function submitRequest() {
  * Fetches the current user's time-off requests on mount.
  * The store action hits GET /api/time-off-requests.
  */
+/** Computed minimum start date based on advance notice setting */
+const minStartDate = computed(() => {
+  const d = new Date()
+  d.setDate(d.getDate() + advanceDays.value)
+  return d.toISOString().slice(0, 10)
+})
+
 onMounted(async () => {
   loading.value = true
   try {
-    await store.fetchTimeOffRequests()
+    const [, settingsRes] = await Promise.all([
+      store.fetchTimeOffRequests(),
+      api.get('/api/config/settings'),
+    ])
+    if (settingsRes.data.time_off_advance_days != null) {
+      advanceDays.value = Number(settingsRes.data.time_off_advance_days)
+    }
   } finally {
     loading.value = false
   }
@@ -185,10 +201,12 @@ onMounted(async () => {
               v-model="form.start_date"
               type="date"
               required
+              :min="minStartDate"
               class="w-full rounded-md bg-white/5 border border-white/10 px-3 py-2 text-sm text-gray-200
                      placeholder-gray-600 focus:outline-none focus:border-emerald-500/50 focus:ring-1
                      focus:ring-emerald-500/25 transition-colors"
             />
+            <p class="text-xs text-gray-500 mt-1">Requests must be submitted at least {{ advanceDays }} days in advance.</p>
           </div>
 
           <!-- End date -->

@@ -1437,10 +1437,10 @@ class SchedulingTest extends TestCase
         // Arrange: seed location and users.
         $seed = $this->seedLocationAndUsers();
 
-        // Use dates 5 and 7 days in the future to ensure they pass the
-        // 'after_or_equal:today' and 'after_or_equal:start_date' validations.
-        $startDate = now()->addDays(5)->toDateString();
-        $endDate = now()->addDays(7)->toDateString();
+        // Use dates 15 and 17 days in the future to satisfy the configurable
+        // advance notice requirement (default 14 days).
+        $startDate = now()->addDays(15)->toDateString();
+        $endDate = now()->addDays(17)->toDateString();
 
         // Act: authenticate as the staff user and submit a time-off request.
         $response = $this->actingAs($seed['staff'], 'sanctum')

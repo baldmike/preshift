@@ -138,6 +138,9 @@ const users = computed(() => {
   list.sort((a, b) => {
     // If we have a date + time, sort available before unavailable
     if (dayName && startTime) {
+      const aTimeOff = entryForm.value.date && hasApprovedTimeOff(a.id, entryForm.value.date) ? 1 : 0
+      const bTimeOff = entryForm.value.date && hasApprovedTimeOff(b.id, entryForm.value.date) ? 1 : 0
+      if (aTimeOff !== bTimeOff) return aTimeOff - bTimeOff
       const aAvail = isUserAvailable(a, dayName, startTime) ? 0 : 1
       const bAvail = isUserAvailable(b, dayName, startTime) ? 0 : 1
       if (aAvail !== bAvail) return aAvail - bAvail
@@ -385,8 +388,29 @@ async function handleRemoveEntry(entryId: number) {
  */
 const approvedTimeOff = computed(() => {
   if (!activeSchedule.value) return []
-  return timeOffRequests.value.filter((r) => r.status === 'approved')
+  const weekStart = activeSchedule.value.week_start
+  const ws = new Date(weekStart + 'T00:00:00')
+  const weekEnd = new Date(ws)
+  weekEnd.setDate(ws.getDate() + 6)
+  const weekEndStr = weekEnd.toISOString().slice(0, 10)
+
+  return timeOffRequests.value.filter((r) => {
+    if (r.status !== 'approved') return false
+    const start = (r.start_date as string).substring(0, 10)
+    const end = (r.end_date as string).substring(0, 10)
+    return start <= weekEndStr && end >= weekStart
+  })
 })
+
+/** Check if a specific user has approved time off covering a given date. */
+function hasApprovedTimeOff(userId: number, dateStr: string): boolean {
+  return timeOffRequests.value.some((r) => {
+    if (r.status !== 'approved' || r.user_id !== userId) return false
+    const start = (r.start_date as string).substring(0, 10)
+    const end = (r.end_date as string).substring(0, 10)
+    return dateStr >= start && dateStr <= end
+  })
+}
 
 // ── Toast helper ─────────────────────────────────────────────────────────────
 
@@ -438,6 +462,7 @@ function isUserAvailable(user: User, dayName: string, startTime: string): boolea
 /** Returns the availability indicator for the staff dropdown */
 function availabilityIndicator(user: User): string {
   if (!entryForm.value.date || !entryForm.value.start_time) return ''
+  if (hasApprovedTimeOff(user.id, entryForm.value.date)) return ' (time off)'
   if (!user.availability) return ' (not set)'
   const dayName = getDayName(entryForm.value.date)
   return isUserAvailable(user, dayName, entryForm.value.start_time) ? '' : ' (unavailable)'

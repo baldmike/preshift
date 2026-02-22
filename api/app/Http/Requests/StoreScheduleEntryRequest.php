@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\TimeOffRequest;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -39,6 +40,21 @@ class StoreScheduleEntryRequest extends FormRequest
                 Rule::unique('schedule_entries')->where(fn ($q) =>
                     $q->whereDate('date', $this->date)
                 ),
+                function ($attribute, $value, $fail) {
+                    if (!$this->date || !$value) {
+                        return;
+                    }
+
+                    $hasTimeOff = TimeOffRequest::where('user_id', $value)
+                        ->where('status', 'approved')
+                        ->whereDate('start_date', '<=', $this->date)
+                        ->whereDate('end_date', '>=', $this->date)
+                        ->exists();
+
+                    if ($hasTimeOff) {
+                        $fail('This user has approved time off on this date.');
+                    }
+                },
             ],
             'shift_template_id' => 'required|exists:shift_templates,id',
             'date' => 'required|date',
