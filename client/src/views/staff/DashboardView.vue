@@ -114,11 +114,14 @@ const todayLabel = computed(() => {
   return new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
 })
 
-/** All schedule entries for today, filtered from the published week schedule */
+/** All schedule entries for today, filtered from the published week schedule.
+ *  Staff (servers/bartenders) only see their own shifts; managers/admins see everyone. */
 const todayEntries = computed(() => {
   const schedule = scheduleStore.currentSchedule
   if (!schedule?.entries) return []
-  return schedule.entries.filter(e => e.date.split('T')[0] === todayISO.value)
+  const entries = schedule.entries.filter(e => e.date.split('T')[0] === todayISO.value)
+  if (canManageEvents.value) return entries
+  return entries.filter(e => e.user_id === user.value?.id)
 })
 
 /**
@@ -220,7 +223,7 @@ async function giveUpShift(entryId: number) {
 let channel: ReturnType<typeof useLocationChannel> | null = null
 
 const hasContent = computed(() =>
-  store.eightySixed.length || store.specials.length || store.pushItems.length || store.announcements.length || store.events.length
+  store.eightySixed.length || store.specials.length || store.pushItems.length || store.announcements.length || store.events.length || scheduleStore.currentSchedule
 )
 
 onMounted(async () => {
@@ -316,7 +319,7 @@ onUnmounted(() => {
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
-            <span class="text-xs font-bold text-emerald-400 uppercase tracking-wide">Today</span>
+            <span class="text-xs font-bold text-emerald-400 uppercase tracking-wide">{{ canManageEvents ? 'Today' : 'My Schedule' }}</span>
             <span class="text-[10px] text-emerald-500/60">{{ todayLabel }}</span>
           </div>
           <router-link to="/my-schedule" class="text-[10px] text-emerald-500/60 hover:text-emerald-400 transition-colors">
@@ -435,9 +438,9 @@ onUnmounted(() => {
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-1.5">
                 <span v-if="evt.event_time" class="text-xs font-bold text-violet-300">{{ evt.event_time }}</span>
-                <span class="text-xs text-gray-200 truncate">{{ evt.title }}</span>
+                <span class="text-xs text-gray-200">{{ evt.title }}</span>
               </div>
-              <p v-if="evt.description" class="text-[11px] text-gray-500 mt-0.5 truncate">{{ evt.description }}</p>
+              <p v-if="evt.description" class="text-[11px] text-gray-500 mt-0.5 line-clamp-2">{{ evt.description }}</p>
             </div>
             <div v-if="canManageEvents" class="flex items-center gap-1 shrink-0">
               <button @click="startEditEvent(evt)" class="text-gray-500 hover:text-violet-400 transition-colors">

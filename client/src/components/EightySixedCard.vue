@@ -30,7 +30,7 @@ function formatTime(dateStr: string) {
   <div class="rounded-lg bg-red-500/5 border border-red-500/10 p-3">
     <div class="flex items-start justify-between gap-2">
       <div class="min-w-0 flex-1">
-        <h4 class="font-semibold text-red-300 text-sm truncate">{{ item.item_name }}</h4>
+        <h4 class="font-semibold text-red-300 text-sm break-words">{{ item.item_name }}</h4>
         <p v-if="item.reason" class="text-xs text-red-400/70 mt-0.5 line-clamp-2">{{ item.reason }}</p>
         <div class="flex items-center gap-2 mt-1.5 text-[10px] text-red-500/60">
           <span v-if="item.user">{{ item.user.name }}</span>
