@@ -392,4 +392,63 @@ describe('ScheduleGrid.vue', () => {
       expect(div.classes()).not.toContain('ring-red-500/60')
     })
   })
+
+  /**
+   * Test 12 — Clicking a staff name with ackMap present emits 'view-profile'
+   *
+   * When ackMap is provided (manager view), staff names become clickable
+   * buttons that emit 'view-profile' with the entry's User object.
+   */
+  it("emits 'view-profile' when clicking a staff name with ackMap", async () => {
+    const wrapper = mount(ScheduleGrid, {
+      props: {
+        schedule: mockScheduleWithEntries,
+        shiftTemplates: mockTemplates,
+        ackMap: { 3: 100, 4: 100 },
+      },
+      global: {
+        stubs: { BadgePill: BadgePillStub },
+      },
+    })
+
+    // Find the button containing Jake's name (user_id: 3)
+    const nameButtons = wrapper.findAll('.group\\/entry button')
+    const jakeBtn = nameButtons.find(btn => btn.text().includes('Jake'))
+    expect(jakeBtn).toBeDefined()
+
+    await jakeBtn!.trigger('click')
+
+    const emitted = wrapper.emitted('view-profile')
+    expect(emitted).toBeTruthy()
+    expect(emitted).toHaveLength(1)
+    expect((emitted![0][0] as any).id).toBe(3)
+    expect((emitted![0][0] as any).name).toBe('Jake')
+  })
+
+  /**
+   * Test 13 — Staff names are plain spans (not buttons) without ackMap
+   *
+   * When ackMap is not provided (staff view), names should be plain
+   * text spans, not clickable buttons.
+   */
+  it('staff names are not clickable without ackMap', () => {
+    const wrapper = mount(ScheduleGrid, {
+      props: {
+        schedule: mockScheduleWithEntries,
+        shiftTemplates: mockTemplates,
+      },
+      global: {
+        stubs: { BadgePill: BadgePillStub },
+      },
+    })
+
+    // Should have no name buttons inside entry rows
+    const nameButtons = wrapper.findAll('.group\\/entry button')
+    // The only button should be the "x" remove button, not name buttons
+    const nameBtn = nameButtons.find(btn => btn.text().includes('Jake'))
+    expect(nameBtn).toBeUndefined()
+
+    // Names should appear as plain text
+    expect(wrapper.text()).toContain('Jake')
+  })
 })

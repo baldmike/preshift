@@ -230,4 +230,42 @@ describe('AvailabilityGrid.vue', () => {
       expect(result[day]).toEqual([])
     }
   })
+
+  /**
+   * Test 11 — Readonly mode hides "Open Availability" master toggle
+   */
+  it('readonly hides the master Open Availability button', () => {
+    const wrapper = mount(AvailabilityGrid, {
+      props: { modelValue: emptyAvailability(), readonly: true },
+    })
+
+    const buttons = wrapper.findAll('button')
+    const masterBtn = buttons.find(b => b.text().includes('Open Availability'))
+    expect(masterBtn).toBeUndefined()
+  })
+
+  /**
+   * Test 12 — Readonly mode hides the save button
+   */
+  it('readonly hides the save button', () => {
+    const wrapper = mount(AvailabilityGrid, {
+      props: { modelValue: emptyAvailability(), readonly: true },
+    })
+
+    const buttons = wrapper.findAll('button')
+    const saveBtn = buttons.find(b => b.text().includes('Save Availability'))
+    expect(saveBtn).toBeUndefined()
+  })
+
+  /**
+   * Test 13 — Readonly mode adds pointer-events-none to the grid body
+   */
+  it('readonly adds pointer-events-none to the grid', () => {
+    const wrapper = mount(AvailabilityGrid, {
+      props: { modelValue: emptyAvailability(), readonly: true },
+    })
+
+    const gridBody = wrapper.find('.pointer-events-none')
+    expect(gridBody.exists()).toBe(true)
+  })
 })

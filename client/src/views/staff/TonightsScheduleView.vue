@@ -10,16 +10,19 @@
  * Route: /tonights-schedule (any authenticated user)
  */
 import { onMounted, onUnmounted, computed, ref } from 'vue'
+import type { User } from '@/types'
 import { useScheduleStore } from '@/stores/schedule'
 import { useAuth } from '@/composables/useAuth'
 import { useSchedule } from '@/composables/useSchedule'
 import { useLocationChannel } from '@/composables/useReverb'
 import AppShell from '@/components/layout/AppShell.vue'
+import EmployeeProfileModal from '@/components/EmployeeProfileModal.vue'
 
 const scheduleStore = useScheduleStore()
 const { formatShiftTime } = useSchedule()
 const { user, locationId } = useAuth()
 const loading = ref(false)
+const selectedUser = ref<User | null>(null)
 
 const canManage = computed(() => {
   const role = user.value?.role
@@ -168,9 +171,11 @@ onUnmounted(() => {
             <!-- Staff list -->
             <div class="p-3">
               <div class="flex flex-wrap gap-2">
-                <div
+                <component
+                  :is="canManage && entry.user ? 'button' : 'div'"
                   v-for="entry in group.entries"
                   :key="entry.id"
+                  :type="canManage && entry.user ? 'button' : undefined"
                   class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs"
                   :class="[
                     entry.role === 'bartender'
@@ -179,14 +184,16 @@ onUnmounted(() => {
                     canManage && entry.user_id in scheduleStore.ackSummaryMap && scheduleStore.ackSummaryMap[entry.user_id] < 100
                       ? 'ring-1 ring-red-500/60'
                       : '',
+                    canManage && entry.user ? 'hover:brightness-125 transition-all cursor-pointer' : '',
                   ]"
                   :title="canManage && entry.user_id in scheduleStore.ackSummaryMap && scheduleStore.ackSummaryMap[entry.user_id] < 100
                     ? 'Has not acknowledged all pre-shift items'
                     : undefined"
+                  @click="canManage && entry.user ? selectedUser = entry.user : undefined"
                 >
                   <span class="font-medium">{{ entry.user?.name || 'Staff' }}</span>
                   <span class="text-[10px] opacity-60 uppercase">{{ entry.role }}</span>
-                </div>
+                </component>
               </div>
             </div>
           </section>
@@ -206,5 +213,7 @@ onUnmounted(() => {
       </template>
 
     </div>
+
+    <EmployeeProfileModal :user="selectedUser" @close="selectedUser = null" />
   </AppShell>
 </template>

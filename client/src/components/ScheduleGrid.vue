@@ -15,7 +15,7 @@
  *   - remove-entry: number
  */
 import { computed } from 'vue'
-import type { Schedule, ShiftTemplate, ScheduleEntry } from '@/types'
+import type { Schedule, ShiftTemplate, ScheduleEntry, User } from '@/types'
 import BadgePill from '@/components/ui/BadgePill.vue'
 
 const props = defineProps<{
@@ -45,6 +45,7 @@ const effectiveTemplates = computed<ShiftTemplate[]>(() => {
 const emit = defineEmits<{
   'add-entry': [payload: { shiftTemplateId: number; date: string }]
   'remove-entry': [entryId: number]
+  'view-profile': [user: User]
 }>()
 
 // ── Day abbreviations used in column headers ───────────────────────────
@@ -191,7 +192,15 @@ function formatShiftTime(time: string): string {
                 : undefined"
             >
               <!-- User name + role badge -->
-              <span class="truncate text-gray-300 flex-1">
+              <button
+                v-if="props.ackMap && entry.user"
+                type="button"
+                class="truncate text-gray-300 flex-1 text-left hover:text-white transition-colors"
+                @click.stop="emit('view-profile', entry.user)"
+              >
+                {{ entry.user.name }}
+              </button>
+              <span v-else class="truncate text-gray-300 flex-1">
                 {{ entry.user?.name ?? 'Staff' }}
               </span>
               <BadgePill :label="entry.role" :color="roleColor(entry.role)" />

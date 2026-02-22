@@ -5,6 +5,7 @@
  * grid where they can set which days/times they're available.
  */
 import { ref, onMounted, onUnmounted } from 'vue'
+import type { User } from '@/types'
 import { useScheduleStore } from '@/stores/schedule'
 import { useAuthStore } from '@/stores/auth'
 import { useLocationChannel } from '@/composables/useReverb'
@@ -13,11 +14,13 @@ import AppShell from '@/components/layout/AppShell.vue'
 import ShiftCard from '@/components/ShiftCard.vue'
 import ScheduleGrid from '@/components/ScheduleGrid.vue'
 import AvailabilityGrid from '@/components/AvailabilityGrid.vue'
+import EmployeeProfileModal from '@/components/EmployeeProfileModal.vue'
 
 const store = useScheduleStore()
 const authStore = useAuthStore()
 const loading = ref(false)
 const showTeamSchedule = ref(!authStore.isStaff)
+const selectedUser = ref<User | null>(null)
 
 // ── Availability state ──────────────────────────────────────────────────
 const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const
@@ -257,7 +260,7 @@ onUnmounted(() => {
 
           <!-- Full Schedule Grid -->
           <section v-if="store.currentSchedule">
-            <ScheduleGrid :schedule="store.currentSchedule" :ack-map="store.ackSummaryMap" />
+            <ScheduleGrid :schedule="store.currentSchedule" :ack-map="store.ackSummaryMap" @view-profile="selectedUser = $event" />
           </section>
           <div v-else class="rounded-xl border border-white/[0.06] bg-white/[0.03] p-6 text-center">
             <p class="text-gray-400 font-medium">No published schedule this week</p>
@@ -315,5 +318,7 @@ onUnmounted(() => {
       </template>
 
     </div>
+
+    <EmployeeProfileModal :user="selectedUser" @close="selectedUser = null" />
   </AppShell>
 </template>
