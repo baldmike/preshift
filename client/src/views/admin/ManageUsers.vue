@@ -48,7 +48,7 @@ const form = ref({
   role: 'server',
   phone: '',
   availability: Object.fromEntries(DAYS.map(d => [d, [] as string[]])) as Record<string, string[]>,
-  alsoWorksAs: '' as string, // Secondary role for multi-role staff (empty string = none)
+  additionalRoles: [] as string[], // Additional roles beyond the primary (e.g. ['bartender', 'manager'])
 })
 
 // Clears all form fields, exits edit mode, and hides the form panel
@@ -60,34 +60,56 @@ function resetForm() {
     role: 'server',
     phone: '',
     availability: Object.fromEntries(DAYS.map(d => [d, [] as string[]])),
-    alsoWorksAs: '',
+    additionalRoles: [],
   }
   editingId.value = null
   showForm.value = false
 }
 
-// Populates the form with an existing user's data for editing.
-/** The alternate staff role label for the checkbox ("Also works as ..."). */
-const alternateRoleLabel = computed(() => {
-  return form.value.role === 'server' ? 'Bartender' : 'Server'
+/** Formats a raw digit string as (123) 456-7890. Accepts partial input. */
+function formatPhone(value: string): string {
+  const digits = value.replace(/\D/g, '').slice(0, 10)
+  if (digits.length <= 3) return digits
+  if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`
+  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`
+}
+
+/** Handles phone input: strips non-digits and auto-formats. */
+function onPhoneInput(value: string) {
+  form.value.phone = formatPhone(value)
+}
+
+/** All available roles excluding the currently selected primary role. */
+const availableAdditionalRoles = computed(() => {
+  const all = ['server', 'bartender', 'manager', 'admin']
+  return all.filter(r => r !== form.value.role)
 })
 
-/** Whether the primary role is a staff role that supports dual-role assignment. */
-const showDualRole = computed(() => ['server', 'bartender'].includes(form.value.role))
+/** Toggle a role in the additionalRoles array on/off. */
+function toggleAdditionalRole(role: string) {
+  const idx = form.value.additionalRoles.indexOf(role)
+  if (idx === -1) {
+    form.value.additionalRoles.push(role)
+  } else {
+    form.value.additionalRoles.splice(idx, 1)
+  }
+}
 
+// Populates the form with an existing user's data for editing.
 function editUser(user: User) {
   editingId.value = user.id
-  const otherRole = user.role === 'server' ? 'bartender' : 'server'
+  // Derive additional roles by removing the primary role from the roles array
+  const extras = user.roles ? user.roles.filter(r => r !== user.role) : []
   form.value = {
     name: user.name,
     email: user.email,
     password: '',
     role: user.role,
-    phone: user.phone || '',
+    phone: user.phone ? formatPhone(user.phone) : '',
     availability: user.availability
       ? { ...Object.fromEntries(DAYS.map(d => [d, [] as string[]])), ...user.availability }
       : Object.fromEntries(DAYS.map(d => [d, [] as string[]])),
-    alsoWorksAs: user.roles && user.roles.includes(otherRole) ? otherRole : '',
+    additionalRoles: extras,
   }
   showForm.value = true
 }
@@ -134,10 +156,10 @@ async function saveUser() {
   if (!form.value.name.trim() || !form.value.email.trim()) return
   submitting.value = true
   try {
-    // Build the roles array: [primary, secondary] when dual-role is checked,
-    // or null when single-role (API falls back to the primary `role` field).
-    const roles = form.value.alsoWorksAs
-      ? [form.value.role, form.value.alsoWorksAs]
+    // Build the roles array: [primary, ...additional] when extra roles are
+    // selected, or null when single-role (API falls back to the primary `role` field).
+    const roles = form.value.additionalRoles.length > 0
+      ? [form.value.role, ...form.value.additionalRoles]
       : null
     const payload: Record<string, any> = {
       name: form.value.name,
@@ -286,18 +308,27 @@ onMounted(fetchUsers)
               </select>
             </div>
           </div>
-          <div v-if="showDualRole" class="flex items-center gap-2">
-            <input
-              :id="'dual-role'"
-              type="checkbox"
-              :checked="!!form.alsoWorksAs"
-              @change="form.alsoWorksAs = ($event.target as HTMLInputElement).checked ? (form.role === 'server' ? 'bartender' : 'server') : ''"
-              class="h-4 w-4 rounded border-gray-600 bg-gray-700 text-indigo-500 focus:ring-indigo-500"
-            />
-            <label for="dual-role" class="text-sm text-gray-300">Also works as {{ alternateRoleLabel }}</label>
+          <!-- Additional roles multi-select -->
+          <div v-if="availableAdditionalRoles.length > 0">
+            <label class="block text-sm font-medium text-gray-400 mb-1">Additional Roles</label>
+            <div class="flex flex-wrap gap-3">
+              <label
+                v-for="role in availableAdditionalRoles"
+                :key="role"
+                class="inline-flex items-center gap-1.5 cursor-pointer"
+              >
+                <input
+                  type="checkbox"
+                  :checked="form.additionalRoles.includes(role)"
+                  @change="toggleAdditionalRole(role)"
+                  class="h-4 w-4 rounded border-gray-600 bg-gray-700 text-indigo-500 focus:ring-indigo-500"
+                />
+                <span class="text-sm text-gray-300 capitalize">{{ role }}</span>
+              </label>
+            </div>
           </div>
           <div class="grid grid-cols-2 gap-3">
-            <BaseInput v-model="form.phone" label="Phone" type="tel" placeholder="(555) 123-4567" />
+            <BaseInput :modelValue="form.phone" @update:modelValue="onPhoneInput" label="Phone" type="tel" placeholder="(555) 123-4567" />
           </div>
           <!-- Availability grid -->
           <div>
