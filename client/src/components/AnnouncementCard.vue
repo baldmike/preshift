@@ -4,8 +4,9 @@
  *
  * Renders a compact, purple-themed card for a single announcement. Displays
  * the title, a color-coded priority badge (urgent/important/normal), optional
- * body text, the poster's name, and an expiration timestamp. Includes an
- * AcknowledgeButton so staff can mark the announcement as read.
+ * body text, the poster's name, and an expiration timestamp. Staff see an
+ * AcknowledgeButton to mark the announcement as read; managers and admins
+ * see an Edit link that navigates to /manage/announcements instead.
  *
  * Props:
  *   - announcement: Announcement

@@ -3,8 +3,9 @@
  * SpecialCard.vue
  *
  * Renders a compact, blue-themed card for a single daily special. Displays
- * the title, a type badge, optional description, date range, remaining
- * quantity, and an AcknowledgeButton for staff confirmation.
+ * the title, a type badge, optional description, date range, and remaining
+ * quantity. Staff see an AcknowledgeButton for confirmation; managers and
+ * admins see an Edit link that navigates to /manage/daily instead.
  *
  * Props:
  *   - special: Special

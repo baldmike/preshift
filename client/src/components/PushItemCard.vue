@@ -4,7 +4,9 @@
  *
  * Renders a compact, amber-themed card for a single push item. Shows the
  * item title, a color-coded priority badge (high/medium/low), an optional
- * description and reason, and an AcknowledgeButton for staff confirmation.
+ * description and reason. Staff see an AcknowledgeButton for confirmation;
+ * managers and admins see an Edit link that navigates to /manage/push-items
+ * instead.
  *
  * Props:
  *   - item: PushItem

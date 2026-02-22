@@ -4,7 +4,8 @@
  *
  * Renders a compact, red-themed card for a single 86'd item. Displays
  * the item name, optional reason, the user who 86'd it, and a timestamp.
- * Includes an AcknowledgeButton so staff can mark the item as seen.
+ * Staff see an AcknowledgeButton to mark the item as seen; managers and
+ * admins see an Edit link that navigates to /manage/86 instead.
  *
  * Props:
  *   - item: EightySixed

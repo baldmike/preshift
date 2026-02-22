@@ -10,6 +10,7 @@
  *   - An optional description with talking points for staff
  *   - An optional reason management wants the item pushed
  *   - An AcknowledgeButton for staff confirmation
+ *   - An Edit link for managers/admins instead of the AcknowledgeButton
  *
  * Props:
  *   - item: PushItem
@@ -20,6 +21,9 @@
  *   3. The description is shown when provided.
  *   4. The reason is shown when provided.
  *   5. The description is hidden when null.
+ *   6. Staff users see the AcknowledgeButton (not the Edit link).
+ *   7. Managers see an Edit link (not the AcknowledgeButton).
+ *   8. Admins see an Edit link (not the AcknowledgeButton).
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
@@ -182,6 +186,12 @@ describe('PushItemCard.vue', () => {
     expect(paragraphs).toHaveLength(0)
   })
 
+  /**
+   * Test 6 — Staff users see the AcknowledgeButton
+   *
+   * When the current user is a staff member (server/bartender), the card
+   * should render the AcknowledgeButton and not an Edit link.
+   */
   it('shows AcknowledgeButton for staff users', () => {
     const item = makeItem()
 
@@ -194,6 +204,13 @@ describe('PushItemCard.vue', () => {
     expect(wrapper.find('.router-link-stub').exists()).toBe(false)
   })
 
+  /**
+   * Test 7 — Managers see an Edit link instead of AcknowledgeButton
+   *
+   * When the current user is a manager, the card should render a
+   * router-link Edit button pointing to /manage/push-items and hide
+   * the AcknowledgeButton.
+   */
   it('shows Edit link instead of AcknowledgeButton for managers', () => {
     mockIsManager.value = true
     const item = makeItem()
@@ -208,6 +225,13 @@ describe('PushItemCard.vue', () => {
     expect(wrapper.find('.ack-stub').exists()).toBe(false)
   })
 
+  /**
+   * Test 8 — Admins see an Edit link instead of AcknowledgeButton
+   *
+   * When the current user is an admin, the card should render a
+   * router-link Edit button pointing to /manage/push-items and hide
+   * the AcknowledgeButton.
+   */
   it('shows Edit link instead of AcknowledgeButton for admins', () => {
     mockIsAdmin.value = true
     const item = makeItem()

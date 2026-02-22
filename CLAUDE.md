@@ -85,6 +85,13 @@ PreShift is a digital pre-shift meeting replacement for restaurants and bars. Ma
 - Use Laravel factories for test data
 - Test role restrictions: verify staff can't access manager routes, location A can't see location B data
 
+## Commenting Conventions
+
+- Every entry must be commented — PHP gets docblocks, JS/TS gets block comments
+- Vue components: include a block comment at the top of `<script setup>` describing the component, its purpose, and its props
+- Test files: include a file-level block comment listing what the tests verify, and a block comment above each `it()` describing what the test checks and why
+- Composables, stores, and utility files: include a block comment at the top describing the module's purpose and exports
+
 ## Do NOT
 
 - Do not install packages without being asked
