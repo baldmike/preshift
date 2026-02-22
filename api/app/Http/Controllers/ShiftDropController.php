@@ -10,8 +10,11 @@ use App\Http\Resources\ShiftDropResource;
 use App\Models\ScheduleEntry;
 use App\Models\ShiftDrop;
 use App\Models\User;
+use App\Notifications\ShiftDropRequestedNotification;
+use App\Notifications\ShiftDropVolunteeredNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Notification;
 
 /**
  * ShiftDropController manages the shift-drop workflow for a location.
@@ -75,6 +78,13 @@ class ShiftDropController extends Controller
 
         broadcast(new ShiftDropRequested($drop))->toOthers();
 
+        $locationId = $drop->scheduleEntry->schedule->location_id;
+        $managers = User::where('location_id', $locationId)
+            ->whereIn('role', ['admin', 'manager'])
+            ->get();
+
+        Notification::send($managers, new ShiftDropRequestedNotification($drop));
+
         return response()->json(new ShiftDropResource($drop), 201);
     }
 
@@ -115,6 +125,13 @@ class ShiftDropController extends Controller
         $shiftDrop->load('scheduleEntry.shiftTemplate', 'requester', 'volunteers.user');
 
         broadcast(new ShiftDropVolunteered($shiftDrop))->toOthers();
+
+        $locationId = $shiftDrop->scheduleEntry->schedule->location_id;
+        $managers = User::where('location_id', $locationId)
+            ->whereIn('role', ['admin', 'manager'])
+            ->get();
+
+        Notification::send($managers, new ShiftDropVolunteeredNotification($shiftDrop, $request->user()));
 
         return response()->json(new ShiftDropResource($shiftDrop));
     }

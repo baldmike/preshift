@@ -63,6 +63,7 @@ const timeRange = computed(() => {
 })
 
 const volunteerCount = computed(() => props.drop.volunteers?.length ?? 0)
+const showVolunteers = computed(() => !!props.drop.volunteers)
 </script>
 
 <template>
@@ -85,8 +86,8 @@ const volunteerCount = computed(() => props.drop.volunteers?.length ?? 0)
         {{ timeRange }}
       </p>
 
-      <!-- Volunteer count -->
-      <p v-if="volunteerCount > 0" class="text-[10px] text-amber-500/60 mt-1">
+      <!-- Volunteer count (only shown for managers/admins who receive the volunteers array) -->
+      <p v-if="showVolunteers && volunteerCount > 0" class="text-[10px] text-amber-500/60 mt-1">
         {{ volunteerCount }} volunteer{{ volunteerCount !== 1 ? 's' : '' }}
       </p>
 

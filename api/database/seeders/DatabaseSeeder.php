@@ -20,6 +20,7 @@ use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 /**
  * Database Seeder -- populates the database with realistic sample data for
@@ -650,15 +651,39 @@ class DatabaseSeeder extends Seeder
                     && $e->date->toDateString() === $dateStr
                 );
 
+            // Collect managers to notify about shift drops
+            $managersToNotify = User::where('location_id', $location->id)
+                ->whereIn('role', ['admin', 'manager'])
+                ->get();
+
+            // Helper: create a notification record directly for each manager
+            $notifyManagers = function (array $data) use ($managersToNotify) {
+                foreach ($managersToNotify as $mgr) {
+                    $mgr->notifications()->create([
+                        'id' => Str::uuid()->toString(),
+                        'type' => 'App\\Notifications\\ShiftDropRequestedNotification',
+                        'data' => $data,
+                    ]);
+                }
+            };
+
             // Drop 1: server dinner shift on Monday — family birthday dinner
             $drop1Entry = $entriesOn($dinner->id, 'server', $nextMonday->toDateString())->first();
 
             if ($drop1Entry) {
-                ShiftDrop::create([
+                $drop1 = ShiftDrop::create([
                     'schedule_entry_id' => $drop1Entry->id,
                     'requested_by' => $drop1Entry->user_id,
                     'reason' => 'Family birthday dinner, can\'t miss it.',
                     'status' => 'open',
+                ]);
+                $requesterName = User::find($drop1Entry->user_id)->name;
+                $notifyManagers([
+                    'type' => 'shift_drop_requested',
+                    'title' => 'Shift Drop Request',
+                    'body' => "{$requesterName} wants to drop their {$nextMonday->toDateString()} shift.",
+                    'link' => '/manage/shift-drops',
+                    'source_id' => $drop1->id,
                 ]);
             }
 
@@ -667,11 +692,19 @@ class DatabaseSeeder extends Seeder
             $drop2Entry = $entriesOn($lunch->id, 'bartender', $tuesday->toDateString())->first();
 
             if ($drop2Entry) {
-                ShiftDrop::create([
+                $drop2 = ShiftDrop::create([
                     'schedule_entry_id' => $drop2Entry->id,
                     'requested_by' => $drop2Entry->user_id,
                     'reason' => 'Doctor appointment that can\'t be rescheduled.',
                     'status' => 'open',
+                ]);
+                $requesterName = User::find($drop2Entry->user_id)->name;
+                $notifyManagers([
+                    'type' => 'shift_drop_requested',
+                    'title' => 'Shift Drop Request',
+                    'body' => "{$requesterName} wants to drop their {$tuesday->toDateString()} shift.",
+                    'link' => '/manage/shift-drops',
+                    'source_id' => $drop2->id,
                 ]);
             }
 
@@ -687,6 +720,14 @@ class DatabaseSeeder extends Seeder
                     'reason' => 'Not feeling well, might be coming down with something.',
                     'status' => 'open',
                 ]);
+                $requesterName = User::find($drop3Entry->user_id)->name;
+                $notifyManagers([
+                    'type' => 'shift_drop_requested',
+                    'title' => 'Shift Drop Request',
+                    'body' => "{$requesterName} wants to drop their {$wednesday->toDateString()} shift.",
+                    'link' => '/manage/shift-drops',
+                    'source_id' => $drop3->id,
+                ]);
 
                 // Add a volunteer: a server NOT already scheduled on Wednesday
                 // and NOT the person who requested the drop.
@@ -694,17 +735,30 @@ class DatabaseSeeder extends Seeder
                     ->filter(fn ($e) => $e->date->toDateString() === $wednesday->toDateString())
                     ->pluck('user_id');
 
-                $volunteer = $servers
+                $volunteerUser = $servers
                     ->filter(fn ($u) => $u->id !== $drop3Entry->user_id)
                     ->filter(fn ($u) => !$scheduledOnWednesday->contains($u->id))
                     ->first();
 
-                if ($volunteer) {
+                if ($volunteerUser) {
                     ShiftDropVolunteer::create([
                         'shift_drop_id' => $drop3->id,
-                        'user_id' => $volunteer->id,
+                        'user_id' => $volunteerUser->id,
                         'selected' => false,
                     ]);
+                    foreach ($managersToNotify as $mgr) {
+                        $mgr->notifications()->create([
+                            'id' => Str::uuid()->toString(),
+                            'type' => 'App\\Notifications\\ShiftDropVolunteeredNotification',
+                            'data' => [
+                                'type' => 'shift_drop_volunteered',
+                                'title' => 'Shift Drop Volunteer',
+                                'body' => "{$volunteerUser->name} volunteered to pick up the {$wednesday->toDateString()} shift.",
+                                'link' => '/manage/shift-drops',
+                                'source_id' => $drop3->id,
+                            ],
+                        ]);
+                    }
                 }
             }
         }

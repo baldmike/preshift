@@ -452,6 +452,7 @@ export interface ShiftDrop {
   requester?: User
   filler?: User
   volunteers?: ShiftDropVolunteer[]
+  has_volunteered?: boolean
   created_at: string
   updated_at: string
 }
@@ -487,4 +488,27 @@ export interface TimeOffRequest {
   created_at: string
   /** ISO-8601 last-update timestamp */
   updated_at: string
+}
+
+/**
+ * An in-app notification for managers/admins.
+ * Mirrors the data payload from Laravel's database notification channel.
+ */
+export interface AppNotification {
+  /** UUID primary key */
+  id: string
+  /** Notification subtype (e.g. "shift_drop_requested", "time_off_requested") */
+  type: string
+  /** Short headline */
+  title: string
+  /** Descriptive body text */
+  body: string
+  /** Frontend route to navigate to when clicked */
+  link: string
+  /** Primary key of the related source record */
+  source_id: number
+  /** ISO-8601 timestamp when the notification was read; null if unread */
+  read_at: string | null
+  /** ISO-8601 creation timestamp */
+  created_at: string
 }
