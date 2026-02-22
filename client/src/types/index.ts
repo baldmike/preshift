@@ -304,8 +304,37 @@ export interface PreShiftData {
   push_items: PushItem[]
   /** All current announcements targeted at the user's role */
   announcements: Announcement[]
+  /** Today's events for the user's location */
+  events: Event[]
   /** Acknowledgment refs for items the current user has already acknowledged */
   acknowledgments: AcknowledgmentRef[]
+}
+
+/**
+ * A daily event at a location (e.g. "Wine tasting at 7pm", "Private party 6-9").
+ * Events are date-scoped and posted by managers so staff know what's happening.
+ */
+export interface Event {
+  /** Primary key */
+  id: number
+  /** Foreign key to the owning Location */
+  location_id: number
+  /** Short headline for the event */
+  title: string
+  /** Optional details about the event */
+  description: string | null
+  /** The day the event applies to (ISO date string) */
+  event_date: string
+  /** Optional "HH:MM" display time */
+  event_time: string | null
+  /** Foreign key (User.id) of the manager/admin who created the event */
+  created_by: number
+  /** Eagerly-loaded User who created the event (optional) */
+  creator?: User
+  /** ISO-8601 creation timestamp */
+  created_at: string
+  /** ISO-8601 last-update timestamp */
+  updated_at: string
 }
 
 // ─── Scheduling System Types ─────────────────────────────────────────────
