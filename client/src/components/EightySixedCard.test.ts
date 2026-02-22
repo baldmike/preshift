@@ -22,8 +22,8 @@
  *   4. The user name is displayed when the user relationship is loaded.
  *   5. The AcknowledgeButton child component is rendered.
  *   6. Staff users see the AcknowledgeButton (not the Edit link).
- *   7. Managers see an Edit link (not the AcknowledgeButton).
- *   8. Admins see an Edit link (not the AcknowledgeButton).
+ *   7. Managers see an Edit link with item ID (not the AcknowledgeButton).
+ *   8. Admins see an Edit link with item ID (not the AcknowledgeButton).
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
@@ -212,12 +212,12 @@ describe('EightySixedCard.vue', () => {
    * Test 7 — Managers see an Edit link instead of AcknowledgeButton
    *
    * When the current user is a manager, the card should render a
-   * router-link Edit button pointing to /manage/86 and hide the
+   * router-link Edit button pointing to /manage/86/{id} and hide the
    * AcknowledgeButton.
    */
   it('shows Edit link instead of AcknowledgeButton for managers', () => {
     mockIsManager.value = true
-    const item = makeItem()
+    const item = makeItem({ id: 42 })
 
     const wrapper = mount(EightySixedCard, {
       props: { item },
@@ -226,6 +226,7 @@ describe('EightySixedCard.vue', () => {
 
     expect(wrapper.find('.router-link-stub').exists()).toBe(true)
     expect(wrapper.find('.router-link-stub').text()).toBe('Edit')
+    expect(wrapper.findComponent(RouterLinkStub).props('to')).toBe('/manage/86/42')
     expect(wrapper.find('.ack-stub').exists()).toBe(false)
   })
 
@@ -233,12 +234,12 @@ describe('EightySixedCard.vue', () => {
    * Test 8 — Admins see an Edit link instead of AcknowledgeButton
    *
    * When the current user is an admin, the card should render a
-   * router-link Edit button pointing to /manage/86 and hide the
+   * router-link Edit button pointing to /manage/86/{id} and hide the
    * AcknowledgeButton.
    */
   it('shows Edit link instead of AcknowledgeButton for admins', () => {
     mockIsAdmin.value = true
-    const item = makeItem()
+    const item = makeItem({ id: 99 })
 
     const wrapper = mount(EightySixedCard, {
       props: { item },
@@ -247,6 +248,7 @@ describe('EightySixedCard.vue', () => {
 
     expect(wrapper.find('.router-link-stub').exists()).toBe(true)
     expect(wrapper.find('.router-link-stub').text()).toBe('Edit')
+    expect(wrapper.findComponent(RouterLinkStub).props('to')).toBe('/manage/86/99')
     expect(wrapper.find('.ack-stub').exists()).toBe(false)
   })
 })

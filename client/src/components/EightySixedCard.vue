@@ -5,7 +5,7 @@
  * Renders a compact, red-themed card for a single 86'd item. Displays
  * the item name, optional reason, the user who 86'd it, and a timestamp.
  * Staff see an AcknowledgeButton to mark the item as seen; managers and
- * admins see an Edit link that navigates to /manage/86 instead.
+ * admins see an Edit link that navigates to /manage/86/{id} instead.
  *
  * Props:
  *   - item: EightySixed
@@ -44,7 +44,7 @@ function formatTime(dateStr: string) {
       </div>
       <router-link
         v-if="canEdit"
-        to="/manage/86"
+        :to="`/manage/86/${item.id}`"
         class="inline-flex items-center gap-1 rounded-md bg-red-500/10 border border-red-500/20 px-2 py-1 text-[10px] font-medium text-red-300 hover:bg-red-500/20 hover:text-red-200 transition-colors"
       >
         Edit

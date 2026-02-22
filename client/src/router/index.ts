@@ -136,11 +136,12 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true, roles: ['admin', 'manager'] },
   },
   {
-    path: '/manage/86',
+    path: '/manage/86/:id?',
     name: 'ManageEightySixed',
-    // CRUD for 86'd items -- managers can 86 or restore items here
+    // CRUD for 86'd items -- managers can 86, edit, or restore items here
     component: () => import('@/views/admin/ManageEightySixed.vue'),
     meta: { requiresAuth: true, roles: ['admin', 'manager'] },
+    props: true,
   },
   {
     path: '/manage/specials',
