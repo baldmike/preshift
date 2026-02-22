@@ -353,6 +353,66 @@ onUnmounted(() => {
     <!-- Schedule widget — shows either the full weekly strip or a single "Next Shift" fallback -->
     <div v-else-if="hasContent" class="space-y-3 sm:space-y-4">
 
+      <!-- ═══ Weather — current conditions + today's forecast ═══ -->
+      <section v-if="weather" class="rounded-xl bg-sky-500/5 border border-sky-500/10 p-3">
+        <div class="flex items-center gap-2 mb-2">
+          <!-- Weather icon based on current weather code -->
+          <svg v-if="weatherIcon(weather.current.weather_code) === 'sun'" class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+          </svg>
+          <svg v-else-if="weatherIcon(weather.current.weather_code) === 'cloud-sun'" class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
+          </svg>
+          <svg v-else-if="weatherIcon(weather.current.weather_code) === 'rain' || weatherIcon(weather.current.weather_code) === 'drizzle'" class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 19v2m4-2v2m4-2v2" />
+          </svg>
+          <svg v-else-if="weatherIcon(weather.current.weather_code) === 'snow'" class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 19l.5 1m3.5-1l.5 1m3.5-1l.5 1" />
+          </svg>
+          <svg v-else-if="weatherIcon(weather.current.weather_code) === 'storm'" class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+          <svg v-else class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
+          </svg>
+          <span class="text-xs font-bold text-sky-400 uppercase tracking-wide">Weather</span>
+        </div>
+
+        <div class="flex items-center gap-4">
+          <!-- Current temperature (large) -->
+          <div class="flex items-baseline gap-1">
+            <span class="text-2xl font-bold text-sky-300">{{ weather.current.temperature }}°</span>
+            <span class="text-[10px] text-sky-500/60">Feels like {{ weather.current.feels_like }}°</span>
+          </div>
+
+          <!-- Condition + high/low -->
+          <div class="flex-1 min-w-0">
+            <p class="text-xs text-gray-200 truncate">{{ weather.current.description }}</p>
+            <p class="text-[10px] text-sky-500/60">
+              H: {{ weather.today.high }}° &nbsp; L: {{ weather.today.low }}°
+            </p>
+          </div>
+
+          <!-- Humidity + wind -->
+          <div class="text-right shrink-0">
+            <p class="text-[10px] text-sky-500/60">
+              <span class="text-sky-400">{{ weather.current.humidity }}%</span> humidity
+            </p>
+            <p class="text-[10px] text-sky-500/60">
+              <span class="text-sky-400">{{ weather.current.wind_speed }}</span> mph wind
+            </p>
+          </div>
+        </div>
+      </section>
+
       <!-- ═══ Today's Schedule — shows who's working today ═══ -->
       <section v-if="scheduleStore.currentSchedule" class="rounded-xl bg-emerald-500/5 border border-emerald-500/10 p-3">
         <div class="flex items-center justify-between mb-3">
@@ -413,66 +473,6 @@ onUnmounted(() => {
           >
             Time Off
           </router-link>
-        </div>
-      </section>
-
-      <!-- ═══ Weather — current conditions + today's forecast ═══ -->
-      <section v-if="weather" class="rounded-xl bg-sky-500/5 border border-sky-500/10 p-3">
-        <div class="flex items-center gap-2 mb-2">
-          <!-- Weather icon based on current weather code -->
-          <svg v-if="weatherIcon(weather.current.weather_code) === 'sun'" class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-          </svg>
-          <svg v-else-if="weatherIcon(weather.current.weather_code) === 'cloud-sun'" class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
-          </svg>
-          <svg v-else-if="weatherIcon(weather.current.weather_code) === 'rain' || weatherIcon(weather.current.weather_code) === 'drizzle'" class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 19v2m4-2v2m4-2v2" />
-          </svg>
-          <svg v-else-if="weatherIcon(weather.current.weather_code) === 'snow'" class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 19l.5 1m3.5-1l.5 1m3.5-1l.5 1" />
-          </svg>
-          <svg v-else-if="weatherIcon(weather.current.weather_code) === 'storm'" class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M13 10V3L4 14h7v7l9-11h-7z" />
-          </svg>
-          <svg v-else class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
-          </svg>
-          <span class="text-xs font-bold text-sky-400 uppercase tracking-wide">Weather</span>
-        </div>
-
-        <div class="flex items-center gap-4">
-          <!-- Current temperature (large) -->
-          <div class="flex items-baseline gap-1">
-            <span class="text-2xl font-bold text-sky-300">{{ weather.current.temperature }}°</span>
-            <span class="text-[10px] text-sky-500/60">Feels like {{ weather.current.feels_like }}°</span>
-          </div>
-
-          <!-- Condition + high/low -->
-          <div class="flex-1 min-w-0">
-            <p class="text-xs text-gray-200 truncate">{{ weather.current.description }}</p>
-            <p class="text-[10px] text-sky-500/60">
-              H: {{ weather.today.high }}° &nbsp; L: {{ weather.today.low }}°
-            </p>
-          </div>
-
-          <!-- Humidity + wind -->
-          <div class="text-right shrink-0">
-            <p class="text-[10px] text-sky-500/60">
-              <span class="text-sky-400">{{ weather.current.humidity }}%</span> humidity
-            </p>
-            <p class="text-[10px] text-sky-500/60">
-              <span class="text-sky-400">{{ weather.current.wind_speed }}</span> mph wind
-            </p>
-          </div>
         </div>
       </section>
 
