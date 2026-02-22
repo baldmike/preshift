@@ -97,6 +97,28 @@ onMounted(async () => {
         <p class="text-xs text-gray-500 mt-0.5">Pick up available shifts or manage your drops</p>
       </div>
 
+      <!-- Sub-navigation: pill links to schedule-related views -->
+      <div class="flex gap-2">
+        <router-link
+          to="/tonights-schedule"
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full bg-teal-500/20 text-teal-300 hover:bg-teal-500/30 transition-colors"
+        >
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          Tonight's Schedule
+        </router-link>
+        <router-link
+          to="/time-off"
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 transition-colors"
+        >
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          Time Off
+        </router-link>
+      </div>
+
       <!-- Loading State -->
       <div v-if="loading" class="flex items-center justify-center py-16">
         <div class="flex flex-col items-center gap-3">
