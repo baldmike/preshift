@@ -19,6 +19,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
+import { createPinia, setActivePinia } from 'pinia'
 import ScheduleBuilderView from '@/views/admin/ScheduleBuilderView.vue'
 import type { Schedule, ScheduleEntry, ShiftTemplate, User } from '@/types'
 
@@ -43,6 +44,23 @@ vi.mock('@/composables/useApi', () => ({
 vi.mock('@/composables/useSchedule', () => ({
   useSchedule: () => ({
     formatWeekLabel: (date: string) => `Week of ${date}`,
+  }),
+}))
+
+// ── Mock the useAuth composable ─────────────────────────────────────────────
+vi.mock('@/composables/useAuth', () => ({
+  useAuth: () => ({
+    locationId: { value: 1 },
+  }),
+}))
+
+// ── Mock the useReverb composable ───────────────────────────────────────────
+const mockListen = vi.fn().mockReturnThis()
+const mockStopListening = vi.fn()
+vi.mock('@/composables/useReverb', () => ({
+  useLocationChannel: () => ({
+    listen: mockListen,
+    stopListening: mockStopListening,
   }),
 }))
 
@@ -138,6 +156,9 @@ function configureMockApi(schedule: Schedule, users?: User[]) {
     if (url === '/api/time-off-requests') {
       return Promise.resolve({ data: [] })
     }
+    if (url === '/api/acknowledgments/summary') {
+      return Promise.resolve({ data: { total_items: 0, users: [] } })
+    }
     return Promise.resolve({ data: [] })
   })
 }
@@ -213,6 +234,7 @@ function getDropdownUserIds(wrapper: ReturnType<typeof mount>): number[] {
 describe('ScheduleBuilderView — one shift per day filtering', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    setActivePinia(createPinia())
   })
 
   /**

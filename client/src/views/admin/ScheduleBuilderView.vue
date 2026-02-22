@@ -24,9 +24,12 @@
  *   GET    /api/time-off-requests
  *   GET    /api/users
  */
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import api from '@/composables/useApi'
+import { useScheduleStore } from '@/stores/schedule'
 import { useSchedule } from '@/composables/useSchedule'
+import { useAuth } from '@/composables/useAuth'
+import { useLocationChannel } from '@/composables/useReverb'
 import AppShell from '@/components/layout/AppShell.vue'
 import ScheduleGrid from '@/components/ScheduleGrid.vue'
 import TimeOffBadge from '@/components/TimeOffBadge.vue'
@@ -36,6 +39,8 @@ import type { Schedule, ShiftTemplate, TimeOffRequest, User } from '@/types'
 // ── Composables ──────────────────────────────────────────────────────────────
 
 const { formatWeekLabel } = useSchedule()
+const scheduleStore = useScheduleStore()
+const { locationId } = useAuth()
 
 // ── State: schedules ─────────────────────────────────────────────────────────
 
@@ -452,12 +457,28 @@ function toast(message: string, type: string) {
 
 // ── Lifecycle ────────────────────────────────────────────────────────────────
 
+let ackChannel: ReturnType<typeof useLocationChannel> | null = null
+
 // Fetch all required data on component mount
 onMounted(() => {
   fetchSchedules()
   fetchShiftTemplates()
   fetchUsers()
   fetchTimeOff()
+  scheduleStore.fetchAckSummary()
+
+  if (locationId.value) {
+    ackChannel = useLocationChannel(locationId.value)
+    ackChannel.listen('.acknowledgment.recorded', (e: any) => {
+      scheduleStore.updateUserAckPercentage(e.user_id, e.percentage)
+    })
+  }
+})
+
+onUnmounted(() => {
+  if (ackChannel) {
+    ackChannel.stopListening('.acknowledgment.recorded')
+  }
 })
 </script>
 
@@ -609,6 +630,7 @@ onMounted(() => {
             <ScheduleGrid
               :schedule="activeSchedule"
               :shift-templates="shiftTemplates"
+              :ack-map="scheduleStore.ackSummaryMap"
               @add-entry="handleAddEntry"
               @remove-entry="handleRemoveEntry"
             />

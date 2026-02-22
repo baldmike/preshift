@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\AcknowledgmentRecorded;
 use App\Http\Requests\StoreAcknowledgmentRequest;
 use App\Http\Resources\AcknowledgmentResource;
 use App\Models\Acknowledgment;
@@ -49,6 +50,16 @@ class AcknowledgmentController extends Controller
             ]
         );
 
+        $user = $request->user();
+        $stats = $this->calculateUserPercentage($user);
+        AcknowledgmentRecorded::dispatch(
+            $user->location_id,
+            $user->id,
+            $stats['acknowledged_count'],
+            $stats['total_items'],
+            $stats['percentage'],
+        );
+
         return response()->json(new AcknowledgmentResource($acknowledgment));
     }
 
@@ -85,37 +96,8 @@ class AcknowledgmentController extends Controller
     public function summary(Request $request): JsonResponse
     {
         $locationId = $request->user()->location_id;
-
-        $eightySixedIds = EightySixed::where('location_id', $locationId)
-            ->whereNull('restored_at')
-            ->pluck('id');
-
-        $specialIds = Special::where('location_id', $locationId)
-            ->where('is_active', true)
-            ->pluck('id');
-
-        $pushItemIds = PushItem::where('location_id', $locationId)
-            ->where('is_active', true)
-            ->pluck('id');
-
-        $announcementIds = Announcement::where('location_id', $locationId)
-            ->where(function ($query) {
-                $query->whereNull('expires_at')
-                      ->orWhere('expires_at', '>', now());
-            })
-            ->pluck('id');
-
-        $itemMap = [
-            EightySixed::class => $eightySixedIds,
-            Special::class     => $specialIds,
-            PushItem::class    => $pushItemIds,
-            Announcement::class => $announcementIds,
-        ];
-
-        $totalItems = $eightySixedIds->count()
-                    + $specialIds->count()
-                    + $pushItemIds->count()
-                    + $announcementIds->count();
+        $itemMap = $this->activeItemMap($locationId);
+        $totalItems = collect($itemMap)->sum->count();
 
         $users = User::where('location_id', $locationId)->get();
 
@@ -149,5 +131,61 @@ class AcknowledgmentController extends Controller
             'total_items' => $totalItems,
             'users'       => $usersData,
         ]);
+    }
+
+    /**
+     * Build a map of active item IDs per acknowledgable type for a location.
+     *
+     * @return array<class-string, \Illuminate\Support\Collection<int, int>>
+     */
+    private function activeItemMap(int $locationId): array
+    {
+        return [
+            EightySixed::class => EightySixed::where('location_id', $locationId)
+                ->whereNull('restored_at')
+                ->pluck('id'),
+            Special::class => Special::where('location_id', $locationId)
+                ->where('is_active', true)
+                ->pluck('id'),
+            PushItem::class => PushItem::where('location_id', $locationId)
+                ->where('is_active', true)
+                ->pluck('id'),
+            Announcement::class => Announcement::where('location_id', $locationId)
+                ->where(function ($query) {
+                    $query->whereNull('expires_at')
+                          ->orWhere('expires_at', '>', now());
+                })
+                ->pluck('id'),
+        ];
+    }
+
+    /**
+     * Calculate a single user's acknowledgment percentage for their location.
+     *
+     * @return array{acknowledged_count: int, total_items: int, percentage: int}
+     */
+    private function calculateUserPercentage(User $user): array
+    {
+        $itemMap = $this->activeItemMap($user->location_id);
+        $totalItems = collect($itemMap)->sum->count();
+
+        $acknowledgedCount = 0;
+        foreach ($itemMap as $type => $ids) {
+            if ($ids->isEmpty()) {
+                continue;
+            }
+            $acknowledgedCount += Acknowledgment::where('user_id', $user->id)
+                ->where('acknowledgable_type', $type)
+                ->whereIn('acknowledgable_id', $ids)
+                ->count();
+        }
+
+        return [
+            'acknowledged_count' => $acknowledgedCount,
+            'total_items'        => $totalItems,
+            'percentage'         => $totalItems > 0
+                ? (int) round(($acknowledgedCount / $totalItems) * 100)
+                : 0,
+        ];
     }
 }
