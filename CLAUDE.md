@@ -41,8 +41,10 @@ PreShift is a digital pre-shift meeting replacement for restaurants and bars. Ma
 
 ## Development Rules
 
-- Never commit directly to `main` or `develop`
-- Always work in feature branches off `develop`: `feature/`, `fix/`, `chore/`, `refactor/`
+- Never commit directly to `main`
+- Always work in feature branches off `main`: `feature/`, `fix/`, `chore/`, `refactor/`
+- There is NO `develop` branch — `main` is the only base branch
+- Never include "Co-Authored-By" lines, Claude Code references, or any AI attribution in commit messages, PR descriptions, or code comments
 - Write small, focused commits with clear present-tense messages
 - Do not modify existing migrations — always create new migrations for schema changes
 - Do not remove or refactor existing working code unless explicitly asked
