@@ -36,6 +36,7 @@ use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\ScheduleEntryController;
 use App\Http\Controllers\ShiftDropController;
 use App\Http\Controllers\TimeOffRequestController;
+use App\Http\Controllers\EventController;
 use App\Http\Controllers\ConfigController;
 
 /*
@@ -162,6 +163,24 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/announcements', [AnnouncementController::class, 'store'])->middleware('role:admin,manager');
         Route::patch('/announcements/{announcement}', [AnnouncementController::class, 'update'])->middleware('role:admin,manager');
         Route::delete('/announcements/{announcement}', [AnnouncementController::class, 'destroy'])->middleware('role:admin,manager');
+
+        /*
+        |------------------------------------------------------------------
+        | Events
+        |------------------------------------------------------------------
+        | Daily events posted by managers (e.g. "Wine tasting at 7pm",
+        | "Private party in back room 6-9"). Visible to all staff on the
+        | pre-shift dashboard. Full CRUD for managers; read-only for staff.
+        |
+        | GET    /api/events              -- List today's events (or ?date=YYYY-MM-DD).
+        | POST   /api/events              -- Create an event (admin/manager).
+        | PATCH  /api/events/{id}         -- Update an event (admin/manager).
+        | DELETE /api/events/{id}         -- Delete an event (admin/manager).
+        */
+        Route::get('/events', [EventController::class, 'index']);
+        Route::post('/events', [EventController::class, 'store'])->middleware('role:admin,manager');
+        Route::patch('/events/{event}', [EventController::class, 'update'])->middleware('role:admin,manager');
+        Route::delete('/events/{event}', [EventController::class, 'destroy'])->middleware('role:admin,manager');
 
         /*
         |------------------------------------------------------------------

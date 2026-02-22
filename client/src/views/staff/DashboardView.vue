@@ -8,7 +8,7 @@
  * to real-time Reverb events on the location channel so cards update live
  * as managers make changes.
  */
-import { onMounted, onUnmounted, computed } from 'vue'
+import { onMounted, onUnmounted, computed, ref, reactive } from 'vue'
 import { usePreshiftStore } from '@/stores/preshift'
 import { useScheduleStore } from '@/stores/schedule'
 import { useAuth } from '@/composables/useAuth'
@@ -23,7 +23,84 @@ import AnnouncementCard from '@/components/AnnouncementCard.vue'
 
 const store = usePreshiftStore()
 const scheduleStore = useScheduleStore()
-const { locationId } = useAuth()
+const { locationId, user } = useAuth()
+
+/** Whether the current user can manage events (admin or manager) */
+const canManageEvents = computed(() => {
+  const role = user.value?.role
+  return role === 'admin' || role === 'manager'
+})
+
+/** Controls visibility of the inline event form */
+const showEventForm = ref(false)
+
+/** The event currently being edited (null = creating new) */
+const editingEventId = ref<number | null>(null)
+
+/** Reactive form data for creating/editing an event */
+const eventForm = reactive({
+  title: '',
+  description: '',
+  event_date: '',
+  event_time: '',
+})
+
+function resetEventForm() {
+  eventForm.title = ''
+  eventForm.description = ''
+  eventForm.event_date = todayISO.value
+  eventForm.event_time = ''
+  editingEventId.value = null
+  showEventForm.value = false
+}
+
+function startEditEvent(event: any) {
+  editingEventId.value = event.id
+  eventForm.title = event.title
+  eventForm.description = event.description || ''
+  eventForm.event_date = event.event_date?.split('T')[0] || todayISO.value
+  eventForm.event_time = event.event_time || ''
+  showEventForm.value = true
+}
+
+async function saveEvent() {
+  const payload = {
+    title: eventForm.title,
+    description: eventForm.description || null,
+    event_date: eventForm.event_date,
+    event_time: eventForm.event_time || null,
+  }
+  try {
+    if (editingEventId.value) {
+      const { data } = await api.patch(`/api/events/${editingEventId.value}`, payload)
+      store.updateEvent(data)
+      toast('Event updated', 'success')
+    } else {
+      const { data } = await api.post('/api/events', payload)
+      store.addEvent(data)
+      toast('Event created', 'success')
+    }
+    resetEventForm()
+  } catch {
+    toast('Failed to save event', 'error')
+  }
+}
+
+async function deleteEvent(id: number) {
+  try {
+    await api.delete(`/api/events/${id}`)
+    store.removeEvent(id)
+    toast('Event deleted', 'success')
+  } catch {
+    toast('Failed to delete event', 'error')
+  }
+}
+
+function openNewEventForm() {
+  resetEventForm()
+  eventForm.event_date = todayISO.value
+  showEventForm.value = true
+}
 const { nextShift, currentWeekShifts, currentWeekRange, formatShiftTime } = useSchedule()
 
 /** Today's date as "YYYY-MM-DD" for filtering schedule entries */
@@ -143,7 +220,7 @@ async function giveUpShift(entryId: number) {
 let channel: ReturnType<typeof useLocationChannel> | null = null
 
 const hasContent = computed(() =>
-  store.eightySixed.length || store.specials.length || store.pushItems.length || store.announcements.length
+  store.eightySixed.length || store.specials.length || store.pushItems.length || store.announcements.length || store.events.length
 )
 
 onMounted(async () => {
@@ -166,6 +243,9 @@ onMounted(async () => {
       .listen('.announcement.posted', (e: any) => store.addAnnouncement(e.announcement || e))
       .listen('.announcement.updated', (e: any) => store.updateAnnouncement(e.announcement || e))
       .listen('.announcement.deleted', (e: any) => store.removeAnnouncement(e.id))
+      .listen('.event.created', (e: any) => store.addEvent(e.event || e))
+      .listen('.event.updated', (e: any) => store.updateEvent(e.event || e))
+      .listen('.event.deleted', (e: any) => store.removeEvent(e.id))
       .listen('.special.low-stock', (e: any) => {
         toast(`Only ${e.quantity} left: ${e.title}!`, 'warning')
       })
@@ -199,6 +279,9 @@ onUnmounted(() => {
     channel.stopListening('.announcement.posted')
     channel.stopListening('.announcement.updated')
     channel.stopListening('.announcement.deleted')
+    channel.stopListening('.event.created')
+    channel.stopListening('.event.updated')
+    channel.stopListening('.event.deleted')
     channel.stopListening('.special.low-stock')
     channel.stopListening('.schedule.published')
     channel.stopListening('.shift-drop.requested')
@@ -286,6 +369,91 @@ onUnmounted(() => {
             Time Off
           </router-link>
         </div>
+      </section>
+
+      <!-- ═══ Events — daily happenings ═══ -->
+      <section v-if="store.events.length || canManageEvents" class="rounded-xl bg-violet-500/5 border border-violet-500/10 p-3">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <span class="text-xs font-bold text-violet-400 uppercase tracking-wide">Events</span>
+            <span v-if="store.events.length" class="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full text-[0.625rem] font-bold bg-violet-500/20 text-violet-300">{{ store.events.length }}</span>
+          </div>
+          <button
+            v-if="canManageEvents"
+            @click="openNewEventForm"
+            class="text-[10px] font-semibold text-violet-400 hover:text-violet-300 transition-colors"
+          >
+            + Add
+          </button>
+        </div>
+
+        <!-- Inline add/edit form -->
+        <div v-if="showEventForm" class="rounded-lg bg-white/[0.03] border border-white/[0.06] p-2.5 mb-2 space-y-2">
+          <input
+            v-model="eventForm.title"
+            type="text"
+            placeholder="Event title"
+            class="w-full bg-white/[0.05] border border-white/[0.08] rounded px-2 py-1 text-xs text-gray-200 placeholder-gray-500 focus:outline-none focus:border-violet-500/40"
+          />
+          <input
+            v-model="eventForm.description"
+            type="text"
+            placeholder="Description (optional)"
+            class="w-full bg-white/[0.05] border border-white/[0.08] rounded px-2 py-1 text-xs text-gray-200 placeholder-gray-500 focus:outline-none focus:border-violet-500/40"
+          />
+          <div class="flex gap-2">
+            <input
+              v-model="eventForm.event_time"
+              type="time"
+              class="flex-1 bg-white/[0.05] border border-white/[0.08] rounded px-2 py-1 text-xs text-gray-200 focus:outline-none focus:border-violet-500/40"
+            />
+            <input
+              v-model="eventForm.event_date"
+              type="date"
+              class="flex-1 bg-white/[0.05] border border-white/[0.08] rounded px-2 py-1 text-xs text-gray-200 focus:outline-none focus:border-violet-500/40"
+            />
+          </div>
+          <div class="flex gap-2 justify-end">
+            <button @click="resetEventForm" class="px-2 py-1 text-[10px] font-semibold text-gray-400 hover:text-gray-300 transition-colors">Cancel</button>
+            <button @click="saveEvent" :disabled="!eventForm.title" class="px-2.5 py-1 text-[10px] font-semibold rounded bg-violet-500/20 text-violet-300 hover:bg-violet-500/30 transition-colors disabled:opacity-40">
+              {{ editingEventId ? 'Update' : 'Create' }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Event list -->
+        <div v-if="store.events.length" class="space-y-1.5">
+          <div
+            v-for="evt in store.events"
+            :key="evt.id"
+            class="flex items-start gap-2 rounded-lg bg-white/[0.03] border border-white/[0.06] p-2.5"
+          >
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-1.5">
+                <span v-if="evt.event_time" class="text-xs font-bold text-violet-300">{{ evt.event_time }}</span>
+                <span class="text-xs text-gray-200 truncate">{{ evt.title }}</span>
+              </div>
+              <p v-if="evt.description" class="text-[11px] text-gray-500 mt-0.5 truncate">{{ evt.description }}</p>
+            </div>
+            <div v-if="canManageEvents" class="flex items-center gap-1 shrink-0">
+              <button @click="startEditEvent(evt)" class="text-gray-500 hover:text-violet-400 transition-colors">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                </svg>
+              </button>
+              <button @click="deleteEvent(evt.id)" class="text-gray-500 hover:text-red-400 transition-colors">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+        <p v-else class="text-gray-600 text-xs text-center py-4">No events today</p>
       </section>
 
     <!-- Dashboard grid -->

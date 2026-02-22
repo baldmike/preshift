@@ -33,6 +33,7 @@ import type {
   Special,
   PushItem,
   Announcement,
+  Event,
   AcknowledgmentRef,
   PreShiftData,
 } from '@/types'
@@ -53,6 +54,9 @@ export const usePreshiftStore = defineStore('preshift', () => {
 
   /** Management announcements broadcast to staff */
   const announcements = ref<Announcement[]>([])
+
+  /** Today's daily events for the location */
+  const events = ref<Event[]>([])
 
   /**
    * Lightweight acknowledgment references for the current user.
@@ -87,6 +91,7 @@ export const usePreshiftStore = defineStore('preshift', () => {
       specials.value = data.specials
       pushItems.value = data.push_items
       announcements.value = data.announcements
+      events.value = data.events
       acknowledgments.value = data.acknowledgments
     } finally {
       // Always reset loading, even if the request failed
@@ -226,6 +231,41 @@ export const usePreshiftStore = defineStore('preshift', () => {
   }
 
   // -------------------------------------------------------------------------
+  // Actions -- realtime granular mutations for events
+  // -------------------------------------------------------------------------
+
+  /**
+   * Adds a new event to the local list.
+   * Called when an `EventCreated` event arrives via Reverb.
+   *
+   * @param item - The full Event object broadcast from the server
+   */
+  function addEvent(item: Event) {
+    events.value.push(item)
+  }
+
+  /**
+   * Replaces an existing event in the local list with an updated version.
+   * Called when an `EventUpdated` event arrives via Reverb.
+   *
+   * @param item - The updated Event object (must include `item.id`)
+   */
+  function updateEvent(item: Event) {
+    const idx = events.value.findIndex((e) => e.id === item.id)
+    if (idx !== -1) events.value[idx] = item
+  }
+
+  /**
+   * Removes an event from the local list.
+   * Called when an `EventDeleted` event arrives via Reverb.
+   *
+   * @param id - The primary key of the Event to remove
+   */
+  function removeEvent(id: number) {
+    events.value = events.value.filter((e) => e.id !== id)
+  }
+
+  // -------------------------------------------------------------------------
   // Actions -- acknowledgment tracking
   // -------------------------------------------------------------------------
 
@@ -253,6 +293,7 @@ export const usePreshiftStore = defineStore('preshift', () => {
     specials,
     pushItems,
     announcements,
+    events,
     acknowledgments,
     loading,
     // Bulk fetch
@@ -272,6 +313,10 @@ export const usePreshiftStore = defineStore('preshift', () => {
     addAnnouncement,
     updateAnnouncement,
     removeAnnouncement,
+    // Event mutations
+    addEvent,
+    updateEvent,
+    removeEvent,
     // Acknowledgment tracking
     markAcknowledged,
   }

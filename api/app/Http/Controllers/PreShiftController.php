@@ -4,10 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\AnnouncementResource;
 use App\Http\Resources\EightySixedResource;
+use App\Http\Resources\EventResource;
 use App\Http\Resources\PushItemResource;
 use App\Http\Resources\SpecialResource;
 use App\Models\Announcement;
 use App\Models\EightySixed;
+use App\Models\Event;
 use App\Models\PushItem;
 use App\Models\Special;
 use Illuminate\Http\JsonResponse;
@@ -73,6 +75,12 @@ class PreShiftController extends Controller
             ->with('poster')
             ->get();
 
+        // Fetch today's events for the location, with creator info.
+        $events = Event::where('location_id', $locationId)
+            ->forDate(now()->toDateString())
+            ->with('creator')
+            ->get();
+
         // Map the user's polymorphic acknowledgment records into a simple type/id structure.
         // This lets the client know which items have already been acknowledged by this user.
         $acknowledgments = $user->acknowledgments->map(function ($ack) {
@@ -88,6 +96,7 @@ class PreShiftController extends Controller
             'specials' => SpecialResource::collection($specials),
             'push_items' => PushItemResource::collection($pushItems),
             'announcements' => AnnouncementResource::collection($announcements),
+            'events' => EventResource::collection($events),
             'acknowledgments' => $acknowledgments,
         ]);
     }
