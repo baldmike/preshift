@@ -284,12 +284,12 @@ git push origin v0.1.0
 
 ### CLAUDE.md
 
-Keep a `CLAUDE.md` in the project root. Claude Code reads this automatically. Include:
+Keep a `CLAUDE.md` in the project root. It is read automatically by AI coding assistants. Include:
 
 - Project overview and current state
 - Tech stack and conventions
-- Anything Claude Code should know about your architecture
-- Things it should NOT do (e.g. "do not modify existing migrations")
+- Architecture notes and constraints
+- Things that should NOT be done (e.g. "do not modify existing migrations")
 
 Update it as the project evolves.
 
@@ -328,6 +328,6 @@ End of week:
 | **GitHub** | Repos, PRs, Issues, Projects |
 | **Chrome DevTools** | Device emulation, network debugging |
 | **Postman or Thunder Client** | API testing during development |
-| **Claude Code** | Scaffolding, implementation, debugging |
+| **AI Assistant** | Scaffolding, implementation, debugging |
 | **Laravel Telescope** | Local debugging (requests, queries, events) — install in dev only |
 | **Vue DevTools** | Browser extension for inspecting Vue components + Pinia state |
