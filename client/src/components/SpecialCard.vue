@@ -9,13 +9,17 @@
  * Props:
  *   - special: Special
  */
+import { computed } from 'vue'
 import type { Special } from '@/types'
 import { useAcknowledgments } from '@/composables/useAcknowledgments'
+import { useAuth } from '@/composables/useAuth'
 import AcknowledgeButton from '@/components/AcknowledgeButton.vue'
 import BadgePill from '@/components/ui/BadgePill.vue'
 
 const props = defineProps<{ special: Special }>()
 const { isAcknowledged } = useAcknowledgments()
+const { isAdmin, isManager } = useAuth()
+const canEdit = computed(() => isAdmin.value || isManager.value)
 
 function formatDate(dateStr: string | null) {
   if (!dateStr) return ''
@@ -38,7 +42,15 @@ function formatDate(dateStr: string | null) {
           <span v-if="special.quantity != null" class="text-amber-400/80 font-medium">{{ special.quantity }} left</span>
         </div>
       </div>
+      <router-link
+        v-if="canEdit"
+        to="/manage/daily"
+        class="inline-flex items-center gap-1 rounded-md bg-blue-500/10 border border-blue-500/20 px-2 py-1 text-[10px] font-medium text-blue-300 hover:bg-blue-500/20 hover:text-blue-200 transition-colors"
+      >
+        Edit
+      </router-link>
       <AcknowledgeButton
+        v-else
         type="special"
         :id="special.id"
         :acknowledged="isAcknowledged('special', special.id)"

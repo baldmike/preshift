@@ -23,7 +23,7 @@
  *   5. The quantity is shown when present.
  */
 
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import SpecialCard from '@/components/SpecialCard.vue'
 import type { Special } from '@/types'
@@ -33,6 +33,21 @@ vi.mock('@/composables/useAcknowledgments', () => ({
   useAcknowledgments: () => ({
     acknowledge: vi.fn().mockResolvedValue(undefined),
     isAcknowledged: vi.fn().mockReturnValue(false),
+  }),
+}))
+
+// ── Mock for the useAuth composable ─────────────────────────────────────────
+const mockIsAdmin = { value: false }
+const mockIsManager = { value: false }
+vi.mock('@/composables/useAuth', () => ({
+  useAuth: () => ({
+    user: { value: null },
+    isLoggedIn: { value: true },
+    isAdmin: mockIsAdmin,
+    isManager: mockIsManager,
+    isStaff: { value: true },
+    isSuperAdmin: { value: false },
+    locationId: { value: 1 },
   }),
 }))
 
@@ -68,7 +83,18 @@ function makeSpecial(overrides: Partial<Special> = {}): Special {
   }
 }
 
+// ── Stub for RouterLink ──────────────────────────────────────────────────────
+const RouterLinkStub = {
+  template: '<a class="router-link-stub"><slot /></a>',
+  props: ['to'],
+}
+
 describe('SpecialCard.vue', () => {
+  beforeEach(() => {
+    mockIsAdmin.value = false
+    mockIsManager.value = false
+  })
+
   /**
    * Test 1 — Renders the title as the heading
    *
@@ -80,7 +106,7 @@ describe('SpecialCard.vue', () => {
 
     const wrapper = mount(SpecialCard, {
       props: { special },
-      global: { stubs: { BadgePill: BadgePillStub, AcknowledgeButton: AcknowledgeButtonStub } },
+      global: { stubs: { BadgePill: BadgePillStub, AcknowledgeButton: AcknowledgeButtonStub, RouterLink: RouterLinkStub } },
     })
 
     const heading = wrapper.find('h4')
@@ -98,7 +124,7 @@ describe('SpecialCard.vue', () => {
 
     const wrapper = mount(SpecialCard, {
       props: { special },
-      global: { stubs: { BadgePill: BadgePillStub, AcknowledgeButton: AcknowledgeButtonStub } },
+      global: { stubs: { BadgePill: BadgePillStub, AcknowledgeButton: AcknowledgeButtonStub, RouterLink: RouterLinkStub } },
     })
 
     const badge = wrapper.find('.badge-pill-stub')
@@ -117,7 +143,7 @@ describe('SpecialCard.vue', () => {
 
     const wrapper = mount(SpecialCard, {
       props: { special },
-      global: { stubs: { BadgePill: BadgePillStub, AcknowledgeButton: AcknowledgeButtonStub } },
+      global: { stubs: { BadgePill: BadgePillStub, AcknowledgeButton: AcknowledgeButtonStub, RouterLink: RouterLinkStub } },
     })
 
     expect(wrapper.text()).toContain('Half-price margaritas from 4-6 PM')
@@ -137,7 +163,7 @@ describe('SpecialCard.vue', () => {
 
     const wrapper = mount(SpecialCard, {
       props: { special },
-      global: { stubs: { BadgePill: BadgePillStub, AcknowledgeButton: AcknowledgeButtonStub } },
+      global: { stubs: { BadgePill: BadgePillStub, AcknowledgeButton: AcknowledgeButtonStub, RouterLink: RouterLinkStub } },
     })
 
     const text = wrapper.text()
@@ -158,9 +184,49 @@ describe('SpecialCard.vue', () => {
 
     const wrapper = mount(SpecialCard, {
       props: { special },
-      global: { stubs: { BadgePill: BadgePillStub, AcknowledgeButton: AcknowledgeButtonStub } },
+      global: { stubs: { BadgePill: BadgePillStub, AcknowledgeButton: AcknowledgeButtonStub, RouterLink: RouterLinkStub } },
     })
 
     expect(wrapper.text()).toContain('5 left')
+  })
+
+  it('shows AcknowledgeButton for staff users', () => {
+    const special = makeSpecial()
+
+    const wrapper = mount(SpecialCard, {
+      props: { special },
+      global: { stubs: { BadgePill: BadgePillStub, AcknowledgeButton: AcknowledgeButtonStub, RouterLink: RouterLinkStub } },
+    })
+
+    expect(wrapper.find('.ack-stub').exists()).toBe(true)
+    expect(wrapper.find('.router-link-stub').exists()).toBe(false)
+  })
+
+  it('shows Edit link instead of AcknowledgeButton for managers', () => {
+    mockIsManager.value = true
+    const special = makeSpecial()
+
+    const wrapper = mount(SpecialCard, {
+      props: { special },
+      global: { stubs: { BadgePill: BadgePillStub, AcknowledgeButton: AcknowledgeButtonStub, RouterLink: RouterLinkStub } },
+    })
+
+    expect(wrapper.find('.router-link-stub').exists()).toBe(true)
+    expect(wrapper.find('.router-link-stub').text()).toBe('Edit')
+    expect(wrapper.find('.ack-stub').exists()).toBe(false)
+  })
+
+  it('shows Edit link instead of AcknowledgeButton for admins', () => {
+    mockIsAdmin.value = true
+    const special = makeSpecial()
+
+    const wrapper = mount(SpecialCard, {
+      props: { special },
+      global: { stubs: { BadgePill: BadgePillStub, AcknowledgeButton: AcknowledgeButtonStub, RouterLink: RouterLinkStub } },
+    })
+
+    expect(wrapper.find('.router-link-stub').exists()).toBe(true)
+    expect(wrapper.find('.router-link-stub').text()).toBe('Edit')
+    expect(wrapper.find('.ack-stub').exists()).toBe(false)
   })
 })

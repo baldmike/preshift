@@ -22,7 +22,7 @@
  *   5. The AcknowledgeButton child component is rendered.
  */
 
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import EightySixedCard from '@/components/EightySixedCard.vue'
 import type { EightySixed } from '@/types'
@@ -32,6 +32,21 @@ vi.mock('@/composables/useAcknowledgments', () => ({
   useAcknowledgments: () => ({
     acknowledge: vi.fn().mockResolvedValue(undefined),
     isAcknowledged: vi.fn().mockReturnValue(false),
+  }),
+}))
+
+// ── Mock for the useAuth composable ─────────────────────────────────────────
+const mockIsAdmin = { value: false }
+const mockIsManager = { value: false }
+vi.mock('@/composables/useAuth', () => ({
+  useAuth: () => ({
+    user: { value: null },
+    isLoggedIn: { value: true },
+    isAdmin: mockIsAdmin,
+    isManager: mockIsManager,
+    isStaff: { value: true },
+    isSuperAdmin: { value: false },
+    locationId: { value: 1 },
   }),
 }))
 
@@ -70,7 +85,18 @@ function makeItem(overrides: Partial<EightySixed> = {}): EightySixed {
   }
 }
 
+// ── Stub for RouterLink ──────────────────────────────────────────────────────
+const RouterLinkStub = {
+  template: '<a class="router-link-stub"><slot /></a>',
+  props: ['to'],
+}
+
 describe('EightySixedCard.vue', () => {
+  beforeEach(() => {
+    mockIsAdmin.value = false
+    mockIsManager.value = false
+  })
+
   /**
    * Test 1 — Renders the item_name as the heading
    *
@@ -82,7 +108,7 @@ describe('EightySixedCard.vue', () => {
 
     const wrapper = mount(EightySixedCard, {
       props: { item },
-      global: { stubs: { AcknowledgeButton: AcknowledgeButtonStub } },
+      global: { stubs: { AcknowledgeButton: AcknowledgeButtonStub, RouterLink: RouterLinkStub } },
     })
 
     const heading = wrapper.find('h4')
@@ -100,7 +126,7 @@ describe('EightySixedCard.vue', () => {
 
     const wrapper = mount(EightySixedCard, {
       props: { item },
-      global: { stubs: { AcknowledgeButton: AcknowledgeButtonStub } },
+      global: { stubs: { AcknowledgeButton: AcknowledgeButtonStub, RouterLink: RouterLinkStub } },
     })
 
     expect(wrapper.text()).toContain('Ran out of fresh salmon')
@@ -117,7 +143,7 @@ describe('EightySixedCard.vue', () => {
 
     const wrapper = mount(EightySixedCard, {
       props: { item },
-      global: { stubs: { AcknowledgeButton: AcknowledgeButtonStub } },
+      global: { stubs: { AcknowledgeButton: AcknowledgeButtonStub, RouterLink: RouterLinkStub } },
     })
 
     // The only <p> in the template is the reason paragraph; it should not exist
@@ -136,7 +162,7 @@ describe('EightySixedCard.vue', () => {
 
     const wrapper = mount(EightySixedCard, {
       props: { item },
-      global: { stubs: { AcknowledgeButton: AcknowledgeButtonStub } },
+      global: { stubs: { AcknowledgeButton: AcknowledgeButtonStub, RouterLink: RouterLinkStub } },
     })
 
     expect(wrapper.text()).toContain('Chef Mike')
@@ -153,10 +179,50 @@ describe('EightySixedCard.vue', () => {
 
     const wrapper = mount(EightySixedCard, {
       props: { item },
-      global: { stubs: { AcknowledgeButton: AcknowledgeButtonStub } },
+      global: { stubs: { AcknowledgeButton: AcknowledgeButtonStub, RouterLink: RouterLinkStub } },
     })
 
     const ackButton = wrapper.find('.ack-stub')
     expect(ackButton.exists()).toBe(true)
+  })
+
+  it('shows AcknowledgeButton for staff users', () => {
+    const item = makeItem()
+
+    const wrapper = mount(EightySixedCard, {
+      props: { item },
+      global: { stubs: { AcknowledgeButton: AcknowledgeButtonStub, RouterLink: RouterLinkStub } },
+    })
+
+    expect(wrapper.find('.ack-stub').exists()).toBe(true)
+    expect(wrapper.find('.router-link-stub').exists()).toBe(false)
+  })
+
+  it('shows Edit link instead of AcknowledgeButton for managers', () => {
+    mockIsManager.value = true
+    const item = makeItem()
+
+    const wrapper = mount(EightySixedCard, {
+      props: { item },
+      global: { stubs: { AcknowledgeButton: AcknowledgeButtonStub, RouterLink: RouterLinkStub } },
+    })
+
+    expect(wrapper.find('.router-link-stub').exists()).toBe(true)
+    expect(wrapper.find('.router-link-stub').text()).toBe('Edit')
+    expect(wrapper.find('.ack-stub').exists()).toBe(false)
+  })
+
+  it('shows Edit link instead of AcknowledgeButton for admins', () => {
+    mockIsAdmin.value = true
+    const item = makeItem()
+
+    const wrapper = mount(EightySixedCard, {
+      props: { item },
+      global: { stubs: { AcknowledgeButton: AcknowledgeButtonStub, RouterLink: RouterLinkStub } },
+    })
+
+    expect(wrapper.find('.router-link-stub').exists()).toBe(true)
+    expect(wrapper.find('.router-link-stub').text()).toBe('Edit')
+    expect(wrapper.find('.ack-stub').exists()).toBe(false)
   })
 })
