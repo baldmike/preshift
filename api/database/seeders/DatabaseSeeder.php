@@ -71,6 +71,8 @@ class DatabaseSeeder extends Seeder
             'name' => 'The Anchor',
             'address' => '123 Main St, Anytown, USA',
             'timezone' => 'America/New_York',
+            'latitude' => 41.8781,
+            'longitude' => -87.6298,
         ]);
 
         /*
