@@ -49,6 +49,15 @@ use Illuminate\Support\Str;
  */
 class DatabaseSeeder extends Seeder
 {
+    /** Generate a random phone number formatted as (XXX) XXX-XXXX. */
+    private function randomPhone(): string
+    {
+        $area = rand(200, 999);
+        $prefix = rand(200, 999);
+        $line = rand(1000, 9999);
+        return "({$area}) {$prefix}-{$line}";
+    }
+
     public function run(): void
     {
         /*
@@ -86,6 +95,7 @@ class DatabaseSeeder extends Seeder
             'role' => 'admin',
             'location_id' => $location->id,
             'is_superadmin' => true,
+            'phone' => $this->randomPhone(),
         ]);
 
         // ── Managers ──
@@ -95,6 +105,7 @@ class DatabaseSeeder extends Seeder
             'password' => Hash::make('password'),
             'role' => 'manager',
             'location_id' => $location->id,
+            'phone' => $this->randomPhone(),
         ]);
 
         foreach ([
@@ -107,6 +118,7 @@ class DatabaseSeeder extends Seeder
                 'password' => Hash::make('password'),
                 'role' => 'manager',
                 'location_id' => $location->id,
+                'phone' => $this->randomPhone(),
             ]);
         }
 
@@ -117,6 +129,7 @@ class DatabaseSeeder extends Seeder
             'password' => Hash::make('password'),
             'role' => 'bartender',
             'location_id' => $location->id,
+            'phone' => $this->randomPhone(),
         ]);
 
         foreach ([
@@ -131,6 +144,7 @@ class DatabaseSeeder extends Seeder
                 'password' => Hash::make('password'),
                 'role' => 'bartender',
                 'location_id' => $location->id,
+                'phone' => $this->randomPhone(),
             ]);
         }
 
@@ -158,6 +172,7 @@ class DatabaseSeeder extends Seeder
                 'password' => Hash::make('password'),
                 'role' => 'server',
                 'location_id' => $location->id,
+                'phone' => $this->randomPhone(),
             ]);
         }
 

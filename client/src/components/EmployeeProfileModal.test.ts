@@ -55,6 +55,7 @@ const userWithPhone: User = {
   name: 'Jane Doe',
   email: 'jane@example.com',
   role: 'server',
+  roles: null,
   is_superadmin: false,
   phone: '555-123-4567',
   availability: {
@@ -76,6 +77,7 @@ const userWithoutPhone: User = {
   name: 'Bob Smith',
   email: 'bob@example.com',
   role: 'bartender',
+  roles: null,
   is_superadmin: false,
   phone: null,
   availability: null,

@@ -49,17 +49,27 @@ class ShiftDropRequestedNotification extends Notification implements ShouldQueue
         return $this->buildData();
     }
 
+    /**
+     * Build the shared notification payload used by all channels.
+     *
+     * Includes the shift role in both the human-readable body text and as a
+     * discrete `role` key so consumers can filter or style by role.
+     *
+     * @return array{type: string, title: string, body: string, link: string, source_id: int, role: string}
+     */
     private function buildData(): array
     {
         $name = $this->shiftDrop->requester->name;
         $date = $this->shiftDrop->scheduleEntry->date;
+        $role = $this->shiftDrop->scheduleEntry->role;
 
         return [
             'type' => 'shift_drop_requested',
             'title' => 'Shift Drop Request',
-            'body' => "{$name} wants to drop their {$date} shift.",
+            'body' => "{$name} wants to drop their {$role} shift on {$date}.",
             'link' => '/manage/shift-drops',
             'source_id' => $this->shiftDrop->id,
+            'role' => $role,
         ];
     }
 }

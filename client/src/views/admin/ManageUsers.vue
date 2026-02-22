@@ -2,9 +2,10 @@
 /**
  * ManageUsers -- admin/manager CRUD view for employee accounts.
  * Provides a toggleable create/edit form with name, email, password,
- * role, phone, and day-of-week availability fields. Password is required
- * when creating a new user but optional when editing (left blank to keep
- * the existing password). A table lists all employees with their role badge,
+ * role, multi-role toggle (server/bartender dual-role), phone, and
+ * day-of-week availability fields. Password is required when creating a
+ * new user but optional when editing (left blank to keep the existing
+ * password). A table lists all employees with their role badge(s),
  * phone, availability summary, and Edit/Remove actions.
  */
 import { ref, computed, onMounted } from 'vue'
@@ -47,6 +48,7 @@ const form = ref({
   role: 'server',
   phone: '',
   availability: Object.fromEntries(DAYS.map(d => [d, [] as string[]])) as Record<string, string[]>,
+  additionalRoles: [] as string[], // Additional roles beyond the primary (e.g. ['bartender', 'manager'])
 })
 
 // Clears all form fields, exits edit mode, and hides the form panel
@@ -58,23 +60,56 @@ function resetForm() {
     role: 'server',
     phone: '',
     availability: Object.fromEntries(DAYS.map(d => [d, [] as string[]])),
+    additionalRoles: [],
   }
   editingId.value = null
   showForm.value = false
 }
 
+/** Formats a raw digit string as (123) 456-7890. Accepts partial input. */
+function formatPhone(value: string): string {
+  const digits = value.replace(/\D/g, '').slice(0, 10)
+  if (digits.length <= 3) return digits
+  if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`
+  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`
+}
+
+/** Handles phone input: strips non-digits and auto-formats. */
+function onPhoneInput(value: string) {
+  form.value.phone = formatPhone(value)
+}
+
+/** All available roles excluding the currently selected primary role. */
+const availableAdditionalRoles = computed(() => {
+  const all = ['server', 'bartender', 'manager', 'admin']
+  return all.filter(r => r !== form.value.role)
+})
+
+/** Toggle a role in the additionalRoles array on/off. */
+function toggleAdditionalRole(role: string) {
+  const idx = form.value.additionalRoles.indexOf(role)
+  if (idx === -1) {
+    form.value.additionalRoles.push(role)
+  } else {
+    form.value.additionalRoles.splice(idx, 1)
+  }
+}
+
 // Populates the form with an existing user's data for editing.
 function editUser(user: User) {
   editingId.value = user.id
+  // Derive additional roles by removing the primary role from the roles array
+  const extras = user.roles ? user.roles.filter(r => r !== user.role) : []
   form.value = {
     name: user.name,
     email: user.email,
     password: '',
     role: user.role,
-    phone: user.phone || '',
+    phone: user.phone ? formatPhone(user.phone) : '',
     availability: user.availability
       ? { ...Object.fromEntries(DAYS.map(d => [d, [] as string[]])), ...user.availability }
       : Object.fromEntries(DAYS.map(d => [d, [] as string[]])),
+    additionalRoles: extras,
   }
   showForm.value = true
 }
@@ -121,10 +156,16 @@ async function saveUser() {
   if (!form.value.name.trim() || !form.value.email.trim()) return
   submitting.value = true
   try {
+    // Build the roles array: [primary, ...additional] when extra roles are
+    // selected, or null when single-role (API falls back to the primary `role` field).
+    const roles = form.value.additionalRoles.length > 0
+      ? [form.value.role, ...form.value.additionalRoles]
+      : null
     const payload: Record<string, any> = {
       name: form.value.name,
       email: form.value.email,
       role: form.value.role,
+      roles,
       phone: form.value.phone || null,
       availability: form.value.availability,
     }
@@ -267,8 +308,27 @@ onMounted(fetchUsers)
               </select>
             </div>
           </div>
+          <!-- Additional roles multi-select -->
+          <div v-if="availableAdditionalRoles.length > 0">
+            <label class="block text-sm font-medium text-gray-400 mb-1">Additional Roles</label>
+            <div class="flex flex-wrap gap-3">
+              <label
+                v-for="role in availableAdditionalRoles"
+                :key="role"
+                class="inline-flex items-center gap-1.5 cursor-pointer"
+              >
+                <input
+                  type="checkbox"
+                  :checked="form.additionalRoles.includes(role)"
+                  @change="toggleAdditionalRole(role)"
+                  class="h-4 w-4 rounded border-gray-600 bg-gray-700 text-indigo-500 focus:ring-indigo-500"
+                />
+                <span class="text-sm text-gray-300 capitalize">{{ role }}</span>
+              </label>
+            </div>
+          </div>
           <div class="grid grid-cols-2 gap-3">
-            <BaseInput v-model="form.phone" label="Phone" type="tel" placeholder="(555) 123-4567" />
+            <BaseInput :modelValue="form.phone" @update:modelValue="onPhoneInput" label="Phone" type="tel" placeholder="(555) 123-4567" />
           </div>
           <!-- Availability grid -->
           <div>
@@ -328,8 +388,16 @@ onMounted(fetchUsers)
               <td class="px-4 py-3 text-sm font-medium text-white">{{ user.name }}</td>
               <td class="px-4 py-3 text-sm text-gray-400">{{ user.email }}</td>
               <td class="px-4 py-3 text-sm text-gray-400">{{ user.phone || '—' }}</td>
-              <td class="px-4 py-3">
+              <td class="px-4 py-3 space-x-1">
                 <BadgePill :label="user.role" :color="roleColor[user.role] || 'gray'" />
+                <template v-if="user.roles && user.roles.length > 1">
+                  <BadgePill
+                    v-for="r in user.roles.filter(r => r !== user.role)"
+                    :key="r"
+                    :label="r"
+                    :color="roleColor[r] || 'gray'"
+                  />
+                </template>
               </td>
               <td class="px-4 py-3 text-sm text-gray-400">{{ availabilitySummary(user.availability) }}</td>
               <td class="px-4 py-3 text-right space-x-2">

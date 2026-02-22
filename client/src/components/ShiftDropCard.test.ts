@@ -67,6 +67,7 @@ function makeShiftDrop(overrides: Partial<ShiftDrop> = {}): ShiftDrop {
       name: 'Jane Doe',
       email: 'jane@example.com',
       role: 'server',
+      roles: null,
       is_superadmin: false,
       phone: null,
       availability: null,

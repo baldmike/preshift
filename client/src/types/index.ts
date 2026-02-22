@@ -53,6 +53,8 @@ export interface User {
    *  - 'bartender' : bar staff, read-only dashboard access
    */
   role: 'admin' | 'manager' | 'server' | 'bartender'
+  /** Additional roles for multi-role staff; null means primary role only */
+  roles: ('admin' | 'manager' | 'server' | 'bartender')[] | null
   /** Whether this user has SuperAdmin privileges */
   is_superadmin: boolean
   /** Contact phone number; null if not provided */

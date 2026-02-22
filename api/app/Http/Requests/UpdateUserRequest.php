@@ -10,7 +10,8 @@ use Illuminate\Foundation\Http\FormRequest;
  * Used by UserController::update(). Validates required fields like name,
  * email (unique except for the current user), and role (admin, manager,
  * server, or bartender), plus optional password, location_id, phone,
- * and nested availability array with time-slot values.
+ * roles (JSON array of additional roles for multi-role staff), and nested
+ * availability array with time-slot values.
  */
 class UpdateUserRequest extends FormRequest
 {
@@ -38,6 +39,8 @@ class UpdateUserRequest extends FormRequest
             'role' => 'required|in:admin,manager,server,bartender',
             'location_id' => 'nullable|exists:locations,id',
             'phone' => 'nullable|string|max:20',
+            'roles' => 'nullable|array',
+            'roles.*' => 'string|in:admin,manager,server,bartender',
             'availability' => 'nullable|array',
             'availability.*' => 'array',
             'availability.*.*' => 'string|in:10:30,16:30,open',

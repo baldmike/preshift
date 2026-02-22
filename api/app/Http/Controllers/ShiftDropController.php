@@ -35,13 +35,15 @@ class ShiftDropController extends Controller
             $q->where('location_id', $user->location_id);
         })->with('scheduleEntry.shiftTemplate', 'scheduleEntry.user', 'requester', 'filler', 'volunteers.user');
 
+        // Staff see their own drops plus any open drops whose role matches
+        // one of their effective roles (supports multi-role employees).
         if ($user->isStaff()) {
             $query->where(function ($q) use ($user) {
                 $q->where('requested_by', $user->id)
                   ->orWhere(function ($q2) use ($user) {
                       $q2->where('status', 'open')
                          ->whereHas('scheduleEntry', function ($q3) use ($user) {
-                             $q3->where('role', $user->role);
+                             $q3->whereIn('role', $user->getEffectiveRoles());
                          });
                   });
             });
@@ -78,12 +80,33 @@ class ShiftDropController extends Controller
 
         broadcast(new ShiftDropRequested($drop))->toOthers();
 
+        // Notify managers/admins AND eligible same-role staff at this location.
+        // Eligible staff: their `roles` JSON contains the shift's role, or
+        // if `roles` is NULL, their primary `role` matches. The requester
+        // is excluded so they don't receive their own notification.
         $locationId = $drop->scheduleEntry->schedule->location_id;
-        $managers = User::where('location_id', $locationId)
-            ->whereIn('role', ['admin', 'manager'])
+        $shiftRole = $drop->scheduleEntry->role;
+
+        $recipients = User::where('location_id', $locationId)
+            ->where('id', '!=', $request->user()->id)
+            ->where(function ($q) use ($shiftRole) {
+                // Always notify managers and admins
+                $q->whereIn('role', ['admin', 'manager'])
+                  ->orWhere(function ($q2) use ($shiftRole) {
+                      // Also notify staff whose role set includes the shift's role
+                      $q2->whereIn('role', ['server', 'bartender'])
+                         ->where(function ($q3) use ($shiftRole) {
+                             $q3->whereJsonContains('roles', $shiftRole)
+                                ->orWhere(function ($q4) use ($shiftRole) {
+                                    $q4->whereNull('roles')
+                                       ->where('role', $shiftRole);
+                                });
+                         });
+                  });
+            })
             ->get();
 
-        Notification::send($managers, new ShiftDropRequestedNotification($drop));
+        Notification::send($recipients, new ShiftDropRequestedNotification($drop));
 
         return response()->json(new ShiftDropResource($drop), 201);
     }
@@ -107,8 +130,9 @@ class ShiftDropController extends Controller
             return response()->json(['message' => 'You cannot volunteer for your own drop.'], 422);
         }
 
+        // Check against all effective roles so multi-role staff can volunteer
         $entryRole = $shiftDrop->scheduleEntry->role;
-        if ($request->user()->role !== $entryRole) {
+        if (!$request->user()->hasRole($entryRole)) {
             return response()->json(['message' => 'You must have the same role to pick up this shift.'], 422);
         }
 
