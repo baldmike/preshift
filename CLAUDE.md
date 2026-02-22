@@ -1,117 +1,94 @@
 # PreShift
 
-> **Read this entire file before writing any code. This is your operating manual.**
+## Project Overview
 
-## What Is This
+PreShift is a digital pre-shift meeting replacement for restaurants and bars. Managers post daily operational updates (86'd items, specials, push items, announcements) and staff check in before their shift to see everything they need. Includes a full scheduling system with shift drops and time-off requests.
 
-PreShift is a digital pre-shift meeting replacement for restaurants and bars. Vue 3 SPA + Laravel 11 API + MySQL + Sanctum + Reverb. Mobile-first web app.
+## Tech Stack
+
+- **Frontend:** Vue 3 SPA (Vite + Vue Router + Pinia + Tailwind CSS)
+- **Backend:** Laravel 11 API
+- **Database:** MySQL
+- **Auth:** Laravel Sanctum (token-based SPA authentication)
+- **Realtime:** Laravel Reverb (WebSockets)
+- **Deployment:** Laravel Cloud (Starter plan)
 
 ## Project Structure
 
 ```
-/api              ← Laravel 11 API
-/client           ← Vue 3 SPA
-/docs             ← Reference documentation (read as needed)
-CLAUDE.md         ← This file (rules and conventions)
-PRESHIFT_SPEC.md  ← Full feature spec (read for feature details)
+/api        ← Laravel 11 API
+/client     ← Vue 3 SPA
 ```
 
-## Reference Docs
+## Roles
 
-Read these when working on related areas — don't memorize them, just look them up:
+| Role | Access |
+|------|--------|
+| admin | Full access across all locations |
+| manager | CRUD all content, scheduling, approve drops/time-off — scoped to their location |
+| server | View pre-shift content, view schedule, request drops/time-off — scoped to their location |
+| bartender | Same as server with bar-specific content visibility |
 
-- **Database schema:** `docs/SCHEMA.md`
-- **API endpoints:** `docs/API.md`
-- **Reverb events:** `docs/EVENTS.md`
-- **Architecture & decisions:** `docs/ARCHITECTURE.md`
-- **Full feature spec:** `PRESHIFT_SPEC.md`
+## Key Architecture Decisions
 
----
+- `/api/preshift` is the hero endpoint — returns everything staff needs in one call, filtered by role + location
+- Polymorphic acknowledgments — one table tracks reads on any content type
+- Menu items are optional references — managers can 86 a menu item OR type freeform text
+- Reverb channels are scoped per location: `private-location.{id}`
+- Scheduling uses shift templates (reusable shift types defined per location)
+- Shift changes use a drop/pickup model, not a swap model — staff drops a shift, manager approves, eligible staff volunteer, manager picks one
+- "Today" scoping only — no AM/PM shift splits
 
-## Git Rules
+## Development Rules
 
-- **Never commit directly to `main`**
-- **Before starting ANY work:** `git checkout main && git pull origin main && git checkout -b <branch-name>`. Every time. No exceptions. No reusing old branches.
-- **Do not merge any branch.** Create a PR and I will review and merge it myself.
-- Branch naming: `feature/`, `fix/`, `chore/`, `refactor/` + short hyphenated description
-- Small, focused commits. Clear present-tense messages. One logical change per commit.
+- Never commit directly to `main` or `develop`
+- Always work in feature branches off `develop`: `feature/`, `fix/`, `chore/`, `refactor/`
+- Write small, focused commits with clear present-tense messages
+- Do not modify existing migrations — always create new migrations for schema changes
+- Do not remove or refactor existing working code unless explicitly asked
+- Follow existing code patterns, naming conventions, and file organization in the codebase
+- All API endpoints must check role authorization (use middleware or policy)
+- All data must be scoped to the user's location (never leak cross-location data)
+- When creating new features, also create a corresponding Feature test in `/api/tests/Feature/`
+- Run `php artisan test` before considering any feature complete
 
----
+## API Conventions
 
-## Code Rules
+- RESTful resource routes: `GET /api/resource`, `POST /api/resource`, `PATCH /api/resource/{id}`, `DELETE /api/resource/{id}`
+- Action routes use POST: `POST /api/resource/{id}/approve`, `POST /api/resource/{id}/publish`
+- All responses return JSON
+- Auth via Sanctum token — every request must include bearer token except `/api/login`
+- Validation in Form Request classes, not controllers
+- Use API Resources for response formatting
 
-### General
-- **Conventions apply to NEW code only.** Do not retroactively refactor existing code unless explicitly asked.
-- Follow existing patterns in the codebase. Be consistent.
-- **Verbose comments and docblocks on everything.** Every class, method, property, and non-trivial logic block. Write for someone reading this code for the first time.
-- No magic strings — use enums, constants, or config values.
-- No commented-out code in commits.
+## Frontend Conventions
 
-### Laravel (/api)
-- Thin controllers — validate with Form Requests, authorize with Policies, respond with API Resources
-- Models: `$fillable` not `$guarded`. Define all relationships, scopes, casts.
-- Never modify existing migrations — always create new ones
-- API Resources for all JSON responses — never return raw models
-- Events implement `ShouldBroadcast` with full resource payload
-- Routes in `routes/api.php`, grouped by feature, middleware at group level
-- Every model gets a factory
+- Vue 3 Composition API with `<script setup>` — no Options API
+- Pinia for state management
+- Composables for reusable logic (`useAuth`, `usePreshift`, `useSchedule`, etc.)
+- Tailwind CSS for styling — no custom CSS files unless absolutely necessary
+- Axios for API calls, configured with Sanctum token in a shared `api.js` service
+- Vue Router with role-based navigation guards
 
-### Vue (/client)
-- Composition API with `<script setup>` only — no Options API, no mixins
-- Pinia stores: one per domain, setup syntax, stores handle API calls
-- Composables in `src/composables/` with `use` prefix
-- All API calls through `src/services/api.js` — never import axios directly
-- Role-based route guards in `beforeEach`
-- Loading states on every API call. Error handling on every API call. No silent failures.
+## Reverb Conventions
 
-### Styling
-- Tailwind utility classes only. Mobile-first.
-- 86'd items = red/warning. Urgent announcements = red. Important = yellow.
+- All events broadcast on `private-location.{location_id}`
+- Frontend listens via composable (`useReverb`) and updates Pinia stores on event
+- Events should include the full resource payload so the frontend can update state without re-fetching
 
----
+## Testing Conventions
 
-## Security Rules
+- Feature tests for all API endpoints (happy path + auth/role checks at minimum)
+- Test files mirror controller names: `ShiftDropController` → `ShiftDropTest`
+- Use Laravel factories for test data
+- Test role restrictions: verify staff can't access manager routes, location A can't see location B data
 
-- **Every endpoint enforces role checks** via middleware or Policies
-- **Every query scopes to user's location** — Location A never sees Location B
-- Admin is the only exception to location scoping
-- When in doubt, restrict access
+## Do NOT
 
----
-
-## Testing Rules
-
-- **Every change gets tests. No exceptions.**
-- Feature tests for every controller action (happy path + auth/role check minimum)
-- Test location scoping: user at Location A gets 403 or empty for Location B
-- Test role restrictions: staff can't hit manager endpoints
-- Use factories — never hardcode IDs
-- `php artisan test` must pass before any PR
-- Test names read like English: `test_manager_can_approve_shift_drop`
-
----
-
-## DO NOT
-
-- ❌ Install packages without being asked
-- ❌ Modify `.env` — only update `.env.example`
-- ❌ Modify existing migrations
-- ❌ Add PWA / service workers
-- ❌ Build inventory, stock tracking, kitchen/cook roles, barback roles (v2)
-- ❌ Use Options API, mixins, Blade, or Inertia
-- ❌ Add features not in the spec
-- ❌ Change settled architecture decisions (see `docs/ARCHITECTURE.md`)
-- ❌ Combine `/api` and `/client`
-- ❌ Return raw models from controllers
-- ❌ Skip auth checks or location scoping
-- ❌ Leave `console.log`, `dd()`, or `dump()` in committed code
-- ❌ Over-engineer for "future flexibility" — build what's needed now
-
----
-
-## When In Doubt
-
-1. Check the relevant doc in `/docs`
-2. Check `PRESHIFT_SPEC.md`
-3. Follow existing patterns in the codebase
-4. If none of that helps — **ask me, don't guess**
+- Do not install packages without being asked
+- Do not modify `.env` — only update `.env.example`
+- Do not change the database schema by editing existing migrations
+- Do not add PWA/service worker functionality
+- Do not build inventory/stock tracking features (deferred to v2)
+- Do not add kitchen/cook or barback roles (deferred to v2)
+- Do not use Options API in Vue components
