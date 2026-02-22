@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\InitialSetupRequest;
 use App\Http\Requests\UpdateSettingsRequest;
+use App\Models\Location;
 use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -14,6 +16,7 @@ use Illuminate\Support\Facades\Schema;
 /**
  * ConfigController handles system-wide configuration:
  * - Reading/updating settings (establishment name)
+ * - Initial setup (wipe demo data and create real superadmin + location)
  * - Full database reset (superadmin only)
  */
 class ConfigController extends Controller
@@ -41,13 +44,21 @@ class ConfigController extends Controller
     }
 
     /**
-     * POST /api/config/remove-items — Remove all operational items (superadmin only).
+     * POST /api/config/initial-setup — Wipe demo data and create a real superadmin account.
+     *
+     * Truncates all tables except `settings` and `migrations`, then creates a
+     * new Location and a superadmin User with the provided details. Sets the
+     * `establishment_name` setting to match the location name.
      */
-    public function removeItems(): JsonResponse
+    public function initialSetup(InitialSetupRequest $request): JsonResponse
     {
-        $tables = ['acknowledgments', 'eighty_sixed', 'specials', 'push_items', 'announcements', 'menu_items', 'categories'];
+        $validated = $request->validated();
 
         Schema::disableForeignKeyConstraints();
+
+        $tables = collect(Schema::getTableListing())
+            ->filter(fn ($table) => !in_array($table, ['settings', 'migrations']));
+
         foreach ($tables as $table) {
             if (DB::getDriverName() === 'sqlite') {
                 DB::table($table)->delete();
@@ -55,54 +66,30 @@ class ConfigController extends Controller
                 DB::table($table)->truncate();
             }
         }
-        Schema::enableForeignKeyConstraints();
-
-        return response()->json(['message' => 'All items have been removed.']);
-    }
-
-    /**
-     * POST /api/config/remove-schedules — Remove all scheduling data (superadmin only).
-     */
-    public function removeSchedules(): JsonResponse
-    {
-        $tables = ['shift_drop_volunteers', 'shift_drops', 'schedule_entries', 'schedules', 'shift_templates', 'time_off_requests'];
-
-        Schema::disableForeignKeyConstraints();
-        foreach ($tables as $table) {
-            if (DB::getDriverName() === 'sqlite') {
-                DB::table($table)->delete();
-            } else {
-                DB::table($table)->truncate();
-            }
-        }
-        Schema::enableForeignKeyConstraints();
-
-        return response()->json(['message' => 'All schedules have been removed.']);
-    }
-
-    /**
-     * POST /api/config/remove-employees — Remove all employees except the calling superadmin.
-     */
-    public function removeEmployees(Request $request): JsonResponse
-    {
-        $callingUserId = $request->user()->id;
-
-        Schema::disableForeignKeyConstraints();
-
-        $relatedTables = ['acknowledgments', 'shift_drop_volunteers', 'shift_drops', 'schedule_entries', 'time_off_requests'];
-        foreach ($relatedTables as $table) {
-            if (DB::getDriverName() === 'sqlite') {
-                DB::table($table)->delete();
-            } else {
-                DB::table($table)->truncate();
-            }
-        }
-
-        User::where('id', '!=', $callingUserId)->delete();
 
         Schema::enableForeignKeyConstraints();
 
-        return response()->json(['message' => 'All employees have been removed.']);
+        $location = Location::create([
+            'name' => $validated['location_name'],
+            'address' => 'Update in location settings',
+            'timezone' => 'America/New_York',
+        ]);
+
+        User::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make('password'),
+            'role' => 'admin',
+            'location_id' => $location->id,
+            'is_superadmin' => true,
+        ]);
+
+        Setting::set('establishment_name', $validated['location_name']);
+        Setting::set('setup_complete', 'true');
+
+        return response()->json([
+            'message' => 'Setup complete. Your account has been created with password "password". Please log in.',
+        ]);
     }
 
     /**

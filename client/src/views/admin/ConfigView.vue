@@ -2,8 +2,9 @@
 /**
  * ConfigView.vue
  *
- * SuperAdmin configuration page with establishment name settings
- * and a DANGER ZONE with granular and full reset options.
+ * SuperAdmin configuration page with establishment name settings,
+ * an Initial Setup section for replacing demo data with a real account,
+ * and a DANGER ZONE with the full reset option.
  */
 import { ref, onMounted } from 'vue'
 import api from '@/composables/useApi'
@@ -22,10 +23,14 @@ function toast(message: string, type: string) {
 const establishmentName = ref('')
 const saving = ref(false)
 
+/** Whether the initial setup has been completed (gates Danger Zone visibility). */
+const setupComplete = ref(false)
+
 onMounted(async () => {
   try {
     const { data } = await api.get('/api/config/settings')
     establishmentName.value = data.establishment_name || ''
+    setupComplete.value = data.setup_complete === 'true'
   } catch {
     // Settings may not exist yet
   }
@@ -43,6 +48,99 @@ async function saveSettings() {
   } finally {
     saving.value = false
   }
+}
+
+// ── Initial Setup ──
+const setupName = ref('')
+const setupEmail = ref('')
+const setupLocationName = ref('')
+const setupActive = ref(false)
+const setupProcessing = ref(false)
+
+// Math challenge for Initial Setup
+const setupChallengeA = ref(0)
+const setupChallengeB = ref(0)
+const setupChallengeAnswer = ref('')
+const setupChallengePassed = ref(false)
+
+/** Generate a new math challenge for Initial Setup. */
+function generateSetupChallenge() {
+  setupChallengeA.value = Math.floor(Math.random() * 40) + 10
+  setupChallengeB.value = Math.floor(Math.random() * 40) + 10
+  setupChallengeAnswer.value = ''
+  setupChallengePassed.value = false
+}
+
+/** Check if the user's answer matches the sum. */
+function checkSetupChallenge() {
+  setupChallengePassed.value =
+    parseInt(setupChallengeAnswer.value) === setupChallengeA.value + setupChallengeB.value
+}
+
+/** Open the Initial Setup form and generate a math challenge. */
+function startSetup() {
+  setupActive.value = true
+  generateSetupChallenge()
+}
+
+/** Close the Initial Setup form and reset state. */
+function cancelSetup() {
+  setupActive.value = false
+  setupName.value = ''
+  setupEmail.value = ''
+  setupLocationName.value = ''
+  setupChallengePassed.value = false
+}
+
+/** Submit the Initial Setup form — wipe demo data and create a real account. */
+async function performSetup() {
+  const confirmed = await confirm('This will permanently delete all existing data and create a new account. This cannot be undone.')
+  if (!confirmed) return
+
+  setupProcessing.value = true
+  try {
+    await api.post('/api/config/initial-setup', {
+      name: setupName.value,
+      email: setupEmail.value,
+      location_name: setupLocationName.value,
+    })
+    toast('Setup complete. Redirecting to login...', 'success')
+    setupActive.value = false
+    await authStore.logout()
+    router.push('/login')
+  } catch (err: any) {
+    toast(err.response?.data?.message || 'Initial setup failed.', 'error')
+  } finally {
+    setupProcessing.value = false
+  }
+}
+
+// ── Confirmation Dialog ──
+const showConfirmDialog = ref(false)
+const confirmDialogMessage = ref('')
+let confirmDialogResolve: ((value: boolean) => void) | null = null
+
+/** Show an "ARE YOU SURE?" dialog and return a promise that resolves to true/false. */
+function confirm(message: string): Promise<boolean> {
+  confirmDialogMessage.value = message
+  showConfirmDialog.value = true
+  return new Promise((resolve) => {
+    confirmDialogResolve = resolve
+  })
+}
+
+/** User confirmed the dialog. */
+function onConfirmYes() {
+  showConfirmDialog.value = false
+  confirmDialogResolve?.(true)
+  confirmDialogResolve = null
+}
+
+/** User cancelled the dialog. */
+function onConfirmNo() {
+  showConfirmDialog.value = false
+  confirmDialogResolve?.(false)
+  confirmDialogResolve = null
 }
 
 // ── Danger Zone Actions ──
@@ -78,33 +176,9 @@ interface DangerAction {
 
 const dangerActions: DangerAction[] = [
   {
-    key: 'items',
-    label: 'Remove All Items',
-    description: 'Deletes all 86\'d items, specials, push items, announcements, acknowledgments, menu items, and categories.',
-    confirmWord: 'ITEMS',
-    endpoint: '/api/config/remove-items',
-    logout: false,
-  },
-  {
-    key: 'schedules',
-    label: 'Remove All Schedules',
-    description: 'Deletes all schedules, schedule entries, shift templates, shift drops, and time-off requests.',
-    confirmWord: 'SCHEDULES',
-    endpoint: '/api/config/remove-schedules',
-    logout: false,
-  },
-  {
-    key: 'employees',
-    label: 'Remove All Employees',
-    description: 'Deletes all employees except you. Related schedule entries, shift drops, and time-off requests will also be removed.',
-    confirmWord: 'EMPLOYEES',
-    endpoint: '/api/config/remove-employees',
-    logout: false,
-  },
-  {
     key: 'nuclear',
-    label: 'Nuclear Option',
-    description: 'Permanently deletes ALL data and resets the entire database. You will be re-created as the sole superadmin with password "password".',
+    label: 'Full Reset',
+    description: 'Wipes all data — users, locations, menus, schedules, everything. Your account will be re-created as the sole superadmin with password "password". You will be logged out.',
     confirmWord: 'RESET',
     endpoint: '/api/config/reset',
     logout: true,
@@ -113,6 +187,9 @@ const dangerActions: DangerAction[] = [
 
 async function performAction(action: DangerAction) {
   if (confirmText.value !== action.confirmWord) return
+
+  const confirmed = await confirm('This will permanently wipe all data. This cannot be undone.')
+  if (!confirmed) return
 
   processing.value = true
   try {
@@ -156,8 +233,8 @@ function cancelAction() {
         </span>
       </div>
 
-      <!-- Establishment Name Section -->
-      <div class="bg-gray-900 border border-gray-800 rounded-xl p-6 space-y-4">
+      <!-- Establishment Name Section — only visible after initial setup -->
+      <div v-if="setupComplete" class="bg-gray-900 border border-gray-800 rounded-xl p-6 space-y-4">
         <h3 class="text-lg font-semibold text-white">Establishment Name</h3>
         <p class="text-sm text-gray-400">
           This name is displayed in the top bar for all users.
@@ -182,8 +259,116 @@ function cancelAction() {
         </div>
       </div>
 
-      <!-- DANGER ZONE -->
-      <div class="border-2 border-red-600/50 rounded-xl p-6 space-y-5 bg-red-950/20">
+      <!-- Initial Setup — hidden once setup has been completed -->
+      <div v-if="!setupComplete" class="bg-gray-900 border border-gray-800 rounded-xl p-6 space-y-4">
+        <h3 class="text-lg font-semibold text-white">Initial Setup</h3>
+        <p class="text-sm text-gray-400">
+          Replace the seeded demo data with your real account. This wipes all existing data and
+          creates a new superadmin account with password "password" and a location.
+        </p>
+
+        <!-- Collapsed: button to start -->
+        <button
+          v-if="!setupActive"
+          @click="startSetup"
+          class="px-6 py-2 bg-amber-500 text-gray-950 font-semibold rounded-lg
+                 hover:bg-amber-400 transition-colors"
+        >
+          Start Setup
+        </button>
+
+        <!-- Expanded: challenge + form -->
+        <div v-else class="space-y-4">
+          <!-- Step 1: Math challenge -->
+          <div v-if="!setupChallengePassed" class="space-y-2">
+            <p class="text-sm text-amber-300 font-medium">
+              Solve to continue: <code class="px-1.5 py-0.5 bg-amber-900/50 rounded text-amber-200 font-bold">{{ setupChallengeA }} + {{ setupChallengeB }} = ?</code>
+            </p>
+            <div class="flex gap-3">
+              <input
+                v-model="setupChallengeAnswer"
+                type="text"
+                inputmode="numeric"
+                placeholder="Your answer"
+                class="flex-1 px-4 py-2 bg-gray-800 border border-amber-600/50 rounded-lg text-white
+                       placeholder-gray-500 focus:outline-none focus:border-amber-500"
+                @keyup.enter="checkSetupChallenge"
+              />
+              <button
+                @click="checkSetupChallenge"
+                class="px-5 py-1.5 bg-amber-600/30 text-amber-300 text-xs font-semibold rounded-lg
+                       hover:bg-amber-600/40 transition-colors"
+              >
+                Submit
+              </button>
+              <button
+                @click="cancelSetup"
+                class="px-5 py-1.5 bg-gray-700 text-gray-300 text-xs font-medium rounded-lg
+                       hover:bg-gray-600 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+            <p v-if="setupChallengeAnswer && !setupChallengePassed" class="text-xs text-red-400">Incorrect. Try again.</p>
+          </div>
+
+          <!-- Step 2: Setup form fields -->
+          <template v-else>
+            <div class="space-y-3">
+              <div>
+                <label class="block text-sm font-medium text-gray-300 mb-1">Your Name</label>
+                <input
+                  v-model="setupName"
+                  type="text"
+                  placeholder="e.g. Jane Smith"
+                  class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white
+                         placeholder-gray-500 focus:outline-none focus:border-amber-500"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-300 mb-1">Email</label>
+                <input
+                  v-model="setupEmail"
+                  type="email"
+                  placeholder="e.g. jane@example.com"
+                  class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white
+                         placeholder-gray-500 focus:outline-none focus:border-amber-500"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-300 mb-1">Location / Establishment Name</label>
+                <input
+                  v-model="setupLocationName"
+                  type="text"
+                  placeholder="e.g. The Anchor"
+                  class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white
+                         placeholder-gray-500 focus:outline-none focus:border-amber-500"
+                />
+              </div>
+            </div>
+            <div class="flex gap-3">
+              <button
+                @click="performSetup"
+                :disabled="!setupName.trim() || !setupEmail.trim() || !setupLocationName.trim() || setupProcessing"
+                class="px-6 py-2 bg-amber-500 text-gray-950 font-semibold rounded-lg
+                       hover:bg-amber-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {{ setupProcessing ? 'Setting up...' : 'Create Account & Wipe Demo Data' }}
+              </button>
+              <button
+                @click="cancelSetup"
+                class="px-5 py-2 bg-gray-700 text-gray-300 text-sm font-medium rounded-lg
+                       hover:bg-gray-600 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </template>
+        </div>
+      </div>
+
+      <!-- DANGER ZONE — only visible after initial setup has been completed -->
+      <div v-if="setupComplete" class="border-2 border-red-600/50 rounded-xl p-6 space-y-5 bg-red-950/20">
         <div class="flex items-center gap-3">
           <svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -196,8 +381,7 @@ function cancelAction() {
         <div
           v-for="action in dangerActions"
           :key="action.key"
-          class="border border-red-600/20 rounded-lg p-4"
-          :class="action.key === 'nuclear' ? 'bg-red-950/40 border-red-600/40' : 'bg-red-950/10'"
+          class="border border-red-600/40 rounded-lg p-4 bg-red-950/40"
         >
           <!-- Collapsed: label + description + button -->
           <div v-if="activeAction !== action.key" class="flex items-center justify-between gap-4">
@@ -207,10 +391,8 @@ function cancelAction() {
             </div>
             <button
               @click="startAction(action.key)"
-              class="shrink-0 px-4 py-1.5 text-xs font-semibold rounded-lg transition-colors"
-              :class="action.key === 'nuclear'
-                ? 'bg-red-600 text-white hover:bg-red-500'
-                : 'bg-red-600/20 text-red-400 hover:bg-red-600/30'"
+              class="shrink-0 px-4 py-1.5 text-xs font-semibold rounded-lg transition-colors
+                     bg-red-600 text-white hover:bg-red-500"
             >
               {{ action.label }}
             </button>
@@ -288,5 +470,35 @@ function cancelAction() {
         </div>
       </div>
     </div>
+
+    <!-- ARE YOU SURE? Confirmation Dialog -->
+    <Teleport to="body">
+      <div
+        v-if="showConfirmDialog"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
+        @click.self="onConfirmNo"
+      >
+        <div class="bg-gray-900 border border-gray-700 rounded-xl p-6 max-w-sm mx-4 space-y-4 shadow-2xl">
+          <h3 class="text-lg font-bold text-red-400 uppercase tracking-wide text-center">Are you sure?</h3>
+          <p class="text-sm text-gray-300 text-center">{{ confirmDialogMessage }}</p>
+          <div class="flex gap-3 justify-center">
+            <button
+              @click="onConfirmYes"
+              class="px-6 py-2 bg-red-600 text-white font-semibold rounded-lg
+                     hover:bg-red-500 transition-colors"
+            >
+              Yes, do it
+            </button>
+            <button
+              @click="onConfirmNo"
+              class="px-6 py-2 bg-gray-700 text-gray-300 font-medium rounded-lg
+                     hover:bg-gray-600 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </AppShell>
 </template>
