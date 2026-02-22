@@ -9,6 +9,7 @@
  * as managers make changes.
  */
 import { onMounted, onUnmounted, computed, ref, reactive } from 'vue'
+import type { User } from '@/types'
 import { usePreshiftStore } from '@/stores/preshift'
 import { useScheduleStore } from '@/stores/schedule'
 import { useAuth } from '@/composables/useAuth'
@@ -20,6 +21,7 @@ import EightySixedCard from '@/components/EightySixedCard.vue'
 import SpecialCard from '@/components/SpecialCard.vue'
 import PushItemCard from '@/components/PushItemCard.vue'
 import AnnouncementCard from '@/components/AnnouncementCard.vue'
+import EmployeeProfileModal from '@/components/EmployeeProfileModal.vue'
 
 /** Weather data shape returned by GET /api/weather */
 interface WeatherData {
@@ -64,6 +66,9 @@ const canManageEvents = computed(() => {
   const role = user.value?.role
   return role === 'admin' || role === 'manager'
 })
+
+/** Selected user for profile modal (managers only) */
+const selectedUser = ref<User | null>(null)
 
 /** Controls visibility of the inline event form */
 const showEventForm = ref(false)
@@ -537,9 +542,11 @@ onUnmounted(() => {
               <span v-else class="text-xs font-bold text-emerald-300">Shift</span>
             </div>
             <div class="flex flex-wrap gap-1.5">
-              <span
+              <component
+                :is="canManageEvents && entry.user ? 'button' : 'span'"
                 v-for="entry in group.entries"
                 :key="entry.id"
+                :type="canManageEvents && entry.user ? 'button' : undefined"
                 class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px]"
                 :class="[
                   entry.role === 'bartender'
@@ -548,14 +555,16 @@ onUnmounted(() => {
                   canManageEvents && entry.user_id in scheduleStore.ackSummaryMap && scheduleStore.ackSummaryMap[entry.user_id] < 100
                     ? 'ring-1 ring-red-500/60'
                     : '',
+                  canManageEvents && entry.user ? 'hover:brightness-125 transition-all cursor-pointer' : '',
                 ]"
                 :title="canManageEvents && entry.user_id in scheduleStore.ackSummaryMap && scheduleStore.ackSummaryMap[entry.user_id] < 100
                   ? 'Has not acknowledged all pre-shift items'
                   : undefined"
+                @click="canManageEvents && entry.user ? selectedUser = entry.user : undefined"
               >
                 {{ entry.user?.name || 'Staff' }}
                 <span class="text-[9px] opacity-60">{{ entry.role }}</span>
-              </span>
+              </component>
             </div>
           </div>
         </div>
@@ -676,6 +685,8 @@ onUnmounted(() => {
       <p class="text-gray-400 text-base font-medium">Nothing for today's pre-shift</p>
       <p class="text-gray-600 text-sm mt-1">Check back before your next shift</p>
     </div>
+
+    <EmployeeProfileModal :user="selectedUser" @close="selectedUser = null" />
   </AppShell>
 </template>
 

@@ -34,6 +34,7 @@ import AppShell from '@/components/layout/AppShell.vue'
 import ScheduleGrid from '@/components/ScheduleGrid.vue'
 import TimeOffBadge from '@/components/TimeOffBadge.vue'
 import BadgePill from '@/components/ui/BadgePill.vue'
+import EmployeeProfileModal from '@/components/EmployeeProfileModal.vue'
 import type { Schedule, ShiftTemplate, TimeOffRequest, User } from '@/types'
 
 // ── Composables ──────────────────────────────────────────────────────────────
@@ -52,6 +53,8 @@ const loading = ref(false)
 const activeSchedule = ref<Schedule | null>(null)
 // True while a publish/unpublish action is in-flight
 const publishing = ref(false)
+// Selected user for profile modal
+const selectedUser = ref<User | null>(null)
 
 // ── State: create-week form ──────────────────────────────────────────────────
 
@@ -633,6 +636,7 @@ onUnmounted(() => {
               :ack-map="scheduleStore.ackSummaryMap"
               @add-entry="handleAddEntry"
               @remove-entry="handleRemoveEntry"
+              @view-profile="selectedUser = $event"
             />
 
             <!-- ── Add entry inline form (shown when triggered from grid) ── -->
@@ -734,5 +738,7 @@ onUnmounted(() => {
       </div>
 
     </div>
+
+    <EmployeeProfileModal :user="selectedUser" @close="selectedUser = null" />
   </AppShell>
 </template>

@@ -23,6 +23,7 @@ import { computed } from 'vue'
 const props = defineProps<{
   modelValue: Record<string, string[]>
   saving?: boolean
+  readonly?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -107,6 +108,7 @@ function toggleAllOpen() {
   <div class="space-y-3">
     <!-- Master OPEN button — sets every day to open availability -->
     <button
+      v-if="!readonly"
       type="button"
       class="w-full py-2 text-xs font-bold rounded-md border transition-colors uppercase tracking-wide"
       :class="allOpen
@@ -130,7 +132,7 @@ function toggleAllOpen() {
     </div>
 
     <!-- Grid body: one column per day -->
-    <div class="grid grid-cols-7 gap-1.5">
+    <div :class="['grid grid-cols-7 gap-1.5', { 'pointer-events-none': readonly }]">
       <div
         v-for="day in DAYS"
         :key="day"
@@ -167,7 +169,7 @@ function toggleAllOpen() {
     </div>
 
     <!-- Save button -->
-    <div class="flex justify-end pt-1">
+    <div v-if="!readonly" class="flex justify-end pt-1">
       <button
         type="button"
         class="bg-blue-500/25 text-blue-300 hover:bg-blue-500/35 px-4 py-1.5 text-xs font-semibold rounded-md disabled:opacity-50 transition-colors"
