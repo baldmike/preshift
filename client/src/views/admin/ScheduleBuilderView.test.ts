@@ -90,6 +90,7 @@ function makeUser(overrides: Partial<User> = {}): User {
     name: 'Test User',
     email: 'test@test.com',
     role: 'server',
+    roles: null,
     is_superadmin: false,
     phone: null,
     availability: null,

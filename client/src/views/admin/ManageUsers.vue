@@ -2,9 +2,10 @@
 /**
  * ManageUsers -- admin/manager CRUD view for employee accounts.
  * Provides a toggleable create/edit form with name, email, password,
- * role, phone, and day-of-week availability fields. Password is required
- * when creating a new user but optional when editing (left blank to keep
- * the existing password). A table lists all employees with their role badge,
+ * role, multi-role toggle (server/bartender dual-role), phone, and
+ * day-of-week availability fields. Password is required when creating a
+ * new user but optional when editing (left blank to keep the existing
+ * password). A table lists all employees with their role badge(s),
  * phone, availability summary, and Edit/Remove actions.
  */
 import { ref, computed, onMounted } from 'vue'
@@ -47,6 +48,7 @@ const form = ref({
   role: 'server',
   phone: '',
   availability: Object.fromEntries(DAYS.map(d => [d, [] as string[]])) as Record<string, string[]>,
+  alsoWorksAs: '' as string, // Secondary role for multi-role staff (empty string = none)
 })
 
 // Clears all form fields, exits edit mode, and hides the form panel
@@ -58,14 +60,24 @@ function resetForm() {
     role: 'server',
     phone: '',
     availability: Object.fromEntries(DAYS.map(d => [d, [] as string[]])),
+    alsoWorksAs: '',
   }
   editingId.value = null
   showForm.value = false
 }
 
 // Populates the form with an existing user's data for editing.
+/** The alternate staff role label for the checkbox ("Also works as ..."). */
+const alternateRoleLabel = computed(() => {
+  return form.value.role === 'server' ? 'Bartender' : 'Server'
+})
+
+/** Whether the primary role is a staff role that supports dual-role assignment. */
+const showDualRole = computed(() => ['server', 'bartender'].includes(form.value.role))
+
 function editUser(user: User) {
   editingId.value = user.id
+  const otherRole = user.role === 'server' ? 'bartender' : 'server'
   form.value = {
     name: user.name,
     email: user.email,
@@ -75,6 +87,7 @@ function editUser(user: User) {
     availability: user.availability
       ? { ...Object.fromEntries(DAYS.map(d => [d, [] as string[]])), ...user.availability }
       : Object.fromEntries(DAYS.map(d => [d, [] as string[]])),
+    alsoWorksAs: user.roles && user.roles.includes(otherRole) ? otherRole : '',
   }
   showForm.value = true
 }
@@ -121,10 +134,16 @@ async function saveUser() {
   if (!form.value.name.trim() || !form.value.email.trim()) return
   submitting.value = true
   try {
+    // Build the roles array: [primary, secondary] when dual-role is checked,
+    // or null when single-role (API falls back to the primary `role` field).
+    const roles = form.value.alsoWorksAs
+      ? [form.value.role, form.value.alsoWorksAs]
+      : null
     const payload: Record<string, any> = {
       name: form.value.name,
       email: form.value.email,
       role: form.value.role,
+      roles,
       phone: form.value.phone || null,
       availability: form.value.availability,
     }
@@ -267,6 +286,16 @@ onMounted(fetchUsers)
               </select>
             </div>
           </div>
+          <div v-if="showDualRole" class="flex items-center gap-2">
+            <input
+              :id="'dual-role'"
+              type="checkbox"
+              :checked="!!form.alsoWorksAs"
+              @change="form.alsoWorksAs = ($event.target as HTMLInputElement).checked ? (form.role === 'server' ? 'bartender' : 'server') : ''"
+              class="h-4 w-4 rounded border-gray-600 bg-gray-700 text-indigo-500 focus:ring-indigo-500"
+            />
+            <label for="dual-role" class="text-sm text-gray-300">Also works as {{ alternateRoleLabel }}</label>
+          </div>
           <div class="grid grid-cols-2 gap-3">
             <BaseInput v-model="form.phone" label="Phone" type="tel" placeholder="(555) 123-4567" />
           </div>
@@ -328,8 +357,16 @@ onMounted(fetchUsers)
               <td class="px-4 py-3 text-sm font-medium text-white">{{ user.name }}</td>
               <td class="px-4 py-3 text-sm text-gray-400">{{ user.email }}</td>
               <td class="px-4 py-3 text-sm text-gray-400">{{ user.phone || '—' }}</td>
-              <td class="px-4 py-3">
+              <td class="px-4 py-3 space-x-1">
                 <BadgePill :label="user.role" :color="roleColor[user.role] || 'gray'" />
+                <template v-if="user.roles && user.roles.length > 1">
+                  <BadgePill
+                    v-for="r in user.roles.filter(r => r !== user.role)"
+                    :key="r"
+                    :label="r"
+                    :color="roleColor[r] || 'gray'"
+                  />
+                </template>
               </td>
               <td class="px-4 py-3 text-sm text-gray-400">{{ availabilitySummary(user.availability) }}</td>
               <td class="px-4 py-3 text-right space-x-2">

@@ -4,8 +4,8 @@
  *
  * Renders a compact, amber-themed card for a single shift drop request.
  * Shows the requester's name, a color-coded status badge (open/filled/
- * cancelled), shift name, date, time range, volunteer count, and an
- * optional reason.
+ * cancelled), shift name with role label (e.g. "Dinner (server)"), date,
+ * time range, volunteer count, and an optional reason.
  *
  * Props:
  *   - drop: ShiftDrop
@@ -27,9 +27,12 @@ const statusColor = computed(() => {
 
 const requesterName = computed(() => props.drop.requester?.name ?? 'Staff member')
 
-const shiftName = computed(() =>
-  props.drop.schedule_entry?.shift_template?.name ?? 'Shift',
-)
+/** Shift template name with the schedule entry role appended, e.g. "Dinner (server)". */
+const shiftName = computed(() => {
+  const name = props.drop.schedule_entry?.shift_template?.name ?? 'Shift'
+  const role = props.drop.schedule_entry?.role
+  return role ? `${name} (${role})` : name
+})
 
 const shiftDate = computed(() => {
   const dateStr = props.drop.schedule_entry?.date

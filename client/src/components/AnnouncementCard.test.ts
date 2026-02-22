@@ -65,6 +65,7 @@ function makeAnnouncement(overrides: Partial<Announcement> = {}): Announcement {
       name: 'Manager Sarah',
       email: 'sarah@example.com',
       role: 'manager',
+      roles: null,
       is_superadmin: false,
       phone: null,
       availability: null,

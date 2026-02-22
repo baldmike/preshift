@@ -342,6 +342,115 @@ class ModelTest extends TestCase
         );
     }
 
+    /**
+     * Verify that getEffectiveRoles() returns the `roles` JSON array when set,
+     * and falls back to wrapping the primary `role` in an array when `roles`
+     * is NULL.
+     *
+     * This fallback design means existing single-role users work without any
+     * data migration — their effective roles are simply [$this->role].
+     */
+    public function test_user_get_effective_roles_returns_roles_or_fallback(): void
+    {
+        $location = $this->createLocation();
+
+        // User with no `roles` set (NULL) — should fall back to [$role].
+        $singleRole = $this->createUser($location, ['role' => 'server']);
+        $this->assertEquals(
+            ['server'],
+            $singleRole->getEffectiveRoles(),
+            'getEffectiveRoles() must return [$role] when roles is NULL.'
+        );
+
+        // User with explicit `roles` array — should return the stored array.
+        $multiRole = $this->createUser($location, [
+            'role'  => 'server',
+            'roles' => ['server', 'bartender'],
+        ]);
+        $this->assertEquals(
+            ['server', 'bartender'],
+            $multiRole->getEffectiveRoles(),
+            'getEffectiveRoles() must return the stored roles array when set.'
+        );
+    }
+
+    /**
+     * Verify that hasRole() checks against all effective roles (primary +
+     * secondary) and returns false for roles the user does not hold.
+     *
+     * This helper is used by the shift drop volunteer flow to allow a
+     * multi-role employee to volunteer for either of their roles.
+     */
+    public function test_user_has_role_checks_effective_roles(): void
+    {
+        $location = $this->createLocation();
+
+        // Single-role user — hasRole() should only match the primary role.
+        $server = $this->createUser($location, ['role' => 'server']);
+        $this->assertTrue(
+            $server->hasRole('server'),
+            'hasRole() must return true for the primary role.'
+        );
+        $this->assertFalse(
+            $server->hasRole('bartender'),
+            'hasRole() must return false for a role the user does not hold.'
+        );
+
+        // Multi-role user — hasRole() should match both roles.
+        $dual = $this->createUser($location, [
+            'role'  => 'server',
+            'roles' => ['server', 'bartender'],
+        ]);
+        $this->assertTrue(
+            $dual->hasRole('server'),
+            'hasRole() must return true for the primary role in a multi-role set.'
+        );
+        $this->assertTrue(
+            $dual->hasRole('bartender'),
+            'hasRole() must return true for a secondary role in a multi-role set.'
+        );
+        $this->assertFalse(
+            $dual->hasRole('manager'),
+            'hasRole() must return false for roles not in the effective roles set.'
+        );
+    }
+
+    /**
+     * Verify that the 'roles' attribute is cast to an array (or null).
+     *
+     * The roles column stores a JSON array in the database (e.g.,
+     * ["server","bartender"]). The 'array' cast should automatically decode
+     * it when reading and encode it when writing, mirroring the availability
+     * cast behaviour.
+     */
+    public function test_user_roles_is_cast_to_array(): void
+    {
+        $location = $this->createLocation();
+
+        // NULL roles — should stay null, not become an empty array.
+        $nullRoles = $this->createUser($location, ['roles' => null]);
+        $fresh = User::find($nullRoles->id);
+        $this->assertNull(
+            $fresh->roles,
+            'User->roles must be null when stored as NULL in the database.'
+        );
+
+        // Set roles — should round-trip through JSON correctly.
+        $withRoles = $this->createUser($location, [
+            'roles' => ['server', 'bartender'],
+        ]);
+        $fresh = User::find($withRoles->id);
+        $this->assertIsArray(
+            $fresh->roles,
+            'User->roles must be cast to a PHP array.'
+        );
+        $this->assertEquals(
+            ['server', 'bartender'],
+            $fresh->roles,
+            'User->roles should round-trip through JSON encoding correctly.'
+        );
+    }
+
     // =========================================================================
     //  LOCATION MODEL TESTS
     // =========================================================================

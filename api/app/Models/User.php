@@ -26,6 +26,7 @@ use Laravel\Sanctum\HasApiTokens;
  * @property string                          $email             Unique login email
  * @property string                          $password           Hashed via the 'hashed' cast — never stored in plain text
  * @property string                          $role              One of: admin, manager, server, bartender
+ * @property array|null                      $roles             JSON array of all roles this user can work (nullable — falls back to [$role])
  * @property \Illuminate\Support\Carbon|null $email_verified_at Timestamp of email verification (nullable)
  * @property string|null                     $remember_token    Laravel "remember me" session token
  * @property \Illuminate\Support\Carbon      $created_at
@@ -47,6 +48,7 @@ class User extends Authenticatable
         'email',       // Unique credential used for login
         'password',    // Stored as a bcrypt/argon hash via the 'hashed' cast
         'role',        // Determines authorization level (admin | manager | server | bartender)
+        'roles',       // JSON array of additional roles for multi-role staff (nullable)
         'phone',       // Contact phone number (nullable)
         'availability', // JSON map of day-of-week availability (nullable)
         'is_superadmin', // SuperAdmin privilege flag
@@ -67,6 +69,7 @@ class User extends Authenticatable
      *
      * - email_verified_at -> Carbon instance for easy date comparison
      * - password -> 'hashed' ensures any plain-text value assigned is automatically hashed before storage
+     * - roles -> 'array' decodes the JSON multi-role list into a PHP array (nullable)
      *
      * @return array<string, string>
      */
@@ -76,6 +79,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'availability' => 'array',
+            'roles' => 'array',
             'is_superadmin' => 'boolean',
         ];
     }
@@ -142,6 +146,25 @@ class User extends Authenticatable
     {
         // Both "server" and "bartender" share the same permission tier
         return in_array($this->role, ['server', 'bartender']);
+    }
+
+    /**
+     * Return all roles this user can work as.
+     * Falls back to the primary role when no multi-role array is set.
+     *
+     * @return string[]
+     */
+    public function getEffectiveRoles(): array
+    {
+        return $this->roles ?? [$this->role];
+    }
+
+    /**
+     * Check whether the user holds a specific role (primary or secondary).
+     */
+    public function hasRole(string $role): bool
+    {
+        return in_array($role, $this->getEffectiveRoles());
     }
 
     // ── Scopes ──

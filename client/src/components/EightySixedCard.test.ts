@@ -57,6 +57,7 @@ function makeItem(overrides: Partial<EightySixed> = {}): EightySixed {
       name: 'Chef Mike',
       email: 'mike@example.com',
       role: 'manager',
+      roles: null,
       is_superadmin: false,
       phone: null,
       availability: null,
