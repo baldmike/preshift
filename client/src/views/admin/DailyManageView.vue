@@ -14,7 +14,7 @@ import { useAuth } from '@/composables/useAuth'
 import AppShell from '@/components/layout/AppShell.vue'
 import type { EightySixed, Special, PushItem, Announcement } from '@/types'
 
-const { isAdmin } = useAuth()
+const { isAdmin, isSuperAdmin } = useAuth()
 
 const manageLinks = [
   { to: '/manage/users', label: 'Staff' },
@@ -735,6 +735,19 @@ onMounted(() => {
       </section>
 
     </div>
+
+    <!-- SuperAdmin Config link -->
+    <router-link
+      v-if="isSuperAdmin"
+      to="/manage/config"
+      class="flex items-center justify-center gap-2 mt-4 px-4 py-2.5 rounded-lg border border-red-500/15 bg-red-500/5 text-red-400 hover:bg-red-500/10 transition-colors text-xs font-semibold"
+    >
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+      </svg>
+      System Config
+    </router-link>
   </AppShell>
 </template>
 

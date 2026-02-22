@@ -205,14 +205,16 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true, roles: ['admin', 'manager'] },
   },
 
-  // -----------------------------------------------------------------------
-  // SuperAdmin config page
-  // -----------------------------------------------------------------------
   {
-    path: '/config',
+    path: '/manage/config',
     name: 'Config',
     component: () => import('@/views/admin/ConfigView.vue'),
-    meta: { requiresAuth: true, requiresSuperAdmin: true },
+    meta: { requiresAuth: true, roles: ['admin', 'manager'], requiresSuperAdmin: true },
+  },
+  // Legacy redirect for bookmarks
+  {
+    path: '/config',
+    redirect: '/manage/config',
   },
 
   // -----------------------------------------------------------------------
