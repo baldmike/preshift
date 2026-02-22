@@ -34,7 +34,22 @@ class Location extends Model
         'name',      // Display name for the venue
         'address',   // Physical street address
         'timezone',  // IANA timezone — drives all date/time logic scoped to this location
+        'latitude',  // GPS latitude for weather lookups
+        'longitude', // GPS longitude for weather lookups
     ];
+
+    /**
+     * Attribute type casts.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'latitude' => 'float',
+            'longitude' => 'float',
+        ];
+    }
 
     // ── Relationships ──
 

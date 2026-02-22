@@ -21,6 +21,10 @@ export interface Location {
   address: string | null
   /** IANA timezone identifier (e.g. "America/New_York"); nullable */
   timezone: string | null
+  /** GPS latitude for weather lookups; nullable if not configured */
+  latitude: number | null
+  /** GPS longitude for weather lookups; nullable if not configured */
+  longitude: number | null
   /** ISO-8601 creation timestamp */
   created_at: string
   /** ISO-8601 last-update timestamp */

@@ -38,6 +38,7 @@ use App\Http\Controllers\ShiftDropController;
 use App\Http\Controllers\TimeOffRequestController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\ConfigController;
+use App\Http\Controllers\WeatherController;
 
 /*
 |--------------------------------------------------------------------------
@@ -95,6 +96,10 @@ Route::middleware('auth:sanctum')->group(function () {
         //                      86'd items, active specials, push items, and
         //                      announcements in one response for the hero view.
         Route::get('/preshift', [PreShiftController::class, 'index']);
+
+        // GET /api/weather -- Current weather + today's forecast for the location.
+        //                     Uses Open-Meteo API; cached 30 minutes per location.
+        Route::get('/weather', [WeatherController::class, 'index']);
 
         /*
         |------------------------------------------------------------------

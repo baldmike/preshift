@@ -31,11 +31,13 @@ const form = ref({
   name: '',
   address: '',
   timezone: 'America/New_York',  // Defaults to Eastern time; user can override
+  latitude: '',
+  longitude: '',
 })
 
 // Clears all form fields, exits edit mode, and hides the form panel
 function resetForm() {
-  form.value = { name: '', address: '', timezone: 'America/New_York' }
+  form.value = { name: '', address: '', timezone: 'America/New_York', latitude: '', longitude: '' }
   editingId.value = null
   showForm.value = false
 }
@@ -47,6 +49,8 @@ function editLocation(loc: Location) {
     name: loc.name,
     address: loc.address || '',
     timezone: loc.timezone || 'America/New_York',
+    latitude: loc.latitude != null ? String(loc.latitude) : '',
+    longitude: loc.longitude != null ? String(loc.longitude) : '',
   }
   showForm.value = true
 }
@@ -71,14 +75,19 @@ async function fetchLocations() {
 async function saveLocation() {
   if (!form.value.name.trim()) return
   submitting.value = true
+  const payload = {
+    ...form.value,
+    latitude: form.value.latitude !== '' ? Number(form.value.latitude) : null,
+    longitude: form.value.longitude !== '' ? Number(form.value.longitude) : null,
+  }
   try {
     if (editingId.value) {
-      const { data } = await api.patch(`/api/locations/${editingId.value}`, form.value)
+      const { data } = await api.patch(`/api/locations/${editingId.value}`, payload)
       const idx = locations.value.findIndex((l) => l.id === editingId.value)
       if (idx !== -1) locations.value[idx] = data
       toast('Location updated', 'success')
     } else {
-      const { data } = await api.post('/api/locations', form.value)
+      const { data } = await api.post('/api/locations', payload)
       locations.value.push(data)
       toast('Location created', 'success')
     }
@@ -125,6 +134,10 @@ onMounted(fetchLocations)
           <BaseInput v-model="form.name" label="Name" placeholder="Location name" />
           <BaseInput v-model="form.address" label="Address" placeholder="Full address" />
           <BaseInput v-model="form.timezone" label="Timezone" placeholder="America/New_York" />
+          <div class="grid grid-cols-2 gap-3">
+            <BaseInput v-model="form.latitude" label="Latitude" placeholder="e.g. 40.7128" />
+            <BaseInput v-model="form.longitude" label="Longitude" placeholder="e.g. -74.0060" />
+          </div>
           <div class="flex gap-2">
             <BaseButton type="submit" :loading="submitting">{{ editingId ? 'Update' : 'Create' }}</BaseButton>
             <BaseButton variant="secondary" @click="resetForm">Cancel</BaseButton>
@@ -147,6 +160,7 @@ onMounted(fetchLocations)
               <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
               <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Address</th>
               <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Timezone</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Coordinates</th>
               <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
             </tr>
           </thead>
@@ -155,12 +169,16 @@ onMounted(fetchLocations)
               <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ loc.name }}</td>
               <td class="px-4 py-3 text-sm text-gray-500">{{ loc.address || '-' }}</td>
               <td class="px-4 py-3 text-sm text-gray-500">{{ loc.timezone || '-' }}</td>
+              <td class="px-4 py-3 text-sm text-gray-500">
+                <template v-if="loc.latitude != null && loc.longitude != null">{{ loc.latitude }}, {{ loc.longitude }}</template>
+                <template v-else>-</template>
+              </td>
               <td class="px-4 py-3 text-right">
                 <BaseButton size="sm" variant="secondary" @click="editLocation(loc)">Edit</BaseButton>
               </td>
             </tr>
             <tr v-if="!locations.length">
-              <td colspan="4" class="px-4 py-8 text-center text-gray-500">No locations</td>
+              <td colspan="5" class="px-4 py-8 text-center text-gray-500">No locations</td>
             </tr>
           </tbody>
         </table>
