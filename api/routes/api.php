@@ -129,10 +129,12 @@ Route::middleware('auth:sanctum')->group(function () {
         |
         | GET   /api/eighty-sixed                     -- List active 86'd items.
         | POST  /api/eighty-sixed                     -- 86 a new item (admin/manager).
+        | PATCH /api/eighty-sixed/{id}                -- Update an 86'd item (admin/manager).
         | PATCH /api/eighty-sixed/{id}/restore        -- Restore an item (admin/manager).
         */
         Route::get('/eighty-sixed', [EightySixedController::class, 'index']);
         Route::post('/eighty-sixed', [EightySixedController::class, 'store'])->middleware('role:admin,manager');
+        Route::patch('/eighty-sixed/{eightySixed}', [EightySixedController::class, 'update'])->middleware('role:admin,manager');
         Route::patch('/eighty-sixed/{eightySixed}/restore', [EightySixedController::class, 'restore'])->middleware('role:admin,manager');
 
         /*

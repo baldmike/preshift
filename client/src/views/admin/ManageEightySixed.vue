@@ -1,10 +1,12 @@
 <script setup lang="ts">
 /**
  * ManageEightySixed -- admin/manager view for managing 86'd items.
- * Provides a form to 86 a new item (POST) and a table listing all
- * currently 86'd items with a "Restore" action (PATCH) to mark
- * an item as available again. Changes are reflected in the local
- * list immediately without a full refetch.
+ * Provides a toggleable create/edit form to 86 a new item (POST) or
+ * update an existing one (PATCH), and a table listing all currently
+ * 86'd items with Edit and Restore actions. When navigated to with
+ * an item ID via the route param (e.g. /manage/86/5), the form opens
+ * pre-populated with that item's data. Changes are reflected in the
+ * local list immediately without a full refetch.
  */
 import { ref, onMounted } from 'vue'
 import api from '@/composables/useApi'
@@ -13,16 +15,45 @@ import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import type { EightySixed } from '@/types'
 
+// Optional route prop: when present, the form opens in edit mode for this item
+const props = defineProps<{ id?: string }>()
+
 // Reactive list of currently 86'd items
 const items = ref<EightySixed[]>([])
 // True while the initial list is being fetched from the API
 const loading = ref(false)
+// True while the create/update API call is in-flight
+const submitting = ref(false)
 
-// Form fields for 86'ing a new item
+// Controls visibility of the create/edit form panel
+const showForm = ref(false)
+// When non-null, the form is in "edit" mode for the 86'd item with this ID
+const editingId = ref<number | null>(null)
+
+// Form fields for 86'ing or editing an item
 const itemName = ref('')   // The menu item name to 86
 const reason = ref('')     // Optional reason why the item is unavailable
-// True while the "86 It" form submission is in-flight
-const submitting = ref(false)
+
+/**
+ * Clears all form fields, exits edit mode, and hides the form panel.
+ */
+function resetForm() {
+  itemName.value = ''
+  reason.value = ''
+  editingId.value = null
+  showForm.value = false
+}
+
+/**
+ * Populates the form with an existing 86'd item's data for editing.
+ * Opens the form panel and sets editingId.
+ */
+function editItem(item: EightySixed) {
+  editingId.value = item.id
+  itemName.value = item.item_name
+  reason.value = item.reason || ''
+  showForm.value = true
+}
 
 /**
  * Fetches all currently 86'd items from GET /api/eighty-sixed.
@@ -38,24 +69,30 @@ async function fetchItems() {
 }
 
 /**
- * Handles the "86 It" form submission. POSTs the new item to the API,
- * appends the returned record to the local list, resets form fields,
- * and shows a success/error toast.
+ * Saves an 86'd item -- creates (POST) or updates (PATCH) based on editingId.
+ * Updates the local list in-place on success and resets the form.
  */
-async function addItem() {
+async function saveItem() {
   if (!itemName.value.trim()) return
   submitting.value = true
   try {
-    const { data } = await api.post('/api/eighty-sixed', {
+    const payload = {
       item_name: itemName.value,
       reason: reason.value || null,
-    })
-    items.value.push(data)
-    itemName.value = ''
-    reason.value = ''
-    toast('Item 86\'d', 'success')
+    }
+    if (editingId.value) {
+      const { data } = await api.patch(`/api/eighty-sixed/${editingId.value}`, payload)
+      const idx = items.value.findIndex((i) => i.id === editingId.value)
+      if (idx !== -1) items.value[idx] = data
+      toast('Item updated', 'success')
+    } else {
+      const { data } = await api.post('/api/eighty-sixed', payload)
+      items.value.push(data)
+      toast('Item 86\'d', 'success')
+    }
+    resetForm()
   } catch {
-    toast('Failed to add item', 'error')
+    toast('Failed to save item', 'error')
   } finally {
     submitting.value = false
   }
@@ -87,8 +124,14 @@ function formatTime(dateStr: string) {
   })
 }
 
-// Fetch the 86'd items list on component mount
-onMounted(fetchItems)
+// Fetch 86'd items on mount; if an ID route param is present, open edit mode
+onMounted(async () => {
+  await fetchItems()
+  if (props.id) {
+    const target = items.value.find((i) => i.id === Number(props.id))
+    if (target) editItem(target)
+  }
+})
 </script>
 
 <template>
@@ -96,7 +139,8 @@ onMounted(fetchItems)
     <div class="space-y-6">
       <div class="flex items-center justify-between">
         <h1 class="text-2xl font-bold text-gray-900">Manage 86'd Items</h1>
-        <router-link
+        <div class="flex gap-2">
+          <router-link
               to="/manage/daily"
               class="inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-gray-200 text-gray-800 hover:bg-gray-300 transition-colors"
             >
@@ -105,17 +149,22 @@ onMounted(fetchItems)
               </svg>
               Corner!
             </router-link>
+          <BaseButton v-if="!showForm" size="sm" @click="showForm = true">86 an Item</BaseButton>
+        </div>
       </div>
 
-      <!-- Create Form -->
-      <div class="bg-white rounded-lg shadow p-4">
-        <h3 class="font-semibold text-gray-900 mb-3">86 an Item</h3>
-        <form @submit.prevent="addItem" class="flex flex-col sm:flex-row gap-3">
+      <!-- Create/Edit Form -->
+      <div v-if="showForm" class="bg-white rounded-lg shadow p-4">
+        <h3 class="font-semibold text-gray-900 mb-3">{{ editingId ? 'Edit Item' : '86 an Item' }}</h3>
+        <form @submit.prevent="saveItem" class="flex flex-col sm:flex-row gap-3">
           <BaseInput v-model="itemName" placeholder="Item name" class="flex-1" />
           <BaseInput v-model="reason" placeholder="Reason (optional)" class="flex-1" />
-          <BaseButton type="submit" variant="danger" :loading="submitting">
-            86 It
-          </BaseButton>
+          <div class="flex gap-2">
+            <BaseButton type="submit" variant="danger" :loading="submitting">
+              {{ editingId ? 'Update' : '86 It' }}
+            </BaseButton>
+            <BaseButton variant="secondary" @click="resetForm">Cancel</BaseButton>
+          </div>
         </form>
       </div>
 
@@ -144,7 +193,10 @@ onMounted(fetchItems)
               <td class="px-4 py-3 text-sm text-gray-500">{{ item.reason || '-' }}</td>
               <td class="px-4 py-3 text-sm text-gray-500">{{ item.user?.name || '-' }}</td>
               <td class="px-4 py-3 text-sm text-gray-500">{{ formatTime(item.created_at) }}</td>
-              <td class="px-4 py-3 text-right">
+              <td class="px-4 py-3 text-right space-x-2">
+                <BaseButton size="sm" variant="secondary" @click="editItem(item)">
+                  Edit
+                </BaseButton>
                 <BaseButton size="sm" variant="secondary" @click="restoreItem(item.id)">
                   Restore
                 </BaseButton>

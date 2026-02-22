@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Events\ItemEightySixed;
+use App\Events\ItemEightySixedUpdated;
 use App\Events\ItemRestored;
 use App\Http\Requests\StoreEightySixedRequest;
 use App\Http\Resources\EightySixedResource;
@@ -58,6 +59,25 @@ class EightySixedController extends Controller
         broadcast(new ItemEightySixed($item))->toOthers();
 
         return response()->json(new EightySixedResource($item), 201);
+    }
+
+    /**
+     * Update an existing 86'd item.
+     *
+     * @param  \App\Http\Requests\StoreEightySixedRequest  $request
+     * @param  \App\Models\EightySixed  $eightySixed  The 86'd item to update (via route model binding).
+     * @return \Illuminate\Http\JsonResponse  The updated 86'd item.
+     */
+    public function update(StoreEightySixedRequest $request, EightySixed $eightySixed): JsonResponse
+    {
+        $this->authorize('update', $eightySixed);
+
+        $eightySixed->update($request->validated());
+        $eightySixed->load('menuItem', 'user');
+
+        broadcast(new ItemEightySixedUpdated($eightySixed))->toOthers();
+
+        return response()->json(new EightySixedResource($eightySixed));
     }
 
     /**
