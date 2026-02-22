@@ -94,6 +94,9 @@ function cancelSetup() {
 
 /** Submit the Initial Setup form — wipe demo data and create a real account. */
 async function performSetup() {
+  const confirmed = await confirm('This will permanently delete all existing data and create a new account. This cannot be undone.')
+  if (!confirmed) return
+
   setupProcessing.value = true
   try {
     await api.post('/api/config/initial-setup', {
@@ -110,6 +113,34 @@ async function performSetup() {
   } finally {
     setupProcessing.value = false
   }
+}
+
+// ── Confirmation Dialog ──
+const showConfirmDialog = ref(false)
+const confirmDialogMessage = ref('')
+let confirmDialogResolve: ((value: boolean) => void) | null = null
+
+/** Show an "ARE YOU SURE?" dialog and return a promise that resolves to true/false. */
+function confirm(message: string): Promise<boolean> {
+  confirmDialogMessage.value = message
+  showConfirmDialog.value = true
+  return new Promise((resolve) => {
+    confirmDialogResolve = resolve
+  })
+}
+
+/** User confirmed the dialog. */
+function onConfirmYes() {
+  showConfirmDialog.value = false
+  confirmDialogResolve?.(true)
+  confirmDialogResolve = null
+}
+
+/** User cancelled the dialog. */
+function onConfirmNo() {
+  showConfirmDialog.value = false
+  confirmDialogResolve?.(false)
+  confirmDialogResolve = null
 }
 
 // ── Danger Zone Actions ──
@@ -156,6 +187,9 @@ const dangerActions: DangerAction[] = [
 
 async function performAction(action: DangerAction) {
   if (confirmText.value !== action.confirmWord) return
+
+  const confirmed = await confirm('This will permanently wipe all data. This cannot be undone.')
+  if (!confirmed) return
 
   processing.value = true
   try {
@@ -436,5 +470,35 @@ function cancelAction() {
         </div>
       </div>
     </div>
+
+    <!-- ARE YOU SURE? Confirmation Dialog -->
+    <Teleport to="body">
+      <div
+        v-if="showConfirmDialog"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
+        @click.self="onConfirmNo"
+      >
+        <div class="bg-gray-900 border border-gray-700 rounded-xl p-6 max-w-sm mx-4 space-y-4 shadow-2xl">
+          <h3 class="text-lg font-bold text-red-400 uppercase tracking-wide text-center">Are you sure?</h3>
+          <p class="text-sm text-gray-300 text-center">{{ confirmDialogMessage }}</p>
+          <div class="flex gap-3 justify-center">
+            <button
+              @click="onConfirmYes"
+              class="px-6 py-2 bg-red-600 text-white font-semibold rounded-lg
+                     hover:bg-red-500 transition-colors"
+            >
+              Yes, do it
+            </button>
+            <button
+              @click="onConfirmNo"
+              class="px-6 py-2 bg-gray-700 text-gray-300 font-medium rounded-lg
+                     hover:bg-gray-600 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </AppShell>
 </template>

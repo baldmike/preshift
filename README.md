@@ -99,12 +99,20 @@ php artisan reverb:start
 
 ## Demo Login
 
-After seeding, log in with the superadmin account:
+After seeding, all accounts use the password **`password`**. Here are some accounts to try:
 
-- **Email:** `prince@theanchor.com`
-- **Password:** `password`
+| Role | Name | Email |
+|------|------|-------|
+| Admin (superadmin) | Prince Springsteen | `prince@preshift.test` |
+| Manager | Lisa Mercury | `mercury@preshift.test` |
+| Server | Sam Presley | `presley@preshift.test` |
+| Bartender | Kyle Hendrix | `hendrix@preshift.test` |
 
 The seeder creates a full demo environment with a location ("The Anchor"), staff across all roles, a menu, sample 86'd items, specials, push items, announcements, and a multi-week schedule.
+
+### Initial Setup
+
+When you're ready to replace the demo data with your own, log in as the superadmin and go to the **Config** page. The **Initial Setup** form wipes all seeded data and creates your real superadmin account and location. After setup, the Config page shows the Establishment Name setting and a Danger Zone with a full reset option.
 
 ## Running Tests
 
