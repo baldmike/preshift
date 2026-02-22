@@ -269,6 +269,11 @@ onMounted(async () => {
   scheduleStore.fetchMyShifts()
   scheduleStore.fetchCurrentWeekSchedule()
 
+  // Fetch ack summary for managers (powers the red dot indicator)
+  if (canManageEvents.value) {
+    scheduleStore.fetchAckSummary()
+  }
+
   // Fetch weather (silently ignore 404 when coordinates not configured)
   api.get('/api/weather')
     .then(({ data }) => { weather.value = data })
@@ -308,6 +313,9 @@ onMounted(async () => {
       .listen('.time-off.resolved', (e: any) => {
         scheduleStore.upsertTimeOffRequest(e)
       })
+      .listen('.acknowledgment.recorded', (e: any) => {
+        scheduleStore.updateUserAckPercentage(e.user_id, e.percentage)
+      })
   }
 })
 
@@ -333,6 +341,7 @@ onUnmounted(() => {
     channel.stopListening('.shift-drop.volunteered')
     channel.stopListening('.shift-drop.filled')
     channel.stopListening('.time-off.resolved')
+    channel.stopListening('.acknowledgment.recorded')
   }
 })
 </script>
@@ -410,75 +419,6 @@ onUnmounted(() => {
               <span class="text-sky-400">{{ weather.current.wind_speed }}</span> mph wind
             </p>
           </div>
-        </div>
-      </section>
-
-      <!-- ═══ Today's Schedule — shows who's working today ═══ -->
-      <section v-if="scheduleStore.currentSchedule" class="rounded-xl bg-emerald-500/5 border border-emerald-500/10 p-3">
-        <div class="flex items-center justify-between mb-3">
-          <div class="flex items-center gap-2">
-            <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-            <span class="text-xs font-bold text-emerald-400 uppercase tracking-wide">{{ canManageEvents ? 'Today' : 'My Schedule' }}</span>
-            <span class="text-[10px] text-emerald-500/60">{{ todayLabel }}</span>
-          </div>
-          <router-link to="/my-schedule" class="text-[10px] text-emerald-500/60 hover:text-emerald-400 transition-colors">
-            Full week
-          </router-link>
-        </div>
-
-        <!-- Today's shifts grouped by time slot -->
-        <div v-if="todayByShift.length" class="space-y-2">
-          <div
-            v-for="group in todayByShift"
-            :key="group.template?.id"
-            class="rounded-lg bg-white/[0.03] border border-white/[0.06] p-2.5"
-          >
-            <div class="flex items-center gap-2 mb-1.5">
-              <span v-if="group.template" class="text-xs font-bold text-emerald-300">
-                {{ formatShiftTime(group.template.start_time) }}
-              </span>
-              <span v-else class="text-xs font-bold text-emerald-300">Shift</span>
-            </div>
-            <div class="flex flex-wrap gap-1.5">
-              <span
-                v-for="entry in group.entries"
-                :key="entry.id"
-                class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px]"
-                :class="entry.role === 'bartender'
-                  ? 'bg-green-500/15 text-green-400'
-                  : 'bg-blue-500/15 text-blue-400'"
-              >
-                {{ entry.user?.name || 'Staff' }}
-                <span class="text-[9px] opacity-60">{{ entry.role }}</span>
-              </span>
-            </div>
-          </div>
-        </div>
-        <p v-else class="text-gray-600 text-xs text-center py-4">No shifts scheduled today</p>
-
-        <!-- Sub-nav pill links: secondary navigation to schedule-related pages -->
-        <div class="flex gap-2 mt-2">
-          <router-link
-            to="/tonights-schedule"
-            class="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-semibold rounded-full bg-teal-500/15 text-teal-400 hover:bg-teal-500/25 transition-colors"
-          >
-            Tonight's Schedule
-          </router-link>
-          <router-link
-            to="/shift-drops"
-            class="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-semibold rounded-full bg-amber-500/15 text-amber-400 hover:bg-amber-500/25 transition-colors"
-          >
-            Drop Board
-          </router-link>
-          <router-link
-            to="/time-off"
-            class="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-semibold rounded-full bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 transition-colors"
-          >
-            Time Off
-          </router-link>
         </div>
       </section>
 
@@ -565,6 +505,83 @@ onUnmounted(() => {
           </div>
         </div>
         <p v-else class="text-gray-600 text-xs text-center py-4">No events today</p>
+      </section>
+
+      <!-- ═══ Today's Schedule — shows who's working today ═══ -->
+      <section v-if="scheduleStore.currentSchedule" class="rounded-xl bg-emerald-500/5 border border-emerald-500/10 p-3">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <span class="text-xs font-bold text-emerald-400 uppercase tracking-wide">{{ canManageEvents ? 'Today' : 'My Schedule' }}</span>
+            <span class="text-[10px] text-emerald-500/60">{{ todayLabel }}</span>
+          </div>
+          <router-link to="/my-schedule" class="text-[10px] text-emerald-500/60 hover:text-emerald-400 transition-colors">
+            Full week
+          </router-link>
+        </div>
+
+        <!-- Today's shifts grouped by time slot -->
+        <div v-if="todayByShift.length" class="space-y-2">
+          <div
+            v-for="group in todayByShift"
+            :key="group.template?.id"
+            class="rounded-lg bg-white/[0.03] border border-white/[0.06] p-2.5"
+          >
+            <div class="flex items-center gap-2 mb-1.5">
+              <span v-if="group.template" class="text-xs font-bold text-emerald-300">
+                {{ formatShiftTime(group.template.start_time) }}
+              </span>
+              <span v-else class="text-xs font-bold text-emerald-300">Shift</span>
+            </div>
+            <div class="flex flex-wrap gap-1.5">
+              <span
+                v-for="entry in group.entries"
+                :key="entry.id"
+                class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px]"
+                :class="[
+                  entry.role === 'bartender'
+                    ? 'bg-green-500/15 text-green-400'
+                    : 'bg-blue-500/15 text-blue-400',
+                  canManageEvents && entry.user_id in scheduleStore.ackSummaryMap && scheduleStore.ackSummaryMap[entry.user_id] < 100
+                    ? 'ring-1 ring-red-500/60'
+                    : '',
+                ]"
+                :title="canManageEvents && entry.user_id in scheduleStore.ackSummaryMap && scheduleStore.ackSummaryMap[entry.user_id] < 100
+                  ? 'Has not acknowledged all pre-shift items'
+                  : undefined"
+              >
+                {{ entry.user?.name || 'Staff' }}
+                <span class="text-[9px] opacity-60">{{ entry.role }}</span>
+              </span>
+            </div>
+          </div>
+        </div>
+        <p v-else class="text-gray-600 text-xs text-center py-4">No shifts scheduled today</p>
+
+        <!-- Sub-nav pill links: secondary navigation to schedule-related pages -->
+        <div class="flex gap-2 mt-2">
+          <router-link
+            to="/tonights-schedule"
+            class="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-semibold rounded-full bg-teal-500/15 text-teal-400 hover:bg-teal-500/25 transition-colors"
+          >
+            Tonight's Schedule
+          </router-link>
+          <router-link
+            to="/shift-drops"
+            class="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-semibold rounded-full bg-amber-500/15 text-amber-400 hover:bg-amber-500/25 transition-colors"
+          >
+            Drop Board
+          </router-link>
+          <router-link
+            to="/time-off"
+            class="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-semibold rounded-full bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 transition-colors"
+          >
+            Time Off
+          </router-link>
+        </div>
       </section>
 
     <!-- Dashboard grid -->

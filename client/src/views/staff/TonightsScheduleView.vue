@@ -9,14 +9,22 @@
  *
  * Route: /tonights-schedule (any authenticated user)
  */
-import { onMounted, computed, ref } from 'vue'
+import { onMounted, onUnmounted, computed, ref } from 'vue'
 import { useScheduleStore } from '@/stores/schedule'
+import { useAuth } from '@/composables/useAuth'
 import { useSchedule } from '@/composables/useSchedule'
+import { useLocationChannel } from '@/composables/useReverb'
 import AppShell from '@/components/layout/AppShell.vue'
 
 const scheduleStore = useScheduleStore()
 const { formatShiftTime } = useSchedule()
+const { user, locationId } = useAuth()
 const loading = ref(false)
+
+const canManage = computed(() => {
+  const role = user.value?.role
+  return role === 'admin' || role === 'manager'
+})
 
 /** Today's date as "YYYY-MM-DD" for filtering schedule entries */
 const todayISO = computed(() => {
@@ -56,12 +64,31 @@ const todayByShift = computed(() => {
   return Object.values(groups)
 })
 
+let channel: ReturnType<typeof useLocationChannel> | null = null
+
 onMounted(async () => {
   loading.value = true
   try {
     await scheduleStore.fetchCurrentWeekSchedule()
   } finally {
     loading.value = false
+  }
+
+  if (canManage.value) {
+    scheduleStore.fetchAckSummary()
+  }
+
+  if (locationId.value) {
+    channel = useLocationChannel(locationId.value)
+    channel.listen('.acknowledgment.recorded', (e: any) => {
+      scheduleStore.updateUserAckPercentage(e.user_id, e.percentage)
+    })
+  }
+})
+
+onUnmounted(() => {
+  if (channel) {
+    channel.stopListening('.acknowledgment.recorded')
   }
 })
 </script>
@@ -145,9 +172,17 @@ onMounted(async () => {
                   v-for="entry in group.entries"
                   :key="entry.id"
                   class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs"
-                  :class="entry.role === 'bartender'
-                    ? 'bg-green-500/15 text-green-300 border border-green-500/20'
-                    : 'bg-blue-500/15 text-blue-300 border border-blue-500/20'"
+                  :class="[
+                    entry.role === 'bartender'
+                      ? 'bg-green-500/15 text-green-300 border border-green-500/20'
+                      : 'bg-blue-500/15 text-blue-300 border border-blue-500/20',
+                    canManage && entry.user_id in scheduleStore.ackSummaryMap && scheduleStore.ackSummaryMap[entry.user_id] < 100
+                      ? 'ring-1 ring-red-500/60'
+                      : '',
+                  ]"
+                  :title="canManage && entry.user_id in scheduleStore.ackSummaryMap && scheduleStore.ackSummaryMap[entry.user_id] < 100
+                    ? 'Has not acknowledged all pre-shift items'
+                    : undefined"
                 >
                   <span class="font-medium">{{ entry.user?.name || 'Staff' }}</span>
                   <span class="text-[10px] opacity-60 uppercase">{{ entry.role }}</span>

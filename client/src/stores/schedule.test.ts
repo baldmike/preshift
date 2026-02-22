@@ -905,4 +905,88 @@ describe('useScheduleStore', () => {
       expect(store.timeOffRequests[0].resolved_by).toBe(3)
     })
   })
+
+  // ── ackSummaryMap + fetchAckSummary() + updateUserAckPercentage() ────
+
+  describe('ackSummaryMap', () => {
+    /**
+     * The ack summary map should start as an empty object.
+     */
+    it('starts as an empty object', () => {
+      const store = useScheduleStore()
+      expect(store.ackSummaryMap).toEqual({})
+    })
+  })
+
+  describe('fetchAckSummary()', () => {
+    /**
+     * `fetchAckSummary()` should call `GET /api/acknowledgments/summary`
+     * and populate `ackSummaryMap` as a userId → percentage map.
+     */
+    it('calls GET /api/acknowledgments/summary and populates ackSummaryMap', async () => {
+      const api = (await import('@/composables/useApi')).default
+
+      ;(api.get as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+        data: {
+          total_items: 5,
+          users: [
+            { user_id: 1, user_name: 'Alice', role: 'server', total_items: 5, acknowledged_count: 5, percentage: 100 },
+            { user_id: 2, user_name: 'Bob', role: 'bartender', total_items: 5, acknowledged_count: 2, percentage: 40 },
+            { user_id: 3, user_name: 'Carol', role: 'server', total_items: 5, acknowledged_count: 0, percentage: 0 },
+          ],
+        },
+      })
+
+      const store = useScheduleStore()
+      await store.fetchAckSummary()
+
+      expect(api.get).toHaveBeenCalledWith('/api/acknowledgments/summary')
+      expect(store.ackSummaryMap).toEqual({ 1: 100, 2: 40, 3: 0 })
+    })
+
+    /**
+     * If the API returns an error (e.g. 403 for staff users), the store
+     * should catch gracefully and leave ackSummaryMap unchanged.
+     */
+    it('handles API error gracefully', async () => {
+      const api = (await import('@/composables/useApi')).default
+
+      ;(api.get as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+        new Error('Forbidden')
+      )
+
+      const store = useScheduleStore()
+      await store.fetchAckSummary()
+
+      expect(store.ackSummaryMap).toEqual({})
+    })
+  })
+
+  describe('updateUserAckPercentage()', () => {
+    /**
+     * `updateUserAckPercentage()` should set the percentage for a
+     * specific user in the map.
+     */
+    it('sets the percentage for a specific user', () => {
+      const store = useScheduleStore()
+
+      store.updateUserAckPercentage(42, 75)
+
+      expect(store.ackSummaryMap[42]).toBe(75)
+    })
+
+    /**
+     * Updating a user's percentage should not affect other users.
+     */
+    it('preserves other users when updating one', () => {
+      const store = useScheduleStore()
+
+      store.updateUserAckPercentage(1, 50)
+      store.updateUserAckPercentage(2, 80)
+      store.updateUserAckPercentage(1, 100)
+
+      expect(store.ackSummaryMap[1]).toBe(100)
+      expect(store.ackSummaryMap[2]).toBe(80)
+    })
+  })
 })

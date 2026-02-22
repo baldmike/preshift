@@ -339,4 +339,57 @@ describe('ScheduleGrid.vue', () => {
     expect(text).toContain('server')
     expect(text).toContain('bartender')
   })
+
+  /**
+   * Test 10 — ackMap: renders red ring on unacknowledged entries
+   *
+   * When ackMap is provided and a user's percentage is below 100,
+   * their entry cell should have the `ring-red-500/60` class.
+   */
+  it('renders red ring on entries for unacknowledged users', () => {
+    const wrapper = mount(ScheduleGrid, {
+      props: {
+        schedule: mockScheduleWithEntries,
+        shiftTemplates: mockTemplates,
+        ackMap: { 3: 40, 4: 100 },
+      },
+      global: {
+        stubs: { BadgePill: BadgePillStub },
+      },
+    })
+
+    const entryDivs = wrapper.findAll('.group\\/entry')
+
+    // Jake (user_id: 3) has 40% — should have the red ring
+    const jakeEntry = entryDivs.find(div => div.text().includes('Jake'))
+    expect(jakeEntry?.classes()).toContain('ring-1')
+    expect(jakeEntry?.classes()).toContain('ring-red-500/60')
+
+    // Mia (user_id: 4) has 100% — should NOT have the red ring
+    const miaEntry = entryDivs.find(div => div.text().includes('Mia'))
+    expect(miaEntry?.classes()).not.toContain('ring-red-500/60')
+  })
+
+  /**
+   * Test 11 — ackMap: no ring when ackMap is not provided
+   *
+   * When the ackMap prop is omitted, no entry should have the red ring
+   * class, even if entries exist.
+   */
+  it('does not render red ring when ackMap is not provided', () => {
+    const wrapper = mount(ScheduleGrid, {
+      props: {
+        schedule: mockScheduleWithEntries,
+        shiftTemplates: mockTemplates,
+      },
+      global: {
+        stubs: { BadgePill: BadgePillStub },
+      },
+    })
+
+    const entryDivs = wrapper.findAll('.group\\/entry')
+    entryDivs.forEach(div => {
+      expect(div.classes()).not.toContain('ring-red-500/60')
+    })
+  })
 })

@@ -4,9 +4,10 @@
  * the employee's own upcoming shifts, and a self-service availability
  * grid where they can set which days/times they're available.
  */
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useScheduleStore } from '@/stores/schedule'
 import { useAuthStore } from '@/stores/auth'
+import { useLocationChannel } from '@/composables/useReverb'
 import api from '@/composables/useApi'
 import AppShell from '@/components/layout/AppShell.vue'
 import ShiftCard from '@/components/ShiftCard.vue'
@@ -117,9 +118,28 @@ async function giveUpShift(entryId: number) {
   }
 }
 
+let channel: ReturnType<typeof useLocationChannel> | null = null
+
 onMounted(() => {
   loadData()
   loadAvailability()
+
+  if (!authStore.isStaff) {
+    store.fetchAckSummary()
+  }
+
+  if (authStore.user?.location_id) {
+    channel = useLocationChannel(authStore.user.location_id)
+    channel.listen('.acknowledgment.recorded', (e: any) => {
+      store.updateUserAckPercentage(e.user_id, e.percentage)
+    })
+  }
+})
+
+onUnmounted(() => {
+  if (channel) {
+    channel.stopListening('.acknowledgment.recorded')
+  }
 })
 </script>
 
@@ -237,7 +257,7 @@ onMounted(() => {
 
           <!-- Full Schedule Grid -->
           <section v-if="store.currentSchedule">
-            <ScheduleGrid :schedule="store.currentSchedule" />
+            <ScheduleGrid :schedule="store.currentSchedule" :ack-map="store.ackSummaryMap" />
           </section>
           <div v-else class="rounded-xl border border-white/[0.06] bg-white/[0.03] p-6 text-center">
             <p class="text-gray-400 font-medium">No published schedule this week</p>

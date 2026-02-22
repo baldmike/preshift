@@ -27,6 +27,7 @@ export const useScheduleStore = defineStore('schedule', () => {
   const shiftDrops = ref<ShiftDrop[]>([])
   const timeOffRequests = ref<TimeOffRequest[]>([])
   const loading = ref(false)
+  const ackSummaryMap = ref<Record<number, number>>({})
 
   // ── Fetch actions ──────────────────────────────────────────────────────
 
@@ -92,6 +93,25 @@ export const useScheduleStore = defineStore('schedule', () => {
     timeOffRequests.value = data
   }
 
+  /** Fetch per-user acknowledgment percentages for the current location. */
+  async function fetchAckSummary() {
+    try {
+      const { data } = await api.get<{ total_items: number; users: { user_id: number; percentage: number }[] }>('/api/acknowledgments/summary')
+      const map: Record<number, number> = {}
+      for (const u of data.users) {
+        map[u.user_id] = u.percentage
+      }
+      ackSummaryMap.value = map
+    } catch {
+      // Non-critical — silently ignore if the user lacks permission
+    }
+  }
+
+  /** Update a single user's ack percentage (used by Reverb events). */
+  function updateUserAckPercentage(userId: number, percentage: number) {
+    ackSummaryMap.value = { ...ackSummaryMap.value, [userId]: percentage }
+  }
+
   // ── Realtime mutations ─────────────────────────────────────────────────
 
   /** Handle a SchedulePublished Reverb event by upserting the schedule and refreshing shifts. */
@@ -133,6 +153,7 @@ export const useScheduleStore = defineStore('schedule', () => {
     shiftDrops,
     timeOffRequests,
     loading,
+    ackSummaryMap,
     fetchShiftTemplates,
     fetchSchedules,
     fetchSchedule,
@@ -140,6 +161,8 @@ export const useScheduleStore = defineStore('schedule', () => {
     fetchMyShifts,
     fetchShiftDrops,
     fetchTimeOffRequests,
+    fetchAckSummary,
+    updateUserAckPercentage,
     onSchedulePublished,
     upsertShiftDrop,
     upsertTimeOffRequest,
