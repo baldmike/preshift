@@ -45,6 +45,8 @@ function makeLocation(overrides: Partial<Location> = {}): Location {
     name: 'Test Location',
     address: '123 Main St',
     timezone: 'America/New_York',
+    latitude: null,
+    longitude: null,
     created_at: '2026-01-01T00:00:00Z',
     updated_at: '2026-01-01T00:00:00Z',
     ...overrides,
