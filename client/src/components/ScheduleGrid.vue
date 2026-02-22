@@ -21,6 +21,7 @@ import BadgePill from '@/components/ui/BadgePill.vue'
 const props = defineProps<{
   schedule: Schedule
   shiftTemplates?: ShiftTemplate[]
+  highlightUserId?: number
 }>()
 
 /**
@@ -176,7 +177,12 @@ function formatShiftTime(time: string): string {
             <div
               v-for="entry in entriesFor(template.id, date)"
               :key="entry.id"
-              class="flex items-center gap-1 rounded bg-white/[0.03] px-1 py-0.5 mb-0.5 group/entry"
+              :class="[
+                'flex items-center gap-1 rounded px-1 py-0.5 mb-0.5 group/entry',
+                props.highlightUserId && entry.user_id === props.highlightUserId
+                  ? 'bg-blue-500/10 ring-2 ring-blue-400/60'
+                  : 'bg-white/[0.03]',
+              ]"
             >
               <!-- User name + role badge -->
               <span class="truncate text-gray-300 flex-1">

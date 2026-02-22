@@ -16,6 +16,7 @@ import AvailabilityGrid from '@/components/AvailabilityGrid.vue'
 const store = useScheduleStore()
 const authStore = useAuthStore()
 const loading = ref(false)
+const showTeamSchedule = ref(!authStore.isStaff)
 
 // ── Availability state ──────────────────────────────────────────────────
 const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const
@@ -135,7 +136,7 @@ onMounted(() => {
           </svg>
           <h1 class="text-xl font-bold text-white">Schedule</h1>
         </div>
-        <p class="text-xs text-gray-500 mt-0.5">This week's full schedule</p>
+        <p class="text-xs text-gray-500 mt-0.5">{{ authStore.isStaff ? 'My upcoming shifts' : "This week's full schedule" }}</p>
       </div>
 
       <!-- Sub-navigation: pill links to schedule-related views -->
@@ -181,31 +182,84 @@ onMounted(() => {
       </div>
 
       <template v-else>
-        <!-- Full Schedule Grid -->
-        <section v-if="store.currentSchedule">
-          <ScheduleGrid
-            :schedule="store.currentSchedule"
-          />
-        </section>
-        <div v-else class="rounded-xl border border-white/[0.06] bg-white/[0.03] p-6 text-center">
-          <p class="text-gray-400 font-medium">No published schedule this week</p>
-          <p class="text-gray-600 text-sm mt-1">Check back when the next schedule is published</p>
-        </div>
 
-        <!-- My Shifts -->
-        <div v-if="store.myShifts.length">
-          <h2 class="text-sm font-bold text-gray-400 uppercase tracking-wide mb-2">My Shifts</h2>
-          <div class="grid gap-3 sm:grid-cols-2">
-            <ShiftCard
-              v-for="entry in store.myShifts"
-              :key="entry.id"
-              :entry="entry"
-              @give-up="giveUpShift"
+        <!-- ═══ STAFF LAYOUT (server/bartender): My Shifts → Team Schedule → Availability ═══ -->
+        <template v-if="authStore.isStaff">
+
+          <!-- My Shifts (prominent, always visible) -->
+          <section>
+            <h2 class="text-sm font-bold text-gray-400 uppercase tracking-wide mb-2">My Shifts</h2>
+            <div v-if="store.myShifts.length" class="grid gap-3 sm:grid-cols-2">
+              <ShiftCard
+                v-for="entry in store.myShifts"
+                :key="entry.id"
+                :entry="entry"
+                @give-up="giveUpShift"
+              />
+            </div>
+            <div v-else-if="store.currentSchedule" class="rounded-xl border border-white/[0.06] bg-white/[0.03] p-6 text-center">
+              <p class="text-gray-400 font-medium">No upcoming shifts</p>
+              <p class="text-gray-600 text-sm mt-1">You haven't been scheduled yet this week</p>
+            </div>
+          </section>
+
+          <!-- Team Schedule (collapsible toggle) -->
+          <section v-if="store.currentSchedule">
+            <button
+              type="button"
+              class="flex items-center gap-2 text-sm font-bold text-gray-400 uppercase tracking-wide mb-2 hover:text-gray-300 transition-colors"
+              @click="showTeamSchedule = !showTeamSchedule"
+            >
+              <svg
+                class="w-3.5 h-3.5 transition-transform"
+                :class="{ 'rotate-90': showTeamSchedule }"
+                fill="none" stroke="currentColor" viewBox="0 0 24 24"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+              </svg>
+              {{ showTeamSchedule ? 'Hide Full Schedule' : 'View Full Schedule' }}
+            </button>
+            <ScheduleGrid
+              v-if="showTeamSchedule"
+              :schedule="store.currentSchedule"
+              :highlight-user-id="authStore.user?.id"
             />
+          </section>
+          <div v-else class="rounded-xl border border-white/[0.06] bg-white/[0.03] p-6 text-center">
+            <p class="text-gray-400 font-medium">No published schedule this week</p>
+            <p class="text-gray-600 text-sm mt-1">Check back when the next schedule is published</p>
           </div>
-        </div>
 
-        <!-- My Availability -->
+        </template>
+
+        <!-- ═══ MANAGER/ADMIN LAYOUT: Full Grid → My Shifts → Availability ═══ -->
+        <template v-else>
+
+          <!-- Full Schedule Grid -->
+          <section v-if="store.currentSchedule">
+            <ScheduleGrid :schedule="store.currentSchedule" />
+          </section>
+          <div v-else class="rounded-xl border border-white/[0.06] bg-white/[0.03] p-6 text-center">
+            <p class="text-gray-400 font-medium">No published schedule this week</p>
+            <p class="text-gray-600 text-sm mt-1">Check back when the next schedule is published</p>
+          </div>
+
+          <!-- My Shifts -->
+          <div v-if="store.myShifts.length">
+            <h2 class="text-sm font-bold text-gray-400 uppercase tracking-wide mb-2">My Shifts</h2>
+            <div class="grid gap-3 sm:grid-cols-2">
+              <ShiftCard
+                v-for="entry in store.myShifts"
+                :key="entry.id"
+                :entry="entry"
+                @give-up="giveUpShift"
+              />
+            </div>
+          </div>
+
+        </template>
+
+        <!-- My Availability (shared by all roles) -->
         <section class="rounded-xl border border-white/[0.06] bg-white/[0.03] p-4 space-y-3">
           <!-- Collapsed: summary line + edit button -->
           <div v-if="!editingAvailability" class="flex items-center justify-between">
