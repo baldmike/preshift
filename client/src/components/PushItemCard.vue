@@ -4,18 +4,24 @@
  *
  * Renders a compact, amber-themed card for a single push item. Shows the
  * item title, a color-coded priority badge (high/medium/low), an optional
- * description and reason, and an AcknowledgeButton for staff confirmation.
+ * description and reason. Staff see an AcknowledgeButton for confirmation;
+ * managers and admins see an Edit link that navigates to /manage/push-items
+ * instead.
  *
  * Props:
  *   - item: PushItem
  */
+import { computed } from 'vue'
 import type { PushItem } from '@/types'
 import { useAcknowledgments } from '@/composables/useAcknowledgments'
+import { useAuth } from '@/composables/useAuth'
 import AcknowledgeButton from '@/components/AcknowledgeButton.vue'
 import BadgePill from '@/components/ui/BadgePill.vue'
 
 const props = defineProps<{ item: PushItem }>()
 const { isAcknowledged } = useAcknowledgments()
+const { isAdmin, isManager } = useAuth()
+const canEdit = computed(() => isAdmin.value || isManager.value)
 
 const priorityColor = {
   high: 'red' as const,
@@ -39,7 +45,15 @@ const priorityColor = {
         <p v-if="item.description" class="text-xs text-amber-400/70 mt-0.5 line-clamp-2">{{ item.description }}</p>
         <p v-if="item.reason" class="text-[10px] text-amber-500/50 mt-1 italic">{{ item.reason }}</p>
       </div>
+      <router-link
+        v-if="canEdit"
+        to="/manage/push-items"
+        class="inline-flex items-center gap-1 rounded-md bg-amber-500/10 border border-amber-500/20 px-2 py-1 text-[10px] font-medium text-amber-300 hover:bg-amber-500/20 hover:text-amber-200 transition-colors"
+      >
+        Edit
+      </router-link>
       <AcknowledgeButton
+        v-else
         type="push_item"
         :id="item.id"
         :acknowledged="isAcknowledged('push_item', item.id)"

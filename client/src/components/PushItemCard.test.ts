@@ -10,6 +10,7 @@
  *   - An optional description with talking points for staff
  *   - An optional reason management wants the item pushed
  *   - An AcknowledgeButton for staff confirmation
+ *   - An Edit link for managers/admins instead of the AcknowledgeButton
  *
  * Props:
  *   - item: PushItem
@@ -20,9 +21,12 @@
  *   3. The description is shown when provided.
  *   4. The reason is shown when provided.
  *   5. The description is hidden when null.
+ *   6. Staff users see the AcknowledgeButton (not the Edit link).
+ *   7. Managers see an Edit link (not the AcknowledgeButton).
+ *   8. Admins see an Edit link (not the AcknowledgeButton).
  */
 
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import PushItemCard from '@/components/PushItemCard.vue'
 import type { PushItem } from '@/types'
@@ -32,6 +36,21 @@ vi.mock('@/composables/useAcknowledgments', () => ({
   useAcknowledgments: () => ({
     acknowledge: vi.fn().mockResolvedValue(undefined),
     isAcknowledged: vi.fn().mockReturnValue(false),
+  }),
+}))
+
+// ── Mock for the useAuth composable ─────────────────────────────────────────
+const mockIsAdmin = { value: false }
+const mockIsManager = { value: false }
+vi.mock('@/composables/useAuth', () => ({
+  useAuth: () => ({
+    user: { value: null },
+    isLoggedIn: { value: true },
+    isAdmin: mockIsAdmin,
+    isManager: mockIsManager,
+    isStaff: { value: true },
+    isSuperAdmin: { value: false },
+    locationId: { value: 1 },
   }),
 }))
 
@@ -65,7 +84,18 @@ function makeItem(overrides: Partial<PushItem> = {}): PushItem {
   }
 }
 
+// ── Stub for RouterLink ──────────────────────────────────────────────────────
+const RouterLinkStub = {
+  template: '<a class="router-link-stub"><slot /></a>',
+  props: ['to'],
+}
+
 describe('PushItemCard.vue', () => {
+  beforeEach(() => {
+    mockIsAdmin.value = false
+    mockIsManager.value = false
+  })
+
   /**
    * Test 1 — Renders the title as the heading
    *
@@ -77,7 +107,7 @@ describe('PushItemCard.vue', () => {
 
     const wrapper = mount(PushItemCard, {
       props: { item },
-      global: { stubs: { BadgePill: BadgePillStub, AcknowledgeButton: AcknowledgeButtonStub } },
+      global: { stubs: { BadgePill: BadgePillStub, AcknowledgeButton: AcknowledgeButtonStub, RouterLink: RouterLinkStub } },
     })
 
     const heading = wrapper.find('h4')
@@ -95,7 +125,7 @@ describe('PushItemCard.vue', () => {
 
     const wrapper = mount(PushItemCard, {
       props: { item },
-      global: { stubs: { BadgePill: BadgePillStub, AcknowledgeButton: AcknowledgeButtonStub } },
+      global: { stubs: { BadgePill: BadgePillStub, AcknowledgeButton: AcknowledgeButtonStub, RouterLink: RouterLinkStub } },
     })
 
     const badge = wrapper.find('.badge-pill-stub')
@@ -114,7 +144,7 @@ describe('PushItemCard.vue', () => {
 
     const wrapper = mount(PushItemCard, {
       props: { item },
-      global: { stubs: { BadgePill: BadgePillStub, AcknowledgeButton: AcknowledgeButtonStub } },
+      global: { stubs: { BadgePill: BadgePillStub, AcknowledgeButton: AcknowledgeButtonStub, RouterLink: RouterLinkStub } },
     })
 
     expect(wrapper.text()).toContain('Great upsell with any entree')
@@ -131,7 +161,7 @@ describe('PushItemCard.vue', () => {
 
     const wrapper = mount(PushItemCard, {
       props: { item },
-      global: { stubs: { BadgePill: BadgePillStub, AcknowledgeButton: AcknowledgeButtonStub } },
+      global: { stubs: { BadgePill: BadgePillStub, AcknowledgeButton: AcknowledgeButtonStub, RouterLink: RouterLinkStub } },
     })
 
     expect(wrapper.text()).toContain('Overstocked on truffle oil')
@@ -148,11 +178,71 @@ describe('PushItemCard.vue', () => {
 
     const wrapper = mount(PushItemCard, {
       props: { item },
-      global: { stubs: { BadgePill: BadgePillStub, AcknowledgeButton: AcknowledgeButtonStub } },
+      global: { stubs: { BadgePill: BadgePillStub, AcknowledgeButton: AcknowledgeButtonStub, RouterLink: RouterLinkStub } },
     })
 
     // Neither description nor reason paragraphs should be rendered
     const paragraphs = wrapper.findAll('p')
     expect(paragraphs).toHaveLength(0)
+  })
+
+  /**
+   * Test 6 — Staff users see the AcknowledgeButton
+   *
+   * When the current user is a staff member (server/bartender), the card
+   * should render the AcknowledgeButton and not an Edit link.
+   */
+  it('shows AcknowledgeButton for staff users', () => {
+    const item = makeItem()
+
+    const wrapper = mount(PushItemCard, {
+      props: { item },
+      global: { stubs: { BadgePill: BadgePillStub, AcknowledgeButton: AcknowledgeButtonStub, RouterLink: RouterLinkStub } },
+    })
+
+    expect(wrapper.find('.ack-stub').exists()).toBe(true)
+    expect(wrapper.find('.router-link-stub').exists()).toBe(false)
+  })
+
+  /**
+   * Test 7 — Managers see an Edit link instead of AcknowledgeButton
+   *
+   * When the current user is a manager, the card should render a
+   * router-link Edit button pointing to /manage/push-items and hide
+   * the AcknowledgeButton.
+   */
+  it('shows Edit link instead of AcknowledgeButton for managers', () => {
+    mockIsManager.value = true
+    const item = makeItem()
+
+    const wrapper = mount(PushItemCard, {
+      props: { item },
+      global: { stubs: { BadgePill: BadgePillStub, AcknowledgeButton: AcknowledgeButtonStub, RouterLink: RouterLinkStub } },
+    })
+
+    expect(wrapper.find('.router-link-stub').exists()).toBe(true)
+    expect(wrapper.find('.router-link-stub').text()).toBe('Edit')
+    expect(wrapper.find('.ack-stub').exists()).toBe(false)
+  })
+
+  /**
+   * Test 8 — Admins see an Edit link instead of AcknowledgeButton
+   *
+   * When the current user is an admin, the card should render a
+   * router-link Edit button pointing to /manage/push-items and hide
+   * the AcknowledgeButton.
+   */
+  it('shows Edit link instead of AcknowledgeButton for admins', () => {
+    mockIsAdmin.value = true
+    const item = makeItem()
+
+    const wrapper = mount(PushItemCard, {
+      props: { item },
+      global: { stubs: { BadgePill: BadgePillStub, AcknowledgeButton: AcknowledgeButtonStub, RouterLink: RouterLinkStub } },
+    })
+
+    expect(wrapper.find('.router-link-stub').exists()).toBe(true)
+    expect(wrapper.find('.router-link-stub').text()).toBe('Edit')
+    expect(wrapper.find('.ack-stub').exists()).toBe(false)
   })
 })

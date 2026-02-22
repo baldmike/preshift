@@ -10,6 +10,7 @@
  *   - The name of the user who flagged the item
  *   - A timestamp
  *   - An AcknowledgeButton so staff can mark the item as seen
+ *   - An Edit link for managers/admins instead of the AcknowledgeButton
  *
  * Props:
  *   - item: EightySixed
@@ -20,9 +21,12 @@
  *   3. The reason is hidden when null.
  *   4. The user name is displayed when the user relationship is loaded.
  *   5. The AcknowledgeButton child component is rendered.
+ *   6. Staff users see the AcknowledgeButton (not the Edit link).
+ *   7. Managers see an Edit link (not the AcknowledgeButton).
+ *   8. Admins see an Edit link (not the AcknowledgeButton).
  */
 
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import EightySixedCard from '@/components/EightySixedCard.vue'
 import type { EightySixed } from '@/types'
@@ -32,6 +36,21 @@ vi.mock('@/composables/useAcknowledgments', () => ({
   useAcknowledgments: () => ({
     acknowledge: vi.fn().mockResolvedValue(undefined),
     isAcknowledged: vi.fn().mockReturnValue(false),
+  }),
+}))
+
+// ── Mock for the useAuth composable ─────────────────────────────────────────
+const mockIsAdmin = { value: false }
+const mockIsManager = { value: false }
+vi.mock('@/composables/useAuth', () => ({
+  useAuth: () => ({
+    user: { value: null },
+    isLoggedIn: { value: true },
+    isAdmin: mockIsAdmin,
+    isManager: mockIsManager,
+    isStaff: { value: true },
+    isSuperAdmin: { value: false },
+    locationId: { value: 1 },
   }),
 }))
 
@@ -70,7 +89,18 @@ function makeItem(overrides: Partial<EightySixed> = {}): EightySixed {
   }
 }
 
+// ── Stub for RouterLink ──────────────────────────────────────────────────────
+const RouterLinkStub = {
+  template: '<a class="router-link-stub"><slot /></a>',
+  props: ['to'],
+}
+
 describe('EightySixedCard.vue', () => {
+  beforeEach(() => {
+    mockIsAdmin.value = false
+    mockIsManager.value = false
+  })
+
   /**
    * Test 1 — Renders the item_name as the heading
    *
@@ -82,7 +112,7 @@ describe('EightySixedCard.vue', () => {
 
     const wrapper = mount(EightySixedCard, {
       props: { item },
-      global: { stubs: { AcknowledgeButton: AcknowledgeButtonStub } },
+      global: { stubs: { AcknowledgeButton: AcknowledgeButtonStub, RouterLink: RouterLinkStub } },
     })
 
     const heading = wrapper.find('h4')
@@ -100,7 +130,7 @@ describe('EightySixedCard.vue', () => {
 
     const wrapper = mount(EightySixedCard, {
       props: { item },
-      global: { stubs: { AcknowledgeButton: AcknowledgeButtonStub } },
+      global: { stubs: { AcknowledgeButton: AcknowledgeButtonStub, RouterLink: RouterLinkStub } },
     })
 
     expect(wrapper.text()).toContain('Ran out of fresh salmon')
@@ -117,7 +147,7 @@ describe('EightySixedCard.vue', () => {
 
     const wrapper = mount(EightySixedCard, {
       props: { item },
-      global: { stubs: { AcknowledgeButton: AcknowledgeButtonStub } },
+      global: { stubs: { AcknowledgeButton: AcknowledgeButtonStub, RouterLink: RouterLinkStub } },
     })
 
     // The only <p> in the template is the reason paragraph; it should not exist
@@ -136,7 +166,7 @@ describe('EightySixedCard.vue', () => {
 
     const wrapper = mount(EightySixedCard, {
       props: { item },
-      global: { stubs: { AcknowledgeButton: AcknowledgeButtonStub } },
+      global: { stubs: { AcknowledgeButton: AcknowledgeButtonStub, RouterLink: RouterLinkStub } },
     })
 
     expect(wrapper.text()).toContain('Chef Mike')
@@ -153,10 +183,70 @@ describe('EightySixedCard.vue', () => {
 
     const wrapper = mount(EightySixedCard, {
       props: { item },
-      global: { stubs: { AcknowledgeButton: AcknowledgeButtonStub } },
+      global: { stubs: { AcknowledgeButton: AcknowledgeButtonStub, RouterLink: RouterLinkStub } },
     })
 
     const ackButton = wrapper.find('.ack-stub')
     expect(ackButton.exists()).toBe(true)
+  })
+
+  /**
+   * Test 6 — Staff users see the AcknowledgeButton
+   *
+   * When the current user is a staff member (server/bartender), the card
+   * should render the AcknowledgeButton and not an Edit link.
+   */
+  it('shows AcknowledgeButton for staff users', () => {
+    const item = makeItem()
+
+    const wrapper = mount(EightySixedCard, {
+      props: { item },
+      global: { stubs: { AcknowledgeButton: AcknowledgeButtonStub, RouterLink: RouterLinkStub } },
+    })
+
+    expect(wrapper.find('.ack-stub').exists()).toBe(true)
+    expect(wrapper.find('.router-link-stub').exists()).toBe(false)
+  })
+
+  /**
+   * Test 7 — Managers see an Edit link instead of AcknowledgeButton
+   *
+   * When the current user is a manager, the card should render a
+   * router-link Edit button pointing to /manage/86 and hide the
+   * AcknowledgeButton.
+   */
+  it('shows Edit link instead of AcknowledgeButton for managers', () => {
+    mockIsManager.value = true
+    const item = makeItem()
+
+    const wrapper = mount(EightySixedCard, {
+      props: { item },
+      global: { stubs: { AcknowledgeButton: AcknowledgeButtonStub, RouterLink: RouterLinkStub } },
+    })
+
+    expect(wrapper.find('.router-link-stub').exists()).toBe(true)
+    expect(wrapper.find('.router-link-stub').text()).toBe('Edit')
+    expect(wrapper.find('.ack-stub').exists()).toBe(false)
+  })
+
+  /**
+   * Test 8 — Admins see an Edit link instead of AcknowledgeButton
+   *
+   * When the current user is an admin, the card should render a
+   * router-link Edit button pointing to /manage/86 and hide the
+   * AcknowledgeButton.
+   */
+  it('shows Edit link instead of AcknowledgeButton for admins', () => {
+    mockIsAdmin.value = true
+    const item = makeItem()
+
+    const wrapper = mount(EightySixedCard, {
+      props: { item },
+      global: { stubs: { AcknowledgeButton: AcknowledgeButtonStub, RouterLink: RouterLinkStub } },
+    })
+
+    expect(wrapper.find('.router-link-stub').exists()).toBe(true)
+    expect(wrapper.find('.router-link-stub').text()).toBe('Edit')
+    expect(wrapper.find('.ack-stub').exists()).toBe(false)
   })
 })

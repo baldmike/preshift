@@ -4,19 +4,24 @@
  *
  * Renders a compact, purple-themed card for a single announcement. Displays
  * the title, a color-coded priority badge (urgent/important/normal), optional
- * body text, the poster's name, and an expiration timestamp. Includes an
- * AcknowledgeButton so staff can mark the announcement as read.
+ * body text, the poster's name, and an expiration timestamp. Staff see an
+ * AcknowledgeButton to mark the announcement as read; managers and admins
+ * see an Edit link that navigates to /manage/announcements instead.
  *
  * Props:
  *   - announcement: Announcement
  */
+import { computed } from 'vue'
 import type { Announcement } from '@/types'
 import { useAcknowledgments } from '@/composables/useAcknowledgments'
+import { useAuth } from '@/composables/useAuth'
 import AcknowledgeButton from '@/components/AcknowledgeButton.vue'
 import BadgePill from '@/components/ui/BadgePill.vue'
 
 const props = defineProps<{ announcement: Announcement }>()
 const { isAcknowledged } = useAcknowledgments()
+const { isAdmin, isManager } = useAuth()
+const canEdit = computed(() => isAdmin.value || isManager.value)
 
 const priorityColor = {
   urgent: 'red' as const,
@@ -53,7 +58,15 @@ function formatDateTime(dateStr: string | null) {
           <span v-if="announcement.expires_at">Exp {{ formatDateTime(announcement.expires_at) }}</span>
         </div>
       </div>
+      <router-link
+        v-if="canEdit"
+        to="/manage/announcements"
+        class="inline-flex items-center gap-1 rounded-md bg-purple-500/10 border border-purple-500/20 px-2 py-1 text-[10px] font-medium text-purple-300 hover:bg-purple-500/20 hover:text-purple-200 transition-colors"
+      >
+        Edit
+      </router-link>
       <AcknowledgeButton
+        v-else
         type="announcement"
         :id="announcement.id"
         :acknowledged="isAcknowledged('announcement', announcement.id)"
