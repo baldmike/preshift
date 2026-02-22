@@ -37,6 +37,7 @@ use App\Http\Controllers\ScheduleEntryController;
 use App\Http\Controllers\ShiftDropController;
 use App\Http\Controllers\TimeOffRequestController;
 use App\Http\Controllers\EventController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ConfigController;
 use App\Http\Controllers\WeatherController;
 
@@ -69,6 +70,23 @@ Route::middleware('auth:sanctum')->group(function () {
     //                      Lives outside `location` middleware because it only
     //                      touches the authenticated user's own record.
     Route::put('/profile', [AuthController::class, 'updateProfile']);
+
+    /*
+    |----------------------------------------------------------------------
+    | Notification Routes (admin + manager only)
+    |----------------------------------------------------------------------
+    | Per-user notifications live outside the `location` middleware group
+    | because they are scoped to the authenticated user, not a location.
+    |
+    | GET  /api/notifications            -- List (newest 50, ?unread_only=1).
+    | POST /api/notifications/{id}/read  -- Mark one notification as read.
+    | POST /api/notifications/read-all   -- Mark all notifications as read.
+    */
+    Route::middleware('role:admin,manager')->group(function () {
+        Route::get('/notifications', [NotificationController::class, 'index']);
+        Route::post('/notifications/{id}/read', [NotificationController::class, 'read']);
+        Route::post('/notifications/read-all', [NotificationController::class, 'readAll']);
+    });
 
     /*
     |----------------------------------------------------------------------

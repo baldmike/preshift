@@ -13,8 +13,9 @@ import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'vue-router'
 import api from '@/composables/useApi'
 import RealtimeIndicator from '@/components/RealtimeIndicator.vue'
+import NotificationBell from '@/components/layout/NotificationBell.vue'
 
-const { user } = useAuth()
+const { user, isAdmin, isManager } = useAuth()
 const authStore = useAuthStore()
 const router = useRouter()
 
@@ -163,6 +164,9 @@ async function changePassword() {
         <!-- Right: realtime indicator + user avatar -->
         <div class="flex items-center gap-3 ml-4 pt-1">
           <RealtimeIndicator />
+
+          <!-- Notification bell (managers/admins only) -->
+          <NotificationBell v-if="isAdmin || isManager" />
 
           <!-- User avatar / settings dropdown -->
           <div v-if="user" class="relative">

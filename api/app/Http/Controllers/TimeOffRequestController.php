@@ -6,8 +6,11 @@ use App\Events\TimeOffResolved;
 use App\Http\Requests\StoreTimeOffRequestRequest;
 use App\Http\Resources\TimeOffRequestResource;
 use App\Models\TimeOffRequest;
+use App\Models\User;
+use App\Notifications\TimeOffRequestedNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Notification;
 
 /**
  * Controller for time-off requests.
@@ -57,6 +60,12 @@ class TimeOffRequestController extends Controller
         ]);
 
         $timeOff->load('user');
+
+        $managers = User::where('location_id', $request->user()->location_id)
+            ->whereIn('role', ['admin', 'manager'])
+            ->get();
+
+        Notification::send($managers, new TimeOffRequestedNotification($timeOff));
 
         return response()->json(new TimeOffRequestResource($timeOff), 201);
     }

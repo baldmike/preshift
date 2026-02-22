@@ -42,7 +42,7 @@ function toast(message: string, type: string) {
 
 /** Check if the current user has already volunteered for a drop. */
 function hasVolunteered(drop: ShiftDrop): boolean {
-  return drop.volunteers?.some((v) => v.user_id === user.value?.id) ?? false
+  return drop.has_volunteered ?? false
 }
 
 async function volunteer(dropId: number) {

@@ -36,6 +36,7 @@ class Location extends Model
         'timezone',  // IANA timezone — drives all date/time logic scoped to this location
         'latitude',  // GPS latitude for weather lookups
         'longitude', // GPS longitude for weather lookups
+        'email_alerts_enabled', // Whether to send email notifications to managers
     ];
 
     /**
@@ -48,6 +49,7 @@ class Location extends Model
         return [
             'latitude' => 'float',
             'longitude' => 'float',
+            'email_alerts_enabled' => 'boolean',
         ];
     }
 

@@ -22,6 +22,18 @@ class ShiftDropResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        return parent::toArray($request);
+        $data = parent::toArray($request);
+
+        $user = $request->user();
+
+        if ($user && $user->isStaff()) {
+            $hasVolunteered = collect($this->volunteers ?? [])
+                ->contains('user_id', $user->id);
+
+            $data['has_volunteered'] = $hasVolunteered;
+            unset($data['volunteers']);
+        }
+
+        return $data;
     }
 }
