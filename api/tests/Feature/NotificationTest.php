@@ -157,8 +157,8 @@ class NotificationTest extends TestCase
 
         $this->actingAs($seed['staff'], 'sanctum')
             ->postJson('/api/time-off-requests', [
-                'start_date' => now()->addDays(7)->toDateString(),
-                'end_date' => now()->addDays(9)->toDateString(),
+                'start_date' => now()->addDays(15)->toDateString(),
+                'end_date' => now()->addDays(17)->toDateString(),
                 'reason' => 'Vacation',
             ])
             ->assertStatus(201);
@@ -176,8 +176,8 @@ class NotificationTest extends TestCase
 
         $this->actingAs($seed['staff'], 'sanctum')
             ->postJson('/api/time-off-requests', [
-                'start_date' => now()->addDays(7)->toDateString(),
-                'end_date' => now()->addDays(9)->toDateString(),
+                'start_date' => now()->addDays(15)->toDateString(),
+                'end_date' => now()->addDays(17)->toDateString(),
                 'reason' => 'Vacation',
             ])
             ->assertStatus(201);
@@ -294,8 +294,8 @@ class NotificationTest extends TestCase
 
         $this->actingAs($seed['staff'], 'sanctum')
             ->postJson('/api/time-off-requests', [
-                'start_date' => now()->addDays(7)->toDateString(),
-                'end_date' => now()->addDays(9)->toDateString(),
+                'start_date' => now()->addDays(15)->toDateString(),
+                'end_date' => now()->addDays(17)->toDateString(),
                 'reason' => 'Vacation',
             ])
             ->assertStatus(201);
@@ -315,8 +315,8 @@ class NotificationTest extends TestCase
 
         $this->actingAs($seed['staff'], 'sanctum')
             ->postJson('/api/time-off-requests', [
-                'start_date' => now()->addDays(7)->toDateString(),
-                'end_date' => now()->addDays(9)->toDateString(),
+                'start_date' => now()->addDays(15)->toDateString(),
+                'end_date' => now()->addDays(17)->toDateString(),
                 'reason' => 'Vacation',
             ])
             ->assertStatus(201);

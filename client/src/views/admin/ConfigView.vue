@@ -23,6 +23,10 @@ function toast(message: string, type: string) {
 const establishmentName = ref('')
 const saving = ref(false)
 
+// ── Time Off Policy ──
+const timeOffAdvanceDays = ref(14)
+const savingTimeOff = ref(false)
+
 /** Whether the initial setup has been completed (gates Danger Zone visibility). */
 const setupComplete = ref(false)
 
@@ -30,6 +34,7 @@ onMounted(async () => {
   try {
     const { data } = await api.get('/api/config/settings')
     establishmentName.value = data.establishment_name || ''
+    timeOffAdvanceDays.value = data.time_off_advance_days != null ? Number(data.time_off_advance_days) : 14
     setupComplete.value = data.setup_complete === 'true'
   } catch {
     // Settings may not exist yet
@@ -47,6 +52,21 @@ async function saveSettings() {
     toast(err.response?.data?.message || 'Failed to save.', 'error')
   } finally {
     saving.value = false
+  }
+}
+
+async function saveTimeOffPolicy() {
+  savingTimeOff.value = true
+  try {
+    await api.put('/api/config/settings', {
+      establishment_name: establishmentName.value,
+      time_off_advance_days: timeOffAdvanceDays.value,
+    })
+    toast('Time off policy saved.', 'success')
+  } catch (err: any) {
+    toast(err.response?.data?.message || 'Failed to save.', 'error')
+  } finally {
+    savingTimeOff.value = false
   }
 }
 
@@ -364,6 +384,35 @@ function cancelAction() {
               </button>
             </div>
           </template>
+        </div>
+      </div>
+
+      <!-- Time Off Policy — only visible after initial setup -->
+      <div v-if="setupComplete" class="bg-gray-900 border border-gray-800 rounded-xl p-6 space-y-4">
+        <h3 class="text-lg font-semibold text-white">Time Off Policy</h3>
+        <p class="text-sm text-gray-400">
+          Set how far in advance staff must submit time-off requests. Set to 0 to allow same-day requests.
+        </p>
+        <div class="flex gap-3 items-end">
+          <div class="flex-1">
+            <label class="block text-sm font-medium text-gray-300 mb-1">Minimum Advance Notice (days)</label>
+            <input
+              v-model.number="timeOffAdvanceDays"
+              type="number"
+              min="0"
+              max="90"
+              class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white
+                     placeholder-gray-500 focus:outline-none focus:border-amber-500"
+            />
+          </div>
+          <button
+            @click="saveTimeOffPolicy"
+            :disabled="savingTimeOff"
+            class="px-6 py-2 bg-amber-500 text-gray-950 font-semibold rounded-lg
+                   hover:bg-amber-400 disabled:opacity-50 transition-colors"
+          >
+            {{ savingTimeOff ? 'Saving...' : 'Save' }}
+          </button>
         </div>
       </div>
 
