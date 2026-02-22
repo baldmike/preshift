@@ -27,8 +27,8 @@ function formatDate(dateStr: string | null) {
   <div class="rounded-lg bg-blue-500/5 border border-blue-500/10 p-3">
     <div class="flex items-start justify-between gap-2">
       <div class="min-w-0 flex-1">
-        <div class="flex items-center gap-1.5">
-          <h4 class="font-semibold text-blue-300 text-sm truncate">{{ special.title }}</h4>
+        <div class="flex items-start gap-1.5 flex-wrap">
+          <h4 class="font-semibold text-blue-300 text-sm break-words">{{ special.title }}</h4>
           <BadgePill v-if="special.type" :label="special.type" color="blue" />
         </div>
         <p v-if="special.description" class="text-xs text-blue-400/70 mt-0.5 line-clamp-2">{{ special.description }}</p>

@@ -39,8 +39,8 @@ function formatDateTime(dateStr: string | null) {
   <div class="rounded-lg bg-purple-500/5 border border-purple-500/10 p-3">
     <div class="flex items-start justify-between gap-2">
       <div class="min-w-0 flex-1">
-        <div class="flex items-center gap-1.5">
-          <h4 class="font-semibold text-purple-300 text-sm truncate">{{ announcement.title }}</h4>
+        <div class="flex items-start gap-1.5 flex-wrap">
+          <h4 class="font-semibold text-purple-300 text-sm break-words">{{ announcement.title }}</h4>
           <BadgePill
             v-if="announcement.priority"
             :label="announcement.priority"

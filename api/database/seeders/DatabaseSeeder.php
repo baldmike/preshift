@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Announcement;
 use App\Models\Category;
 use App\Models\EightySixed;
+use App\Models\Event;
 use App\Models\Location;
 use App\Models\MenuItem;
 use App\Models\PushItem;
@@ -357,6 +358,32 @@ class DatabaseSeeder extends Seeder
             'target_roles' => ['server'],       // Only servers see this
             'posted_by' => $manager->id,
             'expires_at' => now()->addDay(),
+        ]);
+
+        /*
+        |------------------------------------------------------------------
+        | Events
+        |------------------------------------------------------------------
+        | Two daily events for today:
+        |   1. First 75-degree day — patio is open, inform all staff.
+        |   2. Party of 50 — large party arriving at 7pm, heads up.
+        */
+        Event::create([
+            'location_id' => $location->id,
+            'title' => 'First 75-degree day — patio is open!',
+            'description' => 'Open all patio sections. Double-check umbrellas and furniture are clean.',
+            'event_date' => now()->toDateString(),
+            'event_time' => null,
+            'created_by' => $manager->id,
+        ]);
+
+        Event::create([
+            'location_id' => $location->id,
+            'title' => 'Party of 50',
+            'description' => 'Large birthday party in the back room. Pre-set water and bread. Contact Lisa for menu details.',
+            'event_date' => now()->toDateString(),
+            'event_time' => '19:00',
+            'created_by' => $manager->id,
         ]);
 
         /*

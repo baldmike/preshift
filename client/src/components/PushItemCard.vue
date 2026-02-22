@@ -28,8 +28,8 @@ const priorityColor = {
   <div class="rounded-lg bg-amber-500/5 border border-amber-500/10 p-3">
     <div class="flex items-start justify-between gap-2">
       <div class="min-w-0 flex-1">
-        <div class="flex items-center gap-1.5">
-          <h4 class="font-semibold text-amber-300 text-sm truncate">{{ item.title }}</h4>
+        <div class="flex items-start gap-1.5 flex-wrap">
+          <h4 class="font-semibold text-amber-300 text-sm break-words">{{ item.title }}</h4>
           <BadgePill
             v-if="item.priority"
             :label="item.priority"
