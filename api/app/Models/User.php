@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -106,6 +107,29 @@ class User extends Authenticatable
     public function acknowledgments(): HasMany
     {
         return $this->hasMany(Acknowledgment::class);
+    }
+
+    /**
+     * All board messages authored by this user.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany<BoardMessage>
+     */
+    public function boardMessages(): HasMany
+    {
+        return $this->hasMany(BoardMessage::class);
+    }
+
+    /**
+     * All direct message conversations this user participates in.
+     * The pivot includes `last_read_at` for tracking unread messages.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany<Conversation>
+     */
+    public function conversations(): BelongsToMany
+    {
+        return $this->belongsToMany(Conversation::class, 'conversation_user')
+            ->withPivot('last_read_at')
+            ->withTimestamps();
     }
 
     // ── Helpers ──

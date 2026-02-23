@@ -100,6 +100,22 @@ export function useLocationChannel(locationId: number) {
 }
 
 /**
+ * Convenience helper that returns a private channel scoped to a specific user.
+ * Used for receiving direct message notifications on `private-user.{userId}`.
+ * Reuses the existing Echo instance (keyed by locationId) to avoid creating
+ * additional WebSocket connections.
+ *
+ * @param userId     - The User primary key to subscribe to
+ * @param locationId - The Location primary key (used to look up the Echo instance)
+ * @returns A Pusher private channel instance for listening to user events
+ */
+export function useUserChannel(userId: number, locationId: number) {
+  const echo = useReverb(locationId)
+  // Subscribe to the private channel named "user.{id}"
+  return echo.private(`user.${userId}`)
+}
+
+/**
  * Disconnects all active Echo/WebSocket connections and clears the instance
  * cache.  Should be called on logout to clean up resources and stop
  * receiving realtime events.

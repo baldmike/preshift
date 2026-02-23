@@ -9,9 +9,10 @@
  *   3. Config link is not present (moved to manage page).
  */
 
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { ref } from 'vue'
+import { setActivePinia, createPinia } from 'pinia'
 import BottomNav from '@/components/layout/BottomNav.vue'
 
 // Track the mock return values so tests can override them
@@ -25,6 +26,16 @@ vi.mock('@/composables/useAuth', () => ({
   }),
 }))
 
+// Mock the API to prevent real HTTP calls from useMessageStore
+vi.mock('@/composables/useApi', () => ({
+  default: {
+    get: vi.fn().mockResolvedValue({ data: { unread_count: 0 } }),
+    post: vi.fn(),
+    patch: vi.fn(),
+    delete: vi.fn(),
+  },
+}))
+
 // Stub router-link to render as a plain anchor tag
 const routerLinkStub = {
   template: '<a :href="to" class="router-link"><slot /></a>',
@@ -32,6 +43,10 @@ const routerLinkStub = {
 }
 
 describe('BottomNav', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+  })
+
   function mountNav() {
     return mount(BottomNav, {
       global: {

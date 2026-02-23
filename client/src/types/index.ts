@@ -492,6 +492,80 @@ export interface TimeOffRequest {
   updated_at: string
 }
 
+// ─── Message Board & Direct Messaging Types ────────────────────────────
+
+/**
+ * A post on the location-scoped message board.
+ * Top-level posts have `parent_id = null`; replies reference the parent.
+ * Supports one level of threading only (no nested replies).
+ */
+export interface BoardMessage {
+  /** Primary key */
+  id: number
+  /** Foreign key to the owning Location */
+  location_id: number
+  /** Foreign key to the author */
+  user_id: number
+  /** Foreign key to parent post (null for top-level posts) */
+  parent_id: number | null
+  /** The message body text */
+  body: string
+  /** Visibility: 'all' for everyone, 'managers' for admin/manager only */
+  visibility: 'all' | 'managers'
+  /** Whether this post is pinned to the top of the board */
+  pinned: boolean
+  /** Eagerly-loaded author (optional) */
+  user?: User
+  /** Eagerly-loaded replies (optional) */
+  replies?: BoardMessage[]
+  /** Count of replies (when loaded via withCount) */
+  replies_count?: number
+  /** ISO-8601 creation timestamp */
+  created_at: string
+  /** ISO-8601 last-update timestamp */
+  updated_at: string
+}
+
+/**
+ * A private 1-on-1 direct message conversation between two staff members.
+ * Includes participant info, the latest message preview, and unread count.
+ */
+export interface Conversation {
+  /** Primary key */
+  id: number
+  /** Foreign key to the owning Location */
+  location_id: number
+  /** The two participants in this conversation */
+  participants: User[]
+  /** Most recent message for preview display; null if no messages yet */
+  latest_message?: DirectMessage | null
+  /** Number of unread messages from the other participant */
+  unread_count: number
+  /** ISO-8601 creation timestamp */
+  created_at: string
+  /** ISO-8601 last-update timestamp */
+  updated_at: string
+}
+
+/**
+ * A single direct message within a Conversation.
+ * Messages are not editable once sent (standard chat behavior).
+ */
+export interface DirectMessage {
+  /** Primary key */
+  id: number
+  /** Foreign key to the parent Conversation */
+  conversation_id: number
+  /** Foreign key to the sending User */
+  sender_id: number
+  /** The message body text */
+  body: string
+  /** Eagerly-loaded sender info (optional) */
+  sender?: User
+  /** ISO-8601 creation timestamp */
+  created_at: string
+}
+
 /**
  * An in-app notification for managers/admins.
  * Mirrors the data payload from Laravel's database notification channel.

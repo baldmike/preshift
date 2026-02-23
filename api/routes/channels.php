@@ -46,3 +46,15 @@ Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
 Broadcast::channel('location.{locationId}', function ($user, $locationId) {
     return $user->isAdmin() || (int) $user->location_id === (int) $locationId;
 });
+
+/**
+ * Private user channel: "user.{userId}"
+ *
+ * Used for direct message notifications. When a DM is sent, the event
+ * broadcasts on the recipient's private user channel so the message
+ * stays private and is not visible on the location channel.
+ * Authorization simply checks that the authenticated user's ID matches.
+ */
+Broadcast::channel('user.{userId}', function ($user, $userId) {
+    return (int) $user->id === (int) $userId;
+});

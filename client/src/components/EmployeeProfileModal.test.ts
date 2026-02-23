@@ -20,7 +20,7 @@
  *   4. Handles null phone gracefully ("Not set").
  *   5. Shows availability grid when user has availability.
  *   6. Shows "Not set" when user has no availability.
- *   7. "Message" button dispatches a "Coming soon" toast.
+ *   7. "Message" button navigates to direct messages and emits close.
  *   8. "Close" button emits the close event.
  *   9. Modal is not rendered when user is null.
  */
@@ -85,6 +85,14 @@ const userWithoutPhone: User = {
   updated_at: '2026-01-01T00:00:00Z',
 }
 
+// ── Mock router ──────────────────────────────────────────────────────────────
+const mockPush = vi.fn()
+vi.mock('vue-router', () => ({
+  useRouter: () => ({
+    push: mockPush,
+  }),
+}))
+
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
 function mountModal(user: User | null) {
@@ -107,6 +115,7 @@ describe('EmployeeProfileModal.vue', () => {
   let clipboardWriteText: ReturnType<typeof vi.fn>
 
   beforeEach(() => {
+    mockPush.mockClear()
     toastEvents = []
     // Spy on window.dispatchEvent to capture toast events
     vi.spyOn(window, 'dispatchEvent').mockImplementation((event: Event) => {
@@ -195,16 +204,19 @@ describe('EmployeeProfileModal.vue', () => {
   })
 
   /**
-   * Test 7 — "Message" button dispatches a "Coming soon" toast
+   * Test 7 — "Message" button navigates to direct messages and emits close
    */
-  it('message button dispatches coming soon toast', async () => {
+  it('message button navigates to direct messages and emits close', async () => {
     const wrapper = mountModal(userWithPhone)
     const messageBtn = wrapper.find('[data-testid="message-button"]')
 
     await messageBtn.trigger('click')
 
-    expect(toastEvents.length).toBeGreaterThan(0)
-    expect(toastEvents[0].detail.message).toBe('Coming soon')
+    expect(mockPush).toHaveBeenCalledWith({
+      path: '/messages',
+      query: { tab: 'direct', userId: '10' },
+    })
+    expect(wrapper.emitted('close')).toBeTruthy()
   })
 
   /**
