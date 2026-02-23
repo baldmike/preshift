@@ -22,6 +22,10 @@ import SpecialCard from '@/components/SpecialCard.vue'
 import PushItemCard from '@/components/PushItemCard.vue'
 import AnnouncementCard from '@/components/AnnouncementCard.vue'
 import EmployeeProfileModal from '@/components/EmployeeProfileModal.vue'
+import TileDetailModal from '@/components/TileDetailModal.vue'
+
+/** Tile type for the detail modal */
+type TileType = 'eightySixed' | 'specials' | 'pushItems' | 'announcements'
 
 /** Weather data shape returned by GET /api/weather */
 interface WeatherData {
@@ -69,6 +73,9 @@ const canManageEvents = computed(() => {
 
 /** Selected user for profile modal (managers only) */
 const selectedUser = ref<User | null>(null)
+
+/** Currently active tile for the detail modal (null = closed) */
+const activeTile = ref<TileType | null>(null)
 
 /** Controls visibility of the inline event form */
 const showEventForm = ref(false)
@@ -288,6 +295,7 @@ onMounted(async () => {
     channel = useLocationChannel(locationId.value)
     channel
       .listen('.item.eighty-sixed', (e: any) => store.addEightySixed(e.item || e))
+      .listen('.item.eighty-sixed-updated', (e: any) => store.updateEightySixed(e.item || e))
       .listen('.item.restored', (e: any) => store.removeEightySixed(e.item?.id || e.id))
       .listen('.special.created', (e: any) => store.addSpecial(e.special || e))
       .listen('.special.updated', (e: any) => store.updateSpecial(e.special || e))
@@ -327,6 +335,7 @@ onMounted(async () => {
 onUnmounted(() => {
   if (channel && locationId.value) {
     channel.stopListening('.item.eighty-sixed')
+    channel.stopListening('.item.eighty-sixed-updated')
     channel.stopListening('.item.restored')
     channel.stopListening('.special.created')
     channel.stopListening('.special.updated')
@@ -598,7 +607,7 @@ onUnmounted(() => {
 
       <!-- 86'd Items — top left -->
       <section class="dash-quarter dash-quarter--red">
-        <header class="dash-quarter__header">
+        <header class="dash-quarter__header cursor-pointer" @click="activeTile = 'eightySixed'">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
@@ -616,7 +625,7 @@ onUnmounted(() => {
 
       <!-- Specials — top right -->
       <section class="dash-quarter dash-quarter--blue">
-        <header class="dash-quarter__header">
+        <header class="dash-quarter__header cursor-pointer" @click="activeTile = 'specials'">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
@@ -634,7 +643,7 @@ onUnmounted(() => {
 
       <!-- Push Items — bottom left -->
       <section class="dash-quarter dash-quarter--amber">
-        <header class="dash-quarter__header">
+        <header class="dash-quarter__header cursor-pointer" @click="activeTile = 'pushItems'">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
@@ -652,7 +661,7 @@ onUnmounted(() => {
 
       <!-- Announcements — bottom right -->
       <section class="dash-quarter dash-quarter--purple">
-        <header class="dash-quarter__header">
+        <header class="dash-quarter__header cursor-pointer" @click="activeTile = 'announcements'">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
@@ -687,6 +696,7 @@ onUnmounted(() => {
     </div>
 
     <EmployeeProfileModal :user="selectedUser" @close="selectedUser = null" />
+    <TileDetailModal :tileType="activeTile" @close="activeTile = null" />
   </AppShell>
 </template>
 

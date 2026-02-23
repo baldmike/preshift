@@ -116,6 +116,17 @@ export const usePreshiftStore = defineStore('preshift', () => {
   }
 
   /**
+   * Replaces an existing 86'd item in the local list with an updated version.
+   * Called when an `EightySixedUpdated` event arrives via Reverb.
+   *
+   * @param item - The updated EightySixed object (must include `item.id`)
+   */
+  function updateEightySixed(item: EightySixed) {
+    const idx = eightySixed.value.findIndex((i) => i.id === item.id)
+    if (idx !== -1) eightySixed.value[idx] = item
+  }
+
+  /**
    * Removes an 86'd item from the local list (i.e. the item has been restored).
    * Called when a `EightySixedRestored` event arrives via Reverb.
    *
@@ -300,6 +311,7 @@ export const usePreshiftStore = defineStore('preshift', () => {
     fetchAll,
     // 86'd item mutations
     addEightySixed,
+    updateEightySixed,
     removeEightySixed,
     // Special mutations
     addSpecial,

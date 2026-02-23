@@ -7,14 +7,23 @@
  * transitions. Clicking the backdrop emits `close`.
  *
  * Props:
- *   - open: boolean  — controls visibility
+ *   - open: boolean          — controls visibility
+ *   - size?: 'md' | 'lg'     — max-width of the content card (default 'md')
  *
  * Emits:
  *   - close  — fired when the backdrop is clicked
  */
-defineProps<{
+import { computed } from 'vue'
+
+const props = withDefaults(defineProps<{
   open: boolean
-}>()
+  size?: 'md' | 'lg'
+}>(), {
+  size: 'md',
+})
+
+/** Maps the size prop to a Tailwind max-width utility class */
+const sizeClass = computed(() => props.size === 'lg' ? 'max-w-lg' : 'max-w-md')
 
 defineEmits<{
   close: []
@@ -49,7 +58,8 @@ defineEmits<{
           appear
         >
           <div
-            class="relative z-50 w-full max-w-md rounded-xl bg-gray-950 border border-white/[0.06] shadow-xl overflow-y-auto max-h-[90vh]"
+            class="relative z-50 w-full rounded-xl bg-gray-950 border border-white/[0.06] shadow-xl overflow-y-auto max-h-[90vh]"
+            :class="sizeClass"
           >
             <slot />
           </div>
