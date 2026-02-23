@@ -24,12 +24,18 @@ class ShiftDropVolunteer extends Model
 {
     use HasFactory;
 
+    /** Volunteers are insert-only; no updated_at column exists on the table. */
     const UPDATED_AT = null;
 
+    /**
+     * Fields that may be mass-assigned.
+     *
+     * @var list<string>
+     */
     protected $fillable = [
-        'shift_drop_id',
-        'user_id',
-        'selected',
+        'shift_drop_id', // FK — the shift drop being volunteered for
+        'user_id',       // FK — the user who volunteered
+        'selected',      // Whether this volunteer was chosen by the manager
     ];
 
     protected function casts(): array
