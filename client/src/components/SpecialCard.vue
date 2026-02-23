@@ -29,7 +29,7 @@ function formatDate(dateStr: string | null) {
 </script>
 
 <template>
-  <div class="rounded-lg bg-blue-500/5 border border-blue-500/10 p-3">
+  <div class="rounded-lg bg-blue-500/5 border border-blue-500/10 p-3 cursor-pointer">
     <div class="flex items-start justify-between gap-2">
       <div class="min-w-0 flex-1">
         <div class="flex items-start gap-1.5 flex-wrap">
@@ -47,6 +47,7 @@ function formatDate(dateStr: string | null) {
         v-if="canEdit"
         to="/manage/daily"
         class="inline-flex items-center gap-1 rounded-md bg-blue-500/10 border border-blue-500/20 px-2 py-1 text-[10px] font-medium text-blue-300 hover:bg-blue-500/20 hover:text-blue-200 transition-colors"
+        @click.stop
       >
         Edit
       </router-link>
@@ -56,6 +57,7 @@ function formatDate(dateStr: string | null) {
         :id="special.id"
         :acknowledged="isAcknowledged('special', special.id)"
         size="sm"
+        @click.stop
       />
     </div>
   </div>
