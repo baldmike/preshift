@@ -9,8 +9,8 @@
  * Reverb updates appear live while the modal is open.
  *
  * Staff see read-only content with AcknowledgeButtons per item.
- * Managers/admins see inline edit forms and delete/restore controls alongside
- * AcknowledgeButtons.
+ * Managers/admins see inline edit forms and delete/restore controls (no
+ * AcknowledgeButtons).
  *
  * Props:
  *   - tileType: 'eightySixed' | 'specials' | 'pushItems' | 'announcements' | null
@@ -539,9 +539,9 @@ const announcementPriorityColor: Record<string, 'red' | 'yellow' | 'blue'> = {
                   </button>
                 </template>
 
-                <!-- Acknowledge button (all users) -->
+                <!-- Acknowledge button (staff only) -->
                 <AcknowledgeButton
-                  v-if="config"
+                  v-if="config && !canEdit"
                   :type="config.ackType"
                   :id="item.id"
                   :acknowledged="isAcknowledged(config.ackType, item.id)"

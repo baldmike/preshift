@@ -19,7 +19,7 @@
  *   2. Modal renders with correct title for each tile type.
  *   3. Items display full content (no truncation).
  *   4. Staff see AcknowledgeButtons (not edit controls).
- *   5. Managers see edit and delete buttons alongside AcknowledgeButtons.
+ *   5. Managers/admins see edit and delete buttons but no AcknowledgeButtons.
  *   6. Empty tile shows empty state message.
  *   7. Close button emits close event.
  */
@@ -272,12 +272,12 @@ describe('TileDetailModal.vue', () => {
   })
 
   /**
-   * Test 5 — Managers see edit and delete buttons alongside AcknowledgeButtons
+   * Test 5 — Managers see edit and delete buttons but no AcknowledgeButtons
    *
-   * When the current user is a manager, each item should render both
-   * edit/delete controls AND the AcknowledgeButton.
+   * When the current user is a manager, each item should render
+   * edit/delete controls but NOT the AcknowledgeButton.
    */
-  it('shows edit and delete buttons for managers alongside AcknowledgeButton', () => {
+  it('shows edit and delete buttons for managers without AcknowledgeButton', () => {
     mockIsManager.value = true
     const store = usePreshiftStore()
     store.specials = [makeSpecial()] as any
@@ -286,10 +286,10 @@ describe('TileDetailModal.vue', () => {
 
     expect(wrapper.find('[data-testid="edit-button"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="delete-button"]').exists()).toBe(true)
-    expect(wrapper.find('.ack-stub').exists()).toBe(true)
+    expect(wrapper.find('.ack-stub').exists()).toBe(false)
   })
 
-  it('shows edit and delete buttons for admins', () => {
+  it('shows edit and delete buttons for admins without AcknowledgeButton', () => {
     mockIsAdmin.value = true
     const store = usePreshiftStore()
     store.pushItems = [makePushItem()] as any
@@ -298,7 +298,7 @@ describe('TileDetailModal.vue', () => {
 
     expect(wrapper.find('[data-testid="edit-button"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="delete-button"]').exists()).toBe(true)
-    expect(wrapper.find('.ack-stub').exists()).toBe(true)
+    expect(wrapper.find('.ack-stub').exists()).toBe(false)
   })
 
   /**
