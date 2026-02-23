@@ -18,6 +18,7 @@
  *  - VITE_REVERB_APP_KEY  : Pusher-compatible app key
  *  - VITE_REVERB_HOST     : WebSocket server hostname (default: 127.0.0.1)
  *  - VITE_REVERB_PORT     : WebSocket server port (default: 8080)
+ *  - VITE_REVERB_SCHEME   : 'http' or 'https' — controls TLS (default: http)
  */
 
 import Echo from 'laravel-echo'
@@ -67,8 +68,8 @@ export function useReverb(locationId: number): Echo<'pusher'> {
     key: import.meta.env.VITE_REVERB_APP_KEY || 'preshift-key',        // Reverb app key
     wsHost: import.meta.env.VITE_REVERB_HOST || '127.0.0.1',           // WebSocket server host
     wsPort: import.meta.env.VITE_REVERB_PORT || 8080,                  // Non-TLS WebSocket port
-    wssPort: import.meta.env.VITE_REVERB_PORT || 8080,                 // TLS WebSocket port (same in dev)
-    forceTLS: false,                                                    // Disable forced TLS for local dev
+    wssPort: import.meta.env.VITE_REVERB_PORT || 8080,                 // TLS WebSocket port (443 in production)
+    forceTLS: import.meta.env.VITE_REVERB_SCHEME === 'https',          // Enable TLS in production, disable in local dev
     disableStats: true,                                                 // Do not send stats to Pusher
     cluster: 'mt1',                                                     // Required by Pusher SDK but unused by Reverb
     enabledTransports: ['ws', 'wss'],                                   // Allow both ws and wss transports
