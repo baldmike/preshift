@@ -4,15 +4,24 @@
  *
  * Fixed bottom navigation bar for mobile-first layout. Displays a persistent
  * copyright line above icon+label links to Dashboard, 86'd Board, Specials,
- * Schedule, and (for admins/managers) Manage.
+ * Schedule, Messages, and (for admins/managers) Manage.
  * The active route is highlighted in amber.
+ *
+ * For admins and managers, the 86'd and Specials links point to the manage
+ * versions (/manage/86, /manage/specials) instead of the staff read-only views.
  */
-import { onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useAuth } from '@/composables/useAuth'
 import { useMessageStore } from '@/stores/messages'
 
 const { isAdmin, isManager } = useAuth()
 const messageStore = useMessageStore()
+
+/** Route for the 86'd nav item — managers go to /manage/86, staff to /86. */
+const eightySixRoute = computed(() => (isAdmin.value || isManager.value) ? '/manage/86' : '/86')
+
+/** Route for the Specials nav item — managers go to /manage/specials, staff to /specials. */
+const specialsRoute = computed(() => (isAdmin.value || isManager.value) ? '/manage/specials' : '/specials')
 
 onMounted(() => {
   messageStore.fetchUnreadCount()
@@ -36,9 +45,9 @@ onMounted(() => {
       </router-link>
 
       <router-link
-        to="/86"
+        :to="eightySixRoute"
         class="flex flex-col items-center gap-0.5 text-xs transition-colors"
-        :class="$route.path === '/86' ? 'text-amber-400' : 'text-gray-500 hover:text-gray-300'"
+        :class="$route.path === '/86' || $route.path.startsWith('/manage/86') ? 'text-amber-400' : 'text-gray-500 hover:text-gray-300'"
       >
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -48,9 +57,9 @@ onMounted(() => {
       </router-link>
 
       <router-link
-        to="/specials"
+        :to="specialsRoute"
         class="flex flex-col items-center gap-0.5 text-xs transition-colors"
-        :class="$route.path === '/specials' ? 'text-amber-400' : 'text-gray-500 hover:text-gray-300'"
+        :class="$route.path === '/specials' || $route.path === '/manage/specials' ? 'text-amber-400' : 'text-gray-500 hover:text-gray-300'"
       >
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -95,7 +104,7 @@ onMounted(() => {
         v-if="isAdmin || isManager"
         to="/manage/daily"
         class="flex flex-col items-center gap-0.5 text-xs transition-colors"
-        :class="$route.path.startsWith('/manage') ? 'text-amber-400' : 'text-gray-500 hover:text-gray-300'"
+        :class="$route.path.startsWith('/manage') && !$route.path.startsWith('/manage/86') && $route.path !== '/manage/specials' ? 'text-amber-400' : 'text-gray-500 hover:text-gray-300'"
       >
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
