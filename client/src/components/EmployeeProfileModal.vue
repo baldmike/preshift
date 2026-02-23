@@ -4,7 +4,8 @@
  *
  * Displays an employee's profile in a modal overlay for managers/admins.
  * Shows name, role badge, phone (as a `tel:` link), email (click to copy),
- * weekly availability grid (readonly), and a placeholder "Message" button.
+ * weekly availability grid (readonly), and a "Message" button that navigates
+ * to the direct messages tab with the selected user.
  *
  * Props:
  *   - user: User | null  — the employee to display; null = modal closed
@@ -13,6 +14,7 @@
  *   - close  — fired when the modal should be dismissed
  */
 import { computed } from 'vue'
+import { useRouter } from 'vue-router'
 import type { User } from '@/types'
 import BaseModal from '@/components/ui/BaseModal.vue'
 import BadgePill from '@/components/ui/BadgePill.vue'
@@ -22,9 +24,11 @@ const props = defineProps<{
   user: User | null
 }>()
 
-defineEmits<{
+const emit = defineEmits<{
   close: []
 }>()
+
+const router = useRouter()
 
 const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const
 
@@ -68,9 +72,11 @@ async function copyEmail() {
   }
 }
 
-/** Placeholder for future messaging feature */
+/** Navigate to the direct messages tab with this user's conversation */
 function handleMessage() {
-  toast('Coming soon', 'info')
+  if (!props.user) return
+  router.push({ path: '/messages', query: { tab: 'direct', userId: String(props.user.id) } })
+  emit('close')
 }
 </script>
 

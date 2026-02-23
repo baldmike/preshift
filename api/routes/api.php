@@ -40,6 +40,9 @@ use App\Http\Controllers\EventController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ConfigController;
 use App\Http\Controllers\WeatherController;
+use App\Http\Controllers\BoardMessageController;
+use App\Http\Controllers\ConversationController;
+use App\Http\Controllers\DirectMessageController;
 
 /*
 |--------------------------------------------------------------------------
@@ -352,6 +355,45 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/time-off-requests', [TimeOffRequestController::class, 'store']);
         Route::post('/time-off-requests/{timeOffRequest}/approve', [TimeOffRequestController::class, 'approve'])->middleware('role:admin,manager');
         Route::post('/time-off-requests/{timeOffRequest}/deny', [TimeOffRequestController::class, 'deny'])->middleware('role:admin,manager');
+
+        /*
+        |------------------------------------------------------------------
+        | Board Messages
+        |------------------------------------------------------------------
+        | Location-scoped message board where all staff can post updates
+        | and threaded replies. Managers can set visibility and pin posts.
+        |
+        | GET    /api/board-messages                          -- List top-level posts.
+        | POST   /api/board-messages                          -- Create post or reply.
+        | PATCH  /api/board-messages/{id}                     -- Update a post.
+        | DELETE /api/board-messages/{id}                     -- Delete a post.
+        | POST   /api/board-messages/{id}/pin                 -- Toggle pin (admin/manager).
+        */
+        Route::get('/board-messages', [BoardMessageController::class, 'index']);
+        Route::post('/board-messages', [BoardMessageController::class, 'store']);
+        Route::patch('/board-messages/{boardMessage}', [BoardMessageController::class, 'update']);
+        Route::delete('/board-messages/{boardMessage}', [BoardMessageController::class, 'destroy']);
+        Route::post('/board-messages/{boardMessage}/pin', [BoardMessageController::class, 'pin'])->middleware('role:admin,manager');
+
+        /*
+        |------------------------------------------------------------------
+        | Conversations & Direct Messages
+        |------------------------------------------------------------------
+        | Private 1-on-1 DM threads between staff at the same location.
+        | Conversations are found-or-created by target user_id. Messages
+        | within a conversation are ordered chronologically.
+        |
+        | GET    /api/conversations                           -- List user's conversations.
+        | POST   /api/conversations                           -- Find-or-create conversation.
+        | GET    /api/conversations/unread-count               -- Total unread DM count.
+        | GET    /api/conversations/{id}/messages              -- List messages in conversation.
+        | POST   /api/conversations/{id}/messages              -- Send a message.
+        */
+        Route::get('/conversations', [ConversationController::class, 'index']);
+        Route::post('/conversations', [ConversationController::class, 'store']);
+        Route::get('/conversations/unread-count', [DirectMessageController::class, 'unreadCount']);
+        Route::get('/conversations/{conversation}/messages', [DirectMessageController::class, 'index']);
+        Route::post('/conversations/{conversation}/messages', [DirectMessageController::class, 'store']);
 
         /*
         |------------------------------------------------------------------

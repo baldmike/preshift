@@ -119,6 +119,13 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/staff/TonightsScheduleView.vue'),
     meta: { requiresAuth: true },
   },
+  {
+    path: '/messages',
+    name: 'Messages',
+    // Message board + direct messages — tabbed view with ?tab=board|direct
+    component: () => import('@/views/staff/MessagesView.vue'),
+    meta: { requiresAuth: true },
+  },
 
   // -----------------------------------------------------------------------
   // Management routes (admin + manager roles only)
