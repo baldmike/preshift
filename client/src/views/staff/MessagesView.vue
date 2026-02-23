@@ -50,7 +50,18 @@ onMounted(() => {
     <!-- Header -->
     <div class="sticky top-0 z-30 bg-gray-900 border-b border-gray-800">
       <div class="max-w-2xl mx-auto px-4 pt-4 pb-0">
-        <h1 class="text-lg font-bold text-white mb-3">Messages</h1>
+        <div class="flex items-center justify-between mb-3">
+          <h1 class="text-lg font-bold text-white">Messages</h1>
+          <router-link
+            to="/dashboard"
+            class="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-semibold whitespace-nowrap bg-white/[0.06] text-gray-400 hover:bg-white/[0.1] hover:text-white transition-colors"
+          >
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            Corner!
+          </router-link>
+        </div>
 
         <!-- Tab bar -->
         <div class="flex gap-1">
