@@ -617,7 +617,7 @@ onUnmounted(() => {
         </header>
         <div class="dash-quarter__body">
           <template v-if="store.eightySixed.length">
-            <EightySixedCard v-for="item in store.eightySixed" :key="item.id" :item="item" />
+            <EightySixedCard v-for="item in store.eightySixed" :key="item.id" :item="item" @click="activeTile = 'eightySixed'" />
           </template>
           <p v-else class="text-gray-600 text-xs text-center py-4">Nothing 86'd</p>
         </div>
@@ -635,7 +635,7 @@ onUnmounted(() => {
         </header>
         <div class="dash-quarter__body">
           <template v-if="store.specials.length">
-            <SpecialCard v-for="special in store.specials" :key="special.id" :special="special" />
+            <SpecialCard v-for="special in store.specials" :key="special.id" :special="special" @click="activeTile = 'specials'" />
           </template>
           <p v-else class="text-gray-600 text-xs text-center py-4">No specials today</p>
         </div>
@@ -653,7 +653,7 @@ onUnmounted(() => {
         </header>
         <div class="dash-quarter__body">
           <template v-if="store.pushItems.length">
-            <PushItemCard v-for="item in store.pushItems" :key="item.id" :item="item" />
+            <PushItemCard v-for="item in store.pushItems" :key="item.id" :item="item" @click="activeTile = 'pushItems'" />
           </template>
           <p v-else class="text-gray-600 text-xs text-center py-4">No push items</p>
         </div>
@@ -675,6 +675,7 @@ onUnmounted(() => {
               v-for="announcement in store.announcements"
               :key="announcement.id"
               :announcement="announcement"
+              @click="activeTile = 'announcements'"
             />
           </template>
           <p v-else class="text-gray-600 text-xs text-center py-4">No announcements</p>

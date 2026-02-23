@@ -41,7 +41,7 @@ function formatDateTime(dateStr: string | null) {
 </script>
 
 <template>
-  <div class="rounded-lg bg-purple-500/5 border border-purple-500/10 p-3">
+  <div class="rounded-lg bg-purple-500/5 border border-purple-500/10 p-3 cursor-pointer">
     <div class="flex items-start justify-between gap-2">
       <div class="min-w-0 flex-1">
         <div class="flex items-start gap-1.5 flex-wrap">
@@ -62,6 +62,7 @@ function formatDateTime(dateStr: string | null) {
         v-if="canEdit"
         to="/manage/announcements"
         class="inline-flex items-center gap-1 rounded-md bg-purple-500/10 border border-purple-500/20 px-2 py-1 text-[10px] font-medium text-purple-300 hover:bg-purple-500/20 hover:text-purple-200 transition-colors"
+        @click.stop
       >
         Edit
       </router-link>
@@ -71,6 +72,7 @@ function formatDateTime(dateStr: string | null) {
         :id="announcement.id"
         :acknowledged="isAcknowledged('announcement', announcement.id)"
         size="sm"
+        @click.stop
       />
     </div>
   </div>

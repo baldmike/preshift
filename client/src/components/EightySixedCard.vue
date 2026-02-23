@@ -32,7 +32,7 @@ function formatTime(dateStr: string) {
 </script>
 
 <template>
-  <div class="rounded-lg bg-red-500/5 border border-red-500/10 p-3">
+  <div class="rounded-lg bg-red-500/5 border border-red-500/10 p-3 cursor-pointer">
     <div class="flex items-start justify-between gap-2">
       <div class="min-w-0 flex-1">
         <h4 class="font-semibold text-red-300 text-sm break-words">{{ item.item_name }}</h4>
@@ -46,6 +46,7 @@ function formatTime(dateStr: string) {
         v-if="canEdit"
         :to="`/manage/86/${item.id}`"
         class="inline-flex items-center gap-1 rounded-md bg-red-500/10 border border-red-500/20 px-2 py-1 text-[10px] font-medium text-red-300 hover:bg-red-500/20 hover:text-red-200 transition-colors"
+        @click.stop
       >
         Edit
       </router-link>
@@ -55,6 +56,7 @@ function formatTime(dateStr: string) {
         :id="item.id"
         :acknowledged="isAcknowledged('eighty_sixed', item.id)"
         size="sm"
+        @click.stop
       />
     </div>
   </div>
