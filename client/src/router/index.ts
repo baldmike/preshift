@@ -214,6 +214,13 @@ const routes: RouteRecordRaw[] = [
   },
 
   {
+    path: '/manage/logs',
+    name: 'ManageLogs',
+    // Daily manager log entries with auto-populated snapshots
+    component: () => import('@/views/admin/ManageLogsView.vue'),
+    meta: { requiresAuth: true, roles: ['admin', 'manager'] },
+  },
+  {
     path: '/manage/config',
     name: 'Config',
     component: () => import('@/views/admin/ConfigView.vue'),

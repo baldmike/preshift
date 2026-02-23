@@ -492,6 +492,103 @@ export interface TimeOffRequest {
   updated_at: string
 }
 
+// ─── Manager Log Types ──────────────────────────────────────────────────
+
+/**
+ * Weather data snapshot frozen at log creation time.
+ * Contains current conditions and today's forecast summary.
+ */
+export interface WeatherSnapshot {
+  /** Current weather conditions */
+  current: {
+    /** Temperature in Fahrenheit */
+    temperature: number
+    /** Feels-like temperature in Fahrenheit */
+    feels_like: number
+    /** Relative humidity percentage */
+    humidity: number
+    /** Wind speed in mph */
+    wind_speed: number
+    /** WMO weather interpretation code */
+    weather_code: number
+    /** Human-readable weather description */
+    description: string
+  }
+  /** Today's forecast summary */
+  today: {
+    /** High temperature in Fahrenheit */
+    high: number
+    /** Low temperature in Fahrenheit */
+    low: number
+    /** WMO weather interpretation code */
+    weather_code: number
+    /** Human-readable weather description */
+    description: string
+  }
+}
+
+/**
+ * A single event record within an events snapshot.
+ */
+export interface EventSnapshot {
+  /** Primary key of the original event */
+  id: number
+  /** Short headline for the event */
+  title: string
+  /** Optional details about the event */
+  description: string | null
+  /** Optional "HH:MM" display time */
+  event_time: string | null
+  /** Name of the manager who created the event */
+  created_by: string | null
+}
+
+/**
+ * A single schedule entry within a schedule snapshot.
+ */
+export interface ScheduleSnapshot {
+  /** Primary key of the original schedule entry */
+  id: number
+  /** Name of the assigned staff member */
+  user_name: string | null
+  /** The role for this shift: "server" or "bartender" */
+  role: string
+  /** Name of the shift template (e.g. "Dinner") */
+  shift_name: string | null
+  /** HH:MM:SS start time of the shift */
+  start_time: string | null
+}
+
+/**
+ * A daily operational log entry created by a manager.
+ * Contains freeform notes and immutable snapshots of weather, events,
+ * and scheduled staff frozen at creation time.
+ */
+export interface ManagerLog {
+  /** Primary key */
+  id: number
+  /** Foreign key to the owning Location */
+  location_id: number
+  /** Foreign key (User.id) of the manager who created the log */
+  created_by: number
+  /** The date this log covers (ISO date string) */
+  log_date: string
+  /** Freeform manager notes */
+  body: string
+  /** Weather data frozen at creation time; null if unavailable */
+  weather_snapshot: WeatherSnapshot | null
+  /** Events data frozen at creation time */
+  events_snapshot: EventSnapshot[] | null
+  /** Schedule data frozen at creation time */
+  schedule_snapshot: ScheduleSnapshot[] | null
+  /** Eagerly-loaded creator (optional) */
+  creator?: User
+  /** ISO-8601 creation timestamp */
+  created_at: string
+  /** ISO-8601 last-update timestamp */
+  updated_at: string
+}
+
 // ─── Message Board & Direct Messaging Types ────────────────────────────
 
 /**

@@ -43,6 +43,7 @@ use App\Http\Controllers\WeatherController;
 use App\Http\Controllers\BoardMessageController;
 use App\Http\Controllers\ConversationController;
 use App\Http\Controllers\DirectMessageController;
+use App\Http\Controllers\ManagerLogController;
 
 /*
 |--------------------------------------------------------------------------
@@ -394,6 +395,26 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/conversations/unread-count', [DirectMessageController::class, 'unreadCount']);
         Route::get('/conversations/{conversation}/messages', [DirectMessageController::class, 'index']);
         Route::post('/conversations/{conversation}/messages', [DirectMessageController::class, 'store']);
+
+        /*
+        |------------------------------------------------------------------
+        | Manager Logs
+        |------------------------------------------------------------------
+        | Daily operational log entries created by managers. Each log
+        | auto-snapshots weather, events, and scheduled staff at creation
+        | time. Only accessible by admin and manager roles.
+        |
+        | GET    /api/manager-logs              -- List logs for the location.
+        | POST   /api/manager-logs              -- Create a log (admin/manager).
+        | PATCH  /api/manager-logs/{id}         -- Update log body (admin/manager).
+        | DELETE /api/manager-logs/{id}         -- Delete a log (admin/manager).
+        */
+        Route::middleware('role:admin,manager')->group(function () {
+            Route::get('/manager-logs', [ManagerLogController::class, 'index']);
+            Route::post('/manager-logs', [ManagerLogController::class, 'store']);
+            Route::patch('/manager-logs/{managerLog}', [ManagerLogController::class, 'update']);
+            Route::delete('/manager-logs/{managerLog}', [ManagerLogController::class, 'destroy']);
+        });
 
         /*
         |------------------------------------------------------------------
