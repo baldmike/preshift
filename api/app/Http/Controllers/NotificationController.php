@@ -5,11 +5,23 @@ namespace App\Http\Controllers;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
+/**
+ * NotificationController manages in-app notifications for managers and admins.
+ *
+ * Provides endpoints to list notifications (with optional unread filter),
+ * mark individual notifications as read, and bulk-mark all as read. Notifications
+ * are scoped to the authenticated user via Laravel's built-in notification system.
+ */
 class NotificationController extends Controller
 {
     /**
      * List the authenticated user's notifications (newest 50).
-     * Optional query param: ?unread_only=1
+     *
+     * Optionally filters to unread-only when the `unread_only` query parameter
+     * is truthy. Also returns the total unread count for badge display.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse  Notifications array and unread count.
      */
     public function index(Request $request): JsonResponse
     {
@@ -41,7 +53,11 @@ class NotificationController extends Controller
     }
 
     /**
-     * Mark a single notification as read.
+     * Mark a single notification as read by its UUID.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  string                    $id  The notification UUID.
+     * @return \Illuminate\Http\JsonResponse  Confirmation message.
      */
     public function read(Request $request, string $id): JsonResponse
     {
@@ -52,7 +68,10 @@ class NotificationController extends Controller
     }
 
     /**
-     * Mark all of the authenticated user's notifications as read.
+     * Mark all of the authenticated user's unread notifications as read.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse  Confirmation message.
      */
     public function readAll(Request $request): JsonResponse
     {

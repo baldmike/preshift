@@ -28,13 +28,18 @@ class ShiftDrop extends Model
 {
     use HasFactory;
 
+    /**
+     * Fields that may be mass-assigned.
+     *
+     * @var list<string>
+     */
     protected $fillable = [
-        'schedule_entry_id',
-        'requested_by',
-        'reason',
-        'status',
-        'filled_by',
-        'filled_at',
+        'schedule_entry_id', // FK — the shift assignment being dropped
+        'requested_by',      // FK — the user who wants to drop the shift
+        'reason',            // Optional freeform explanation for the drop
+        'status',            // Lifecycle state: open, filled, or cancelled
+        'filled_by',         // FK — the user who picked up the shift (set when filled)
+        'filled_at',         // Timestamp when a volunteer was selected (set when filled)
     ];
 
     protected function casts(): array
