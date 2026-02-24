@@ -113,7 +113,7 @@ onUnmounted(() => {
       </div>
 
       <!-- Sub-navigation -->
-      <div class="flex gap-2">
+      <div class="flex flex-wrap gap-2">
         <router-link
           to="/shift-drops"
           class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 transition-colors"

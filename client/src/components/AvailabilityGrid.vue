@@ -121,7 +121,8 @@ function toggleAllOpen() {
     </button>
 
     <!-- Grid header -->
-    <div class="grid grid-cols-7 gap-1.5 text-center">
+    <div class="overflow-x-auto">
+    <div class="grid grid-cols-7 gap-1.5 text-center min-w-[320px]">
       <div
         v-for="day in DAYS"
         :key="day"
@@ -132,7 +133,7 @@ function toggleAllOpen() {
     </div>
 
     <!-- Grid body: one column per day -->
-    <div :class="['grid grid-cols-7 gap-1.5', { 'pointer-events-none': readonly }]">
+    <div :class="['grid grid-cols-7 gap-1.5 min-w-[320px]', { 'pointer-events-none': readonly }]">
       <div
         v-for="day in DAYS"
         :key="day"
@@ -166,6 +167,7 @@ function toggleAllOpen() {
           Open
         </button>
       </div>
+    </div>
     </div>
 
     <!-- Save button -->

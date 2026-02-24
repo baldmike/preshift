@@ -594,7 +594,7 @@ onUnmounted(() => {
         <p v-else class="text-gray-600 text-xs text-center py-4">No shifts scheduled today</p>
 
         <!-- Sub-nav pill links: secondary navigation to schedule-related pages -->
-        <div class="flex gap-2 mt-2">
+        <div class="flex flex-wrap gap-2 mt-2">
           <router-link
             to="/tonights-schedule"
             class="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-semibold rounded-full bg-teal-500/15 text-teal-400 hover:bg-teal-500/25 transition-colors"
@@ -655,7 +655,7 @@ onUnmounted(() => {
         <p v-else class="text-gray-600 text-xs text-center py-4">No board messages</p>
 
         <!-- Quick links: Board + DMs -->
-        <div class="flex gap-2 mt-2">
+        <div class="flex flex-wrap gap-2 mt-2">
           <router-link
             to="/messages?tab=board"
             class="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-semibold rounded-full bg-orange-500/15 text-orange-400 hover:bg-orange-500/25 transition-colors"

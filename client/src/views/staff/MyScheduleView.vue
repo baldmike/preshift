@@ -163,7 +163,7 @@ onUnmounted(() => {
       </div>
 
       <!-- Sub-navigation: pill links to schedule-related views -->
-      <div class="flex gap-2">
+      <div class="flex flex-wrap gap-2">
         <router-link
           to="/tonights-schedule"
           class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full bg-teal-500/20 text-teal-300 hover:bg-teal-500/30 transition-colors"

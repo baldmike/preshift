@@ -165,7 +165,7 @@ onMounted(fetchSpecials)
         <form @submit.prevent="saveSpecial" class="space-y-3">
           <BaseInput v-model="form.title" label="Title" placeholder="Special title" />
           <BaseInput v-model="form.description" label="Description" placeholder="Describe the special" />
-          <div class="grid grid-cols-3 gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <BaseInput v-model="form.type" label="Type" placeholder="e.g. food, drink" />
             <BaseInput v-model="form.starts_at" label="Starts" type="date" />
             <BaseInput v-model="form.ends_at" label="Ends" type="date" />
