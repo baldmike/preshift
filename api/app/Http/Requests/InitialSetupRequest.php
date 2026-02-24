@@ -37,6 +37,8 @@ class InitialSetupRequest extends FormRequest
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255',
             'location_name' => 'required|string|max:255',
+            'city' => 'nullable|string|max:255',
+            'state' => 'nullable|string|max:50',
         ];
     }
 }

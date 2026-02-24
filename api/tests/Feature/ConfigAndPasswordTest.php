@@ -15,6 +15,7 @@ use App\Models\Special;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 /**
@@ -215,11 +216,24 @@ class ConfigAndPasswordTest extends TestCase
         $this->assertEquals(1, Location::count());
         $this->assertEquals(1, Category::count());
 
+        // Fake the geocoding HTTP call so the test doesn't hit the real API
+        Http::fake([
+            'geocoding-api.open-meteo.com/*' => Http::response([
+                'results' => [[
+                    'latitude' => 30.2672,
+                    'longitude' => -97.7431,
+                    'timezone' => 'America/Chicago',
+                ]],
+            ]),
+        ]);
+
         $response = $this->actingAs($superadmin)
             ->postJson('/api/config/initial-setup', [
                 'name' => 'Jane Smith',
                 'email' => 'jane@example.com',
                 'location_name' => 'The Anchor',
+                'city' => 'Austin',
+                'state' => 'TX',
             ]);
 
         $response->assertStatus(200);
@@ -240,11 +254,40 @@ class ConfigAndPasswordTest extends TestCase
 
         $newLocation = Location::first();
         $this->assertEquals('The Anchor', $newLocation->name);
+        $this->assertEquals('Austin', $newLocation->city);
+        $this->assertEquals('TX', $newLocation->state);
         $this->assertEquals($newLocation->id, $newUser->location_id);
+
+        // Geocoding populated coordinates from city/state
+        $this->assertNotNull($newLocation->latitude);
+        $this->assertNotNull($newLocation->longitude);
+        $this->assertEquals('America/Chicago', $newLocation->timezone);
 
         // Settings were set
         $this->assertEquals('The Anchor', Setting::get('establishment_name'));
         $this->assertEquals('true', Setting::get('setup_complete'));
+    }
+
+    public function test_initial_setup_without_city_state_skips_geocoding(): void
+    {
+        ['superadmin' => $superadmin] = $this->seedUsers();
+
+        Http::fake();
+
+        $this->actingAs($superadmin)
+            ->postJson('/api/config/initial-setup', [
+                'name' => 'Jane Smith',
+                'email' => 'jane@example.com',
+                'location_name' => 'The Anchor',
+            ])
+            ->assertStatus(200);
+
+        $newLocation = Location::first();
+        $this->assertNull($newLocation->city);
+        $this->assertNull($newLocation->latitude);
+
+        // No geocoding request should have been made
+        Http::assertNothingSent();
     }
 
     // ── POST /api/config/reset ──
