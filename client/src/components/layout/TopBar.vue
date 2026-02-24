@@ -151,7 +151,7 @@ async function changePassword() {
 </script>
 
 <template>
-  <header class="bg-gray-900 text-white sticky top-0 z-40">
+  <header data-tour="topbar" class="bg-gray-900 text-white sticky top-0 z-40">
     <div class="px-3 py-2 sm:py-4 sm:px-6 max-w-4xl mx-auto w-full">
       <div class="flex items-center justify-between">
         <!-- Left: establishment + date/time -->
