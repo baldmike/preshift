@@ -592,29 +592,29 @@ onUnmounted(() => {
           </div>
         </div>
         <p v-else class="text-gray-600 text-xs text-center py-4">No shifts scheduled today</p>
-
-        <!-- Sub-nav pill links: secondary navigation to schedule-related pages -->
-        <div class="flex flex-wrap gap-2 mt-2">
-          <router-link
-            to="/tonights-schedule"
-            class="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-semibold rounded-full bg-teal-500/15 text-teal-400 hover:bg-teal-500/25 transition-colors"
-          >
-            Tonight's Schedule
-          </router-link>
-          <router-link
-            to="/shift-drops"
-            class="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-semibold rounded-full bg-amber-500/15 text-amber-400 hover:bg-amber-500/25 transition-colors"
-          >
-            Drop Board
-          </router-link>
-          <router-link
-            to="/time-off"
-            class="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-semibold rounded-full bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 transition-colors"
-          >
-            Time Off
-          </router-link>
-        </div>
       </section>
+
+      <!-- ═══ Schedule nav pills — always visible regardless of published schedule ═══ -->
+      <div class="flex flex-wrap gap-2">
+        <router-link
+          to="/tonights-schedule"
+          class="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-semibold rounded-full bg-teal-500/15 text-teal-400 hover:bg-teal-500/25 transition-colors"
+        >
+          Tonight's Schedule
+        </router-link>
+        <router-link
+          to="/shift-drops"
+          class="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-semibold rounded-full bg-amber-500/15 text-amber-400 hover:bg-amber-500/25 transition-colors"
+        >
+          Drop Board
+        </router-link>
+        <router-link
+          to="/time-off"
+          class="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-semibold rounded-full bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 transition-colors"
+        >
+          Time Off
+        </router-link>
+      </div>
 
       <!-- ═══ Messages — recent board posts + DM unread count ═══ -->
       <section class="rounded-xl bg-orange-500/5 border border-orange-500/10 p-3">

@@ -378,7 +378,7 @@ describe('useAuthStore', () => {
       // Prepare the fake user profile that the API would return
       const fakeUser = makeUser({ id: 10, name: 'Reloaded User' })
       ;(api.get as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
-        data: fakeUser,
+        data: { user: fakeUser, locations: [] },
       })
 
       const store = useAuthStore()
