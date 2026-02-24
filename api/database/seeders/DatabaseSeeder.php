@@ -33,20 +33,13 @@ use Illuminate\Support\Str;
  * for local development and demo purposes.
  *
  * Creates a fully operational Chicago bar called "Bald Bar" with:
- *   - 24 staff members (1 superadmin, 3 managers, 5 bartenders, 15 servers)
+ *   - Staff across all roles (managers, bartenders, servers)
  *   - Full menu across 6 categories (40+ items)
  *   - 86'd items, specials, push items, and announcements
  *   - Events sourced from real Chicago sports/entertainment (Jan–Jul 2026)
  *   - Published schedules from Jan 5, 2026 through Jul 13, 2026 (28 weeks)
  *   - Shift drops, time-off requests, board messages, DM conversations
  *   - Manager logs, acknowledgments, and notifications
- *
- * All accounts use the password "baldsnutz" for easy local login.
- *
- * Key accounts:
- *   - bm@preshift.test       — SuperAdmin (admin role, global access)
- *   - mercury@preshift.test  — Manager (creates seed content)
- *   - hendrix@preshift.test  — Bartender
  */
 class DatabaseSeeder extends Seeder
 {
@@ -91,15 +84,10 @@ class DatabaseSeeder extends Seeder
         |------------------------------------------------------------------
         | Users
         |------------------------------------------------------------------
-        | SuperAdmin:
-        |   - BM: admin role, is_superadmin
-        |
         | Staff — all named after rock stars:
         |   - 3 managers (Mercury, Bowie, Joplin)
         |   - 5 bartenders (Hendrix, Cobain, Morrison, Jagger, Lennon)
         |   - 15 servers
-        |
-        | All accounts use password "baldsnutz" for local dev.
         */
         $superadmin = User::create([
             'name'          => 'BM',
