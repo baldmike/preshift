@@ -73,6 +73,13 @@ onMounted(async () => {
   }
 })
 
+/** City, State label from the user's location (e.g. "Austin, TX") */
+const cityState = computed(() => {
+  const loc = user.value?.location
+  if (!loc?.city) return null
+  return loc.state ? `${loc.city}, ${loc.state}` : loc.city
+})
+
 const initials = computed(() => {
   if (!user.value?.name) return '?'
   return user.value.name
@@ -152,6 +159,7 @@ async function changePassword() {
           <h1 class="text-sm sm:text-xl font-bold tracking-tight truncate">
             {{ establishment }}
           </h1>
+          <p v-if="cityState" class="text-[10px] sm:text-xs text-gray-500 -mt-0.5">{{ cityState }}</p>
           <div class="flex flex-wrap items-center gap-x-1.5 sm:gap-x-2 text-[11px] sm:text-sm text-gray-400 mt-0.5">
             <span class="font-medium text-gray-300">{{ dayName }}</span>
             <span class="hidden sm:inline text-gray-600">&middot;</span>

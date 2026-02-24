@@ -647,7 +647,7 @@ onUnmounted(() => {
           >
             <div class="flex items-center gap-1.5 mb-0.5">
               <span class="text-[11px] font-semibold text-orange-300">{{ post.user?.name || 'Staff' }}</span>
-              <span v-if="post.is_pinned" class="text-[9px] text-amber-400">pinned</span>
+              <span v-if="post.pinned" class="text-[9px] text-amber-400">pinned</span>
             </div>
             <p class="text-xs text-gray-400 line-clamp-1">{{ post.body }}</p>
           </router-link>

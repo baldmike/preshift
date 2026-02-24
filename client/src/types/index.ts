@@ -19,6 +19,10 @@ export interface Location {
   name: string
   /** Street address; nullable if not yet provided */
   address: string | null
+  /** City name (e.g. "Austin"); nullable */
+  city: string | null
+  /** State abbreviation or name (e.g. "TX"); nullable */
+  state: string | null
   /** IANA timezone identifier (e.g. "America/New_York"); nullable */
   timezone: string | null
   /** GPS latitude for weather lookups; nullable if not configured */
