@@ -24,6 +24,8 @@ use Tests\TestCase;
  *   - Non-participant cannot access a conversation
  *   - Unread count endpoint
  *   - last_read_at updates when fetching messages
+ *   - Staff can list location users for the DM recipient picker
+ *   - Cannot create a conversation with yourself
  */
 class ConversationTest extends TestCase
 {
@@ -275,6 +277,75 @@ class ConversationTest extends TestCase
 
         $response->assertOk()
             ->assertJsonPath('unread_count', 1);
+    }
+
+    // ══════════════════════════════════════════════
+    //  LAST_READ_AT UPDATES ON FETCH
+    // ══════════════════════════════════════════════
+
+    // ══════════════════════════════════════════════
+    //  STAFF CAN LIST USERS FOR DM RECIPIENT PICKER
+    // ══════════════════════════════════════════════
+
+    /**
+     * Staff (not just managers) can call GET /api/users to populate the DM
+     * recipient picker. The response must only include users from the same
+     * location — cross-location users must never appear.
+     */
+    public function test_staff_can_list_location_users_for_dm_picker(): void
+    {
+        $seed = $this->seedLocationAndUsers();
+
+        // Create a user at a different location — should NOT appear
+        $otherLocation = Location::create([
+            'name' => 'Other Bar',
+            'address' => '999 Far Ave',
+            'timezone' => 'America/Chicago',
+        ]);
+        User::create([
+            'name' => 'Other Bar Staff',
+            'email' => 'otherbar@test.com',
+            'password' => Hash::make('password'),
+            'role' => 'server',
+            'location_id' => $otherLocation->id,
+        ]);
+
+        // Act: staff user (server role) fetches the user list
+        $response = $this->actingAs($seed['userA'], 'sanctum')
+            ->getJson('/api/users');
+
+        $response->assertOk();
+
+        $names = array_column($response->json(), 'name');
+
+        // Assert: both location users appear (self + userB)
+        $this->assertContains('User A', $names);
+        $this->assertContains('User B', $names);
+
+        // Assert: cross-location user is excluded
+        $this->assertNotContains('Other Bar Staff', $names);
+        $this->assertCount(2, $response->json());
+    }
+
+    // ══════════════════════════════════════════════
+    //  CANNOT START CONVERSATION WITH SELF
+    // ══════════════════════════════════════════════
+
+    /**
+     * Attempting to create a conversation with yourself should return 422.
+     * The frontend user picker excludes self, but the backend must also enforce this.
+     */
+    public function test_cannot_create_conversation_with_self(): void
+    {
+        Event::fake();
+        $seed = $this->seedLocationAndUsers();
+
+        $response = $this->actingAs($seed['userA'], 'sanctum')
+            ->postJson('/api/conversations', [
+                'user_id' => $seed['userA']->id,
+            ]);
+
+        $response->assertStatus(422);
     }
 
     // ══════════════════════════════════════════════
