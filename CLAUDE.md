@@ -94,6 +94,27 @@ PreShift is a digital pre-shift meeting replacement for restaurants and bars. Ma
 - Test files: include a file-level block comment listing what the tests verify, and a block comment above each `it()` describing what the test checks and why
 - Composables, stores, and utility files: include a block comment at the top describing the module's purpose and exports
 
+## Release Workflow
+
+When the user says "branch, tag, pr, deploy it" (or any subset), follow this exact flow:
+
+1. **Branch** — Create a branch off `main` using the appropriate prefix (`feature/`, `fix/`, `chore/`, `refactor/`)
+2. **Commit** — Stage only the changed files and commit with a clear present-tense message (no AI attribution)
+3. **Tag** — Bump the minor version: check `git tag --sort=-v:refname | head -1` and increment (e.g. `v1.25.0` → `v1.26.0`)
+4. **Push** — Push the branch with `-u` and the tag
+5. **PR** — Create a PR with `gh pr create` using a short title and a summary + test plan body
+6. **Merge** — Merge with `gh pr merge <number> --merge`
+7. **Deploy** — Run `ssh preshift 'cd /var/www/preshift && bash deploy/deploy.sh'`
+8. **Clean up** — Switch to main, pull, delete the local branch. Remote branch is auto-deleted by GitHub merge.
+
+If the user says "reseed production" after deploy:
+```bash
+ssh preshift 'cd /var/www/preshift/api && php artisan migrate:fresh --seed --force'
+ssh preshift 'sudo supervisorctl restart preshift-reverb'
+```
+
+If the user says "clean up" without other context, switch to main, pull, and delete the feature branch locally.
+
 ## Deployment
 
 Production server is accessible via `ssh preshift`. Deploy script lives at `deploy/deploy.sh`.
