@@ -6,46 +6,45 @@
 # install dependencies, run migrations, build the frontend, and
 # restart services.
 #
-# Usage:
-#   ssh root@preshift86.com
-#   cd /var/www/preshift
-#   sudo -u preshift bash deploy/deploy.sh
+# Usage (run as root):
+#   ssh preshift
+#   bash /var/www/preshift/deploy/deploy.sh
 
 set -euo pipefail
 
 APP_DIR="/var/www/preshift"
-PHP_VERSION="8.3"
+PHP_VERSION="8.4"
 
 cd ${APP_DIR}
 
 echo "==> Pulling latest changes..."
-git pull origin main
+sudo -u preshift git pull origin main
 
 # ── Backend ──────────────────────────────────────────────────────────
 echo "==> Installing PHP dependencies..."
 cd ${APP_DIR}/api
-composer install --no-dev --optimize-autoloader --no-interaction
+sudo -u preshift composer install --no-dev --optimize-autoloader --no-interaction
 
 echo "==> Running migrations..."
-php artisan migrate --force
+sudo -u preshift php artisan migrate --force
 
 echo "==> Caching configuration..."
-php artisan config:cache
-php artisan route:cache
-php artisan view:cache
+sudo -u preshift php artisan config:cache
+sudo -u preshift php artisan route:cache
+sudo -u preshift php artisan view:cache
 
 # ── Frontend ─────────────────────────────────────────────────────────
 echo "==> Building frontend..."
 cd ${APP_DIR}/client
-npm ci
-npm run build
+sudo -u preshift npm ci
+sudo -u preshift npm run build
 
 # ── Restart services ─────────────────────────────────────────────────
 echo "==> Restarting services..."
-sudo supervisorctl restart preshift-reverb
-sudo supervisorctl restart preshift-queue
-sudo systemctl reload php${PHP_VERSION}-fpm
-sudo systemctl reload nginx
+supervisorctl restart preshift-reverb
+supervisorctl restart preshift-queue
+systemctl reload php${PHP_VERSION}-fpm
+systemctl reload nginx
 
 echo ""
 echo "Deploy complete."

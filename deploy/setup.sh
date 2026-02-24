@@ -2,7 +2,7 @@
 # deploy/setup.sh
 #
 # Idempotent server provisioning script for PreShift on Ubuntu 24.04 LTS.
-# Installs and configures: Nginx, MySQL, PHP 8.3, Node 20, Composer,
+# Installs and configures: Nginx, MySQL, PHP 8.4, Node 20, Composer,
 # Certbot, Supervisor, and the PreShift application directory.
 #
 # Usage (run as root on a fresh droplet):
