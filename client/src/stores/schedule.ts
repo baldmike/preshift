@@ -27,7 +27,7 @@ export const useScheduleStore = defineStore('schedule', () => {
   const shiftDrops = ref<ShiftDrop[]>([])
   const timeOffRequests = ref<TimeOffRequest[]>([])
   const loading = ref(false)
-  const ackSummaryMap = ref<Record<number, number>>({})
+  const ackSummaryMap = ref<Record<number, { acknowledged: number; total: number; percentage: number }>>({})
 
   // ── Fetch actions ──────────────────────────────────────────────────────
 
@@ -93,13 +93,13 @@ export const useScheduleStore = defineStore('schedule', () => {
     timeOffRequests.value = data
   }
 
-  /** Fetch per-user acknowledgment percentages for the current location. */
+  /** Fetch per-user acknowledgment data for the current location. */
   async function fetchAckSummary() {
     try {
-      const { data } = await api.get<{ total_items: number; users: { user_id: number; percentage: number }[] }>('/api/acknowledgments/summary')
-      const map: Record<number, number> = {}
+      const { data } = await api.get<{ total_items: number; users: { user_id: number; acknowledged_count: number; total_items: number; percentage: number }[] }>('/api/acknowledgments/summary')
+      const map: Record<number, { acknowledged: number; total: number; percentage: number }> = {}
       for (const u of data.users) {
-        map[u.user_id] = u.percentage
+        map[u.user_id] = { acknowledged: u.acknowledged_count, total: u.total_items, percentage: u.percentage }
       }
       ackSummaryMap.value = map
     } catch {
@@ -107,9 +107,9 @@ export const useScheduleStore = defineStore('schedule', () => {
     }
   }
 
-  /** Update a single user's ack percentage (used by Reverb events). */
-  function updateUserAckPercentage(userId: number, percentage: number) {
-    ackSummaryMap.value = { ...ackSummaryMap.value, [userId]: percentage }
+  /** Update a single user's ack data (used by Reverb events). */
+  function updateUserAckPercentage(userId: number, acknowledged: number, total: number, percentage: number) {
+    ackSummaryMap.value = { ...ackSummaryMap.value, [userId]: { acknowledged, total, percentage } }
   }
 
   // ── Realtime mutations ─────────────────────────────────────────────────

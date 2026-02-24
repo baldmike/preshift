@@ -9,6 +9,8 @@
  *
  * Props:
  *   - user: User | null  — the employee to display; null = modal closed
+ *   - ackAcknowledged?: number  — how many pre-shift items the employee has acknowledged
+ *   - ackTotal?: number  — total number of pre-shift items for the location
  *
  * Emits:
  *   - close  — fired when the modal should be dismissed
@@ -22,6 +24,8 @@ import AvailabilityGrid from '@/components/AvailabilityGrid.vue'
 
 const props = defineProps<{
   user: User | null
+  ackAcknowledged?: number
+  ackTotal?: number
 }>()
 
 const emit = defineEmits<{
@@ -89,6 +93,21 @@ function handleMessage() {
           <h2 class="text-lg font-bold text-white truncate">{{ user.name }}</h2>
         </div>
         <BadgePill :label="user.role" :color="roleColor(user.role)" />
+      </div>
+
+      <!-- Ack progress (shown when ack data is provided) -->
+      <div
+        v-if="ackTotal != null && ackAcknowledged != null"
+        class="flex items-center gap-2 rounded-lg px-3 py-2"
+        :class="ackAcknowledged >= ackTotal ? 'bg-emerald-500/10' : 'bg-red-500/10'"
+      >
+        <svg class="w-4 h-4 shrink-0" :class="ackAcknowledged >= ackTotal ? 'text-emerald-400' : 'text-red-400'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span class="text-xs font-medium" :class="ackAcknowledged >= ackTotal ? 'text-emerald-300' : 'text-red-300'">
+          {{ ackAcknowledged }} / {{ ackTotal }} acknowledged
+        </span>
       </div>
 
       <!-- Contact info -->

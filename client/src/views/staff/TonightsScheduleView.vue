@@ -84,7 +84,7 @@ onMounted(async () => {
   if (locationId.value) {
     channel = useLocationChannel(locationId.value)
     channel.listen('.acknowledgment.recorded', (e: any) => {
-      scheduleStore.updateUserAckPercentage(e.user_id, e.percentage)
+      scheduleStore.updateUserAckPercentage(e.user_id, e.acknowledged_count, e.total_items, e.percentage)
     })
   }
 })
@@ -181,12 +181,12 @@ onUnmounted(() => {
                     entry.role === 'bartender'
                       ? 'bg-green-500/15 text-green-300 border border-green-500/20'
                       : 'bg-blue-500/15 text-blue-300 border border-blue-500/20',
-                    canManage && entry.user_id in scheduleStore.ackSummaryMap && scheduleStore.ackSummaryMap[entry.user_id] < 100
+                    canManage && entry.user_id in scheduleStore.ackSummaryMap && scheduleStore.ackSummaryMap[entry.user_id]?.percentage < 100
                       ? 'ring-1 ring-red-500/60'
                       : '',
                     canManage && entry.user ? 'hover:brightness-125 transition-all cursor-pointer' : '',
                   ]"
-                  :title="canManage && entry.user_id in scheduleStore.ackSummaryMap && scheduleStore.ackSummaryMap[entry.user_id] < 100
+                  :title="canManage && entry.user_id in scheduleStore.ackSummaryMap && scheduleStore.ackSummaryMap[entry.user_id]?.percentage < 100
                     ? 'Has not acknowledged all pre-shift items'
                     : undefined"
                   @click="canManage && entry.user ? selectedUser = entry.user : undefined"
@@ -214,6 +214,11 @@ onUnmounted(() => {
 
     </div>
 
-    <EmployeeProfileModal :user="selectedUser" @close="selectedUser = null" />
+    <EmployeeProfileModal
+      :user="selectedUser"
+      :ack-acknowledged="selectedUser ? scheduleStore.ackSummaryMap[selectedUser.id]?.acknowledged : undefined"
+      :ack-total="selectedUser ? scheduleStore.ackSummaryMap[selectedUser.id]?.total : undefined"
+      @close="selectedUser = null"
+    />
   </AppShell>
 </template>
