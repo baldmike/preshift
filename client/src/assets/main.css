@@ -1,1 +1,6 @@
 @import "tailwindcss";
+
+/* Prevent horizontal overflow/bounce on mobile */
+html, body {
+  overflow-x: hidden;
+}

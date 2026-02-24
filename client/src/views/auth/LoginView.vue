@@ -71,7 +71,8 @@ async function handleLogin() {
           </label>
           <input
             v-model="email"
-            type="email"
+            type="text"
+            inputmode="email"
             autocomplete="email"
             placeholder="you@restaurant.com"
             required
