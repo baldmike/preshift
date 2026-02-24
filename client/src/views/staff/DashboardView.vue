@@ -341,7 +341,7 @@ onMounted(async () => {
         scheduleStore.upsertTimeOffRequest(e)
       })
       .listen('.acknowledgment.recorded', (e: any) => {
-        scheduleStore.updateUserAckPercentage(e.user_id, e.percentage)
+        scheduleStore.updateUserAckPercentage(e.user_id, e.acknowledged_count, e.total_items, e.percentage)
       })
   }
 })
@@ -575,12 +575,12 @@ onUnmounted(() => {
                   entry.role === 'bartender'
                     ? 'bg-green-500/15 text-green-400'
                     : 'bg-blue-500/15 text-blue-400',
-                  canManageEvents && entry.user_id in scheduleStore.ackSummaryMap && scheduleStore.ackSummaryMap[entry.user_id] < 100
+                  canManageEvents && entry.user_id in scheduleStore.ackSummaryMap && scheduleStore.ackSummaryMap[entry.user_id]?.percentage < 100
                     ? 'ring-1 ring-red-500/60'
                     : '',
                   canManageEvents && entry.user ? 'hover:brightness-125 transition-all cursor-pointer' : '',
                 ]"
-                :title="canManageEvents && entry.user_id in scheduleStore.ackSummaryMap && scheduleStore.ackSummaryMap[entry.user_id] < 100
+                :title="canManageEvents && entry.user_id in scheduleStore.ackSummaryMap && scheduleStore.ackSummaryMap[entry.user_id]?.percentage < 100
                   ? 'Has not acknowledged all pre-shift items'
                   : undefined"
                 @click="canManageEvents && entry.user ? selectedUser = entry.user : undefined"
@@ -771,7 +771,12 @@ onUnmounted(() => {
       <p class="text-gray-600 text-sm mt-1">Check back before your next shift</p>
     </div>
 
-    <EmployeeProfileModal :user="selectedUser" @close="selectedUser = null" />
+    <EmployeeProfileModal
+      :user="selectedUser"
+      :ack-acknowledged="selectedUser ? scheduleStore.ackSummaryMap[selectedUser.id]?.acknowledged : undefined"
+      :ack-total="selectedUser ? scheduleStore.ackSummaryMap[selectedUser.id]?.total : undefined"
+      @close="selectedUser = null"
+    />
     <TileDetailModal :tileType="activeTile" @close="activeTile = null" />
   </AppShell>
 </template>

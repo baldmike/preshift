@@ -351,7 +351,7 @@ describe('ScheduleGrid.vue', () => {
       props: {
         schedule: mockScheduleWithEntries,
         shiftTemplates: mockTemplates,
-        ackMap: { 3: 40, 4: 100 },
+        ackMap: { 3: { acknowledged: 2, total: 5, percentage: 40 }, 4: { acknowledged: 5, total: 5, percentage: 100 } },
       },
       global: {
         stubs: { BadgePill: BadgePillStub },
@@ -404,7 +404,7 @@ describe('ScheduleGrid.vue', () => {
       props: {
         schedule: mockScheduleWithEntries,
         shiftTemplates: mockTemplates,
-        ackMap: { 3: 100, 4: 100 },
+        ackMap: { 3: { acknowledged: 5, total: 5, percentage: 100 }, 4: { acknowledged: 5, total: 5, percentage: 100 } },
       },
       global: {
         stubs: { BadgePill: BadgePillStub },

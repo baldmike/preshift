@@ -134,7 +134,7 @@ onMounted(() => {
   if (authStore.user?.location_id) {
     channel = useLocationChannel(authStore.user.location_id)
     channel.listen('.acknowledgment.recorded', (e: any) => {
-      store.updateUserAckPercentage(e.user_id, e.percentage)
+      store.updateUserAckPercentage(e.user_id, e.acknowledged_count, e.total_items, e.percentage)
     })
   }
 })
@@ -319,6 +319,11 @@ onUnmounted(() => {
 
     </div>
 
-    <EmployeeProfileModal :user="selectedUser" @close="selectedUser = null" />
+    <EmployeeProfileModal
+      :user="selectedUser"
+      :ack-acknowledged="selectedUser ? store.ackSummaryMap[selectedUser.id]?.acknowledged : undefined"
+      :ack-total="selectedUser ? store.ackSummaryMap[selectedUser.id]?.total : undefined"
+      @close="selectedUser = null"
+    />
   </AppShell>
 </template>
