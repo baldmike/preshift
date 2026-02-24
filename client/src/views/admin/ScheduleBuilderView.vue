@@ -65,6 +65,37 @@ const newWeekStart = ref('')
 // True while the create-schedule request is in-flight
 const creatingWeek = ref(false)
 
+/**
+ * Returns the next Monday (YYYY-MM-DD) that doesn't already have a schedule.
+ * Starts from this week's Monday (or next Monday if today is past Monday),
+ * then walks forward week-by-week skipping any Monday already in the schedule list.
+ */
+const nextAvailableMonday = computed(() => {
+  const today = new Date()
+  const day = today.getDay()
+  // getDay(): 0=Sun, 1=Mon … 6=Sat — calculate offset to next Monday
+  const daysUntilMonday = day === 0 ? 1 : day === 1 ? 0 : 8 - day
+  const monday = new Date(today)
+  monday.setDate(today.getDate() + daysUntilMonday)
+
+  const existingStarts = new Set(
+    schedules.value.map(s => s.week_start.split('T')[0])
+  )
+
+  // Walk forward until we find a Monday without an existing schedule
+  for (let i = 0; i < 52; i++) {
+    const candidate = new Date(monday)
+    candidate.setDate(monday.getDate() + i * 7)
+    const iso = candidate.toISOString().slice(0, 10)
+    if (!existingStarts.has(iso)) return iso
+  }
+
+  // Fallback: 52 weeks out (should never happen)
+  const fallback = new Date(monday)
+  fallback.setDate(monday.getDate() + 52 * 7)
+  return fallback.toISOString().slice(0, 10)
+})
+
 // ── State: add-entry form ────────────────────────────────────────────────────
 
 // Controls visibility of the add-entry modal/inline form
@@ -119,7 +150,7 @@ const roleOrder: Record<string, number> = { admin: 0, manager: 1, bartender: 2, 
 const scheduledUserIdsOnDate = computed<Set<number>>(() => {
   if (!activeSchedule.value?.entries || !entryForm.value.date) return new Set()
   const ids = activeSchedule.value.entries
-    .filter((e: any) => e.date === entryForm.value.date)
+    .filter((e: any) => e.date.split('T')[0] === entryForm.value.date)
     .map((e: any) => e.user_id)
   return new Set(ids)
 })
@@ -389,7 +420,7 @@ async function handleRemoveEntry(entryId: number) {
 const approvedTimeOff = computed(() => {
   if (!activeSchedule.value) return []
   const weekStart = activeSchedule.value.week_start
-  const ws = new Date(weekStart + 'T00:00:00')
+  const ws = new Date(weekStart.split('T')[0] + 'T00:00:00')
   const weekEnd = new Date(ws)
   weekEnd.setDate(ws.getDate() + 6)
   const weekEndStr = weekEnd.toISOString().slice(0, 10)
@@ -487,13 +518,37 @@ function toast(message: string, type: string) {
 
 let ackChannel: ReturnType<typeof useLocationChannel> | null = null
 
-// Fetch all required data on component mount
-onMounted(() => {
-  fetchSchedules()
+// Fetch all required data on component mount, then auto-select the best draft schedule
+onMounted(async () => {
+  await fetchSchedules()
   fetchShiftTemplates()
   fetchUsers()
   fetchTimeOff()
   scheduleStore.fetchAckSummary()
+
+  // Auto-select the next unpublished (draft) schedule closest to the current week
+  if (schedules.value.length) {
+    const today = new Date()
+    const day = today.getDay()
+    const mondayOffset = day === 0 ? -6 : 1 - day
+    const thisMonday = new Date(today)
+    thisMonday.setDate(today.getDate() + mondayOffset)
+    const thisMondayStr = thisMonday.toISOString().slice(0, 10)
+
+    // Prefer upcoming drafts (week_start >= this Monday), sorted ascending
+    const upcomingDraft = schedules.value
+      .filter(s => s.status === 'draft' && s.week_start.split('T')[0] >= thisMondayStr)
+      .sort((a, b) => a.week_start.localeCompare(b.week_start))[0]
+
+    // Fall back to most recent draft if no upcoming drafts
+    const target = upcomingDraft ?? schedules.value
+      .filter(s => s.status === 'draft')
+      .sort((a, b) => b.week_start.localeCompare(a.week_start))[0]
+
+    if (target) {
+      selectSchedule(target.id)
+    }
+  }
 
   if (locationId.value) {
     ackChannel = useLocationChannel(locationId.value)
@@ -540,7 +595,7 @@ onUnmounted(() => {
             <h2 class="text-xs font-bold uppercase tracking-wider text-gray-400">Weeks</h2>
             <button
               class="flex items-center justify-center w-6 h-6 rounded-md bg-white/[0.06] text-gray-400 hover:bg-white/[0.1] hover:text-gray-200 transition-colors"
-              @click="showCreateWeek = !showCreateWeek"
+              @click="showCreateWeek = !showCreateWeek; if (showCreateWeek) newWeekStart = nextAvailableMonday"
               :title="showCreateWeek ? 'Close' : 'Create week'"
             >
               <svg class="w-4 h-4 transition-transform" :class="{ 'rotate-45': showCreateWeek }" fill="none" stroke="currentColor" viewBox="0 0 24 24">

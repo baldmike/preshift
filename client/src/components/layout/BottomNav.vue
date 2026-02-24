@@ -40,10 +40,10 @@ onMounted(() => {
         </router-link>
 
         <router-link
-          to="/my-schedule"
+          :to="(isAdmin || isManager) ? '/manage/schedule' : '/my-schedule'"
           data-tour="bottom-nav-schedule"
           class="flex flex-col items-center gap-0.5 text-xs transition-colors"
-          :class="$route.path === '/my-schedule' ? 'text-amber-400' : 'text-gray-500 hover:text-gray-300'"
+          :class="($route.path === '/my-schedule' || $route.path === '/manage/schedule') ? 'text-amber-400' : 'text-gray-500 hover:text-gray-300'"
         >
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
