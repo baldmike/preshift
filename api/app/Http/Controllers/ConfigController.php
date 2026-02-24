@@ -76,6 +76,8 @@ class ConfigController extends Controller
         $location = Location::create([
             'name' => $validated['location_name'],
             'address' => 'Update in location settings',
+            'city' => $validated['city'] ?? null,
+            'state' => $validated['state'] ?? null,
             'timezone' => 'America/New_York',
         ]);
 

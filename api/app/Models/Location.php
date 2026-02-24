@@ -33,6 +33,8 @@ class Location extends Model
     protected $fillable = [
         'name',      // Display name for the venue
         'address',   // Physical street address
+        'city',      // City name (e.g. "Austin")
+        'state',     // State abbreviation or name (e.g. "TX")
         'timezone',  // IANA timezone — drives all date/time logic scoped to this location
         'latitude',  // GPS latitude for weather lookups
         'longitude', // GPS longitude for weather lookups

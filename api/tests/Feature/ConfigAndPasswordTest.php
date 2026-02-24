@@ -220,6 +220,8 @@ class ConfigAndPasswordTest extends TestCase
                 'name' => 'Jane Smith',
                 'email' => 'jane@example.com',
                 'location_name' => 'The Anchor',
+                'city' => 'Austin',
+                'state' => 'TX',
             ]);
 
         $response->assertStatus(200);
@@ -240,6 +242,8 @@ class ConfigAndPasswordTest extends TestCase
 
         $newLocation = Location::first();
         $this->assertEquals('The Anchor', $newLocation->name);
+        $this->assertEquals('Austin', $newLocation->city);
+        $this->assertEquals('TX', $newLocation->state);
         $this->assertEquals($newLocation->id, $newUser->location_id);
 
         // Settings were set
