@@ -157,7 +157,7 @@ async function changePassword() {
         <!-- Left: establishment + date/time -->
         <div class="min-w-0 flex-1">
           <h1 class="text-sm sm:text-xl font-bold tracking-tight truncate">
-            {{ establishment }}
+            <span class="text-green-400">Pre</span><span class="text-yellow-400">Shift</span><span class="text-red-400">86</span>
           </h1>
           <p v-if="cityState" class="text-[10px] sm:text-xs text-gray-500 -mt-0.5">{{ cityState }}</p>
           <div class="flex flex-wrap items-center gap-x-1.5 sm:gap-x-2 text-[11px] sm:text-sm text-gray-400 mt-0.5">

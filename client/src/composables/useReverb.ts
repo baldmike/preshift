@@ -73,7 +73,7 @@ export function useReverb(locationId: number): Echo<'pusher'> {
     disableStats: true,                                                 // Do not send stats to Pusher
     cluster: 'mt1',                                                     // Required by Pusher SDK but unused by Reverb
     enabledTransports: ['ws', 'wss'],                                   // Allow both ws and wss transports
-    authEndpoint: '/broadcasting/auth',                                 // Laravel endpoint that authorises private channel subscriptions
+    authEndpoint: '/api/broadcasting/auth',                              // Laravel endpoint that authorises private channel subscriptions (via Sanctum)
     auth: {
       headers: {
         Authorization: `Bearer ${token}`,                               // Attach the JWT for channel auth
