@@ -149,6 +149,16 @@ class DatabaseSeeder extends Seeder
             'phone'         => '(420) 247-8309',
         ]);
 
+        User::create([
+            'name'          => 'Dean DeRenzis',
+            'email'         => 'deano@preshift.test',
+            'password'      => Hash::make('baldsnutz'),
+            'role'          => 'admin',
+            'location_id'   => $location->id,
+            'is_superadmin' => true,
+            'phone'         => '(888) 123-4567',
+        ]);
+
         // ── Managers ──
         $manager = User::create([
             'name'        => 'Lisa Mercury',
