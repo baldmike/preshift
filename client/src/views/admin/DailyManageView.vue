@@ -331,7 +331,7 @@ onMounted(() => {
 <template>
   <AppShell>
     <!-- Page header -->
-    <div class="flex items-center justify-between mb-3">
+    <div data-tour="manage-header" class="flex items-center justify-between mb-3">
       <div>
         <h1 class="text-xl font-bold text-white tracking-tight">Daily Management</h1>
         <p class="text-xs text-gray-500 mt-0.5">Manage today's pre-shift content</p>
@@ -348,7 +348,7 @@ onMounted(() => {
     </div>
 
     <!-- Quick-nav to other management pages -->
-    <div class="grid grid-cols-3 gap-1.5 sm:gap-2 mb-4">
+    <div data-tour="manage-nav-grid" class="grid grid-cols-3 gap-1.5 sm:gap-2 mb-4">
       <router-link
         to="/manage/86"
         class="inline-flex items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-md text-[10px] sm:text-[11px] font-semibold bg-white/[0.06] text-gray-400 hover:bg-white/[0.1] hover:text-white transition-colors"
@@ -378,6 +378,7 @@ onMounted(() => {
       </router-link>
       <router-link
         to="/manage/schedule"
+        data-tour="manage-schedule-link"
         class="inline-flex items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-md text-[10px] sm:text-[11px] font-semibold bg-white/[0.06] text-gray-400 hover:bg-white/[0.1] hover:text-white transition-colors"
       >
         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -436,7 +437,7 @@ onMounted(() => {
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
       <!-- ════════════════ 86'd Items ════════════════ -->
-      <section class="dm-section dm-section--red">
+      <section data-tour="manage-86-section" class="dm-section dm-section--red">
         <header class="dm-header">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

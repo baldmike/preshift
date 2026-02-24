@@ -27,6 +27,7 @@ onMounted(() => {
     <div class="flex items-center justify-around h-14 max-w-lg mx-auto">
       <router-link
         to="/dashboard"
+        data-tour="bottom-nav-dashboard"
         class="flex flex-col items-center gap-0.5 text-xs transition-colors"
         :class="$route.path === '/dashboard' ? 'text-amber-400' : 'text-gray-500 hover:text-gray-300'"
       >
@@ -39,6 +40,7 @@ onMounted(() => {
 
       <router-link
         to="/my-schedule"
+        data-tour="bottom-nav-schedule"
         class="flex flex-col items-center gap-0.5 text-xs transition-colors"
         :class="$route.path === '/my-schedule' ? 'text-amber-400' : 'text-gray-500 hover:text-gray-300'"
       >
@@ -51,6 +53,7 @@ onMounted(() => {
 
       <router-link
         to="/messages"
+        data-tour="bottom-nav-messages"
         class="flex flex-col items-center gap-0.5 text-xs transition-colors relative"
         :class="$route.path === '/messages' ? 'text-amber-400' : 'text-gray-500 hover:text-gray-300'"
       >
@@ -72,6 +75,7 @@ onMounted(() => {
       <router-link
         v-if="isAdmin || isManager"
         to="/manage/daily"
+        data-tour="bottom-nav-manage"
         class="flex flex-col items-center gap-0.5 text-xs transition-colors"
         :class="$route.path.startsWith('/manage') ? 'text-amber-400' : 'text-gray-500 hover:text-gray-300'"
       >

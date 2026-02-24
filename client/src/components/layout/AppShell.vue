@@ -13,15 +13,21 @@ import { onMounted } from 'vue'
 import TopBar from './TopBar.vue'
 import BottomNav from './BottomNav.vue'
 import ToastContainer from '@/components/ui/ToastContainer.vue'
+import AppTour from '@/components/AppTour.vue'
 import { useAuth } from '@/composables/useAuth'
 import { useReverb } from '@/composables/useReverb'
+import { useOnboarding } from '@/composables/useOnboarding'
 
 const { user } = useAuth()
+const { checkAndStart } = useOnboarding()
 
 onMounted(() => {
   if (user.value?.location_id) {
     useReverb(user.value.location_id)
   }
+
+  /* Delay tour check to let the page finish rendering */
+  setTimeout(() => checkAndStart(), 1000)
 })
 </script>
 
@@ -34,5 +40,6 @@ onMounted(() => {
     <!-- Copyright moved into BottomNav for persistent visibility -->
     <BottomNav />
     <ToastContainer />
+    <AppTour />
   </div>
 </template>
