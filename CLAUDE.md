@@ -4,6 +4,8 @@
 
 PreShift is a digital pre-shift meeting replacement for restaurants and bars. Managers post daily operational updates (86'd items, specials, push items, announcements) and staff check in before their shift to see everything they need. Includes a full scheduling system with shift drops and time-off requests.
 
+**Live at:** https://preshift86.com
+
 ## Tech Stack
 
 - **Frontend:** Vue 3 SPA (Vite + Vue Router + Pinia + Tailwind CSS)
@@ -11,7 +13,7 @@ PreShift is a digital pre-shift meeting replacement for restaurants and bars. Ma
 - **Database:** MySQL
 - **Auth:** Laravel Sanctum (token-based SPA authentication)
 - **Realtime:** Laravel Reverb (WebSockets)
-- **Deployment:** Laravel Cloud (Starter plan)
+- **Deployment:** DigitalOcean (Ubuntu 24.04, Nginx, Supervisor)
 
 ## Project Structure
 

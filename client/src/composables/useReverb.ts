@@ -83,6 +83,8 @@ export function useReverb(locationId: number): Echo<'pusher'> {
 
   // Cache the instance so subsequent calls reuse it
   echoInstances[locationId] = echo
+  // Expose on window so RealtimeIndicator can check connection state
+  window.Echo = echo
   return echo
 }
 
