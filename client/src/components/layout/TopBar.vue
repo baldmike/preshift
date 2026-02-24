@@ -15,9 +15,31 @@ import api from '@/composables/useApi'
 import RealtimeIndicator from '@/components/RealtimeIndicator.vue'
 import NotificationBell from '@/components/layout/NotificationBell.vue'
 
-const { user, isAdmin, isManager } = useAuth()
+const { user, isAdmin, isManager, locations, hasMultipleLocations } = useAuth()
 const authStore = useAuthStore()
 const router = useRouter()
+
+/** Other locations the user can switch to (excludes the current active one). */
+const otherLocations = computed(() =>
+  authStore.locations.filter(loc => loc.id !== user.value?.location_id)
+)
+
+const switchingTo = ref<number | null>(null)
+
+async function handleSwitchLocation(locationId: number) {
+  switchingTo.value = locationId
+  menuOpen.value = false
+  try {
+    await authStore.switchLocation(locationId)
+    // Force a full page reload to re-initialize all stores and Reverb
+    window.location.reload()
+  } catch {
+    window.dispatchEvent(new CustomEvent('toast', {
+      detail: { message: 'Failed to switch location.', type: 'error' }
+    }))
+    switchingTo.value = null
+  }
+}
 
 const now = ref(new Date())
 let timer: ReturnType<typeof setInterval>
@@ -224,6 +246,35 @@ async function changePassword() {
                     </svg>
                     My Profile
                   </router-link>
+
+                  <!-- Location switcher (multi-location users only) -->
+                  <template v-if="hasMultipleLocations && otherLocations.length > 0">
+                    <div class="border-t border-gray-700 px-4 py-2">
+                      <p class="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Switch Location</p>
+                    </div>
+                    <button
+                      v-for="loc in otherLocations"
+                      :key="loc.id"
+                      @click="handleSwitchLocation(loc.id)"
+                      :disabled="switchingTo !== null"
+                      class="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-700
+                             hover:text-white transition-colors flex items-center justify-between gap-2
+                             disabled:opacity-50"
+                    >
+                      <span class="truncate">{{ loc.name }}</span>
+                      <span
+                        class="text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded-full border flex-shrink-0"
+                        :class="{
+                          'bg-purple-500/20 text-purple-400 border-purple-500/30': loc.role === 'admin',
+                          'bg-blue-500/20 text-blue-400 border-blue-500/30': loc.role === 'manager',
+                          'bg-green-500/20 text-green-400 border-green-500/30': loc.role === 'server',
+                          'bg-amber-500/20 text-amber-400 border-amber-500/30': loc.role === 'bartender',
+                        }"
+                      >
+                        {{ loc.role }}
+                      </span>
+                    </button>
+                  </template>
 
                   <!-- Change Password toggle -->
                   <button

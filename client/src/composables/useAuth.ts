@@ -22,12 +22,15 @@ import { useAuthStore } from '@/stores/auth'
  * Provides reactive, read-only access to the current authentication state.
  *
  * @returns An object of computed refs:
- *  - `user`       : The currently authenticated User object, or null
- *  - `isLoggedIn` : Whether the user is fully authenticated (token + user loaded)
- *  - `isAdmin`    : Whether the current user has the 'admin' role
- *  - `isManager`  : Whether the current user has the 'manager' role
- *  - `isStaff`    : Whether the current user is front-of-house ('server' or 'bartender')
- *  - `locationId` : The location_id of the current user, or null
+ *  - `user`                 : The currently authenticated User object, or null
+ *  - `isLoggedIn`           : Whether the user is fully authenticated (token + user loaded)
+ *  - `isAdmin`              : Whether the current user has the 'admin' role
+ *  - `isManager`            : Whether the current user has the 'manager' role
+ *  - `isStaff`              : Whether the current user is front-of-house ('server' or 'bartender')
+ *  - `locationId`           : The location_id of the current user, or null
+ *  - `locations`            : All establishments the user belongs to
+ *  - `hasMultipleLocations` : Whether the user belongs to more than one establishment
+ *  - `needsSetup`           : Whether the user needs the initial establishment setup flow
  */
 export function useAuth() {
   const store = useAuthStore()
@@ -40,6 +43,9 @@ export function useAuth() {
   const isStaff = computed(() => store.isStaff)
   const isSuperAdmin = computed(() => store.isSuperAdmin)
   const locationId = computed(() => store.locationId)
+  const locations = computed(() => store.locations)
+  const hasMultipleLocations = computed(() => store.hasMultipleLocations)
+  const needsSetup = computed(() => store.needsSetup)
 
   return {
     user,
@@ -49,5 +55,8 @@ export function useAuth() {
     isStaff,
     isSuperAdmin,
     locationId,
+    locations,
+    hasMultipleLocations,
+    needsSetup,
   }
 }

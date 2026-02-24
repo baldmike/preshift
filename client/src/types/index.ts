@@ -36,6 +36,20 @@ export interface Location {
 }
 
 /**
+ * Lightweight representation of a user's membership at one location.
+ * Returned by the login and user endpoints alongside the full User object
+ * to power the location picker and switcher UI.
+ */
+export interface LocationMembership {
+  /** Location primary key */
+  id: number
+  /** Human-readable venue name */
+  name: string
+  /** The user's role at this specific location */
+  role: 'admin' | 'manager' | 'server' | 'bartender'
+}
+
+/**
  * Represents an authenticated user (staff member or manager).
  * The `role` field drives permission checks throughout the frontend
  * (route guards, UI visibility, etc.).

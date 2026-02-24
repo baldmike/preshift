@@ -1,41 +1,41 @@
 <script setup lang="ts">
 /**
- * LoginView.vue
+ * SetupView.vue
  *
- * Full-screen authentication page with email and password fields. On
- * successful login, redirects admins and managers to the daily management
- * view and regular staff to the dashboard. Displays an error banner for
- * invalid credentials and includes a loading spinner during submission.
+ * Initial setup flow for new admin users who have no establishment yet.
+ * Presents a simple form to create their first establishment (name, city,
+ * state). On submit, calls POST /api/setup which creates the location,
+ * assigns the admin, and sets their active context. Redirects to the
+ * management dashboard on success.
  */
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import api from '@/composables/useApi'
 
 const router = useRouter()
 const authStore = useAuthStore()
 
-const email = ref('')
-const password = ref('')
+const name = ref('')
+const city = ref('')
+const state = ref('')
 const error = ref('')
 const loading = ref(false)
 
-async function handleLogin() {
+async function handleSetup() {
   error.value = ''
   loading.value = true
   try {
-    await authStore.login(email.value, password.value)
-
-    // Route based on multi-location state
-    if (authStore.needsSetup) {
-      router.push('/setup')
-    } else if (authStore.hasMultipleLocations) {
-      router.push('/pick-location')
-    } else {
-      const role = authStore.user?.role
-      router.push(role === 'admin' || role === 'manager' ? '/manage/daily' : '/dashboard')
-    }
+    const { data } = await api.post('/api/setup', {
+      name: name.value,
+      city: city.value,
+      state: state.value,
+    })
+    authStore.user = data.user
+    authStore.locations = data.locations ?? []
+    router.push('/manage/daily')
   } catch (e: any) {
-    error.value = e.response?.data?.message || 'Invalid credentials. Please try again.'
+    error.value = e.response?.data?.message || 'Failed to create establishment.'
   } finally {
     loading.value = false
   }
@@ -53,17 +53,17 @@ async function handleLogin() {
       <div class="text-center mb-10">
         <div class="inline-flex items-center gap-3 mb-3">
           <span class="h-px w-8 bg-amber-500/60"></span>
-          <span class="text-amber-400 text-xs font-semibold tracking-[0.3em] uppercase">Staff Portal</span>
+          <span class="text-amber-400 text-xs font-semibold tracking-[0.3em] uppercase">Get Started</span>
           <span class="h-px w-8 bg-amber-500/60"></span>
         </div>
         <h1 class="text-4xl sm:text-5xl font-bold text-white tracking-tight">
           <span class="text-green-400">Pre</span><span class="text-yellow-400">Shift</span><span class="text-red-400">86</span>
         </h1>
-        <p class="text-gray-500 text-sm mt-2">Sign in to start your shift</p>
+        <p class="text-gray-500 text-sm mt-2">Create your first establishment</p>
       </div>
 
-      <!-- Login form -->
-      <form @submit.prevent="handleLogin" class="space-y-5">
+      <!-- Setup form -->
+      <form @submit.prevent="handleSetup" class="space-y-5">
         <!-- Error banner -->
         <div
           v-if="error"
@@ -72,34 +72,45 @@ async function handleLogin() {
           {{ error }}
         </div>
 
-        <!-- Email -->
+        <!-- Establishment Name -->
         <div>
           <label class="block text-xs font-medium text-gray-400 uppercase tracking-wider mb-2">
-            Email
+            Establishment Name
           </label>
           <input
-            v-model="email"
+            v-model="name"
             type="text"
-            inputmode="email"
-            autocomplete="email"
-            placeholder="you@restaurant.com"
+            placeholder="e.g. Downtown Taproom"
             required
-            class="login-input"
+            class="setup-input"
           />
         </div>
 
-        <!-- Password -->
+        <!-- City -->
         <div>
           <label class="block text-xs font-medium text-gray-400 uppercase tracking-wider mb-2">
-            Password
+            City
           </label>
           <input
-            v-model="password"
-            type="password"
-            autocomplete="current-password"
-            placeholder="Enter your password"
+            v-model="city"
+            type="text"
+            placeholder="e.g. Chicago"
             required
-            class="login-input"
+            class="setup-input"
+          />
+        </div>
+
+        <!-- State -->
+        <div>
+          <label class="block text-xs font-medium text-gray-400 uppercase tracking-wider mb-2">
+            State
+          </label>
+          <input
+            v-model="state"
+            type="text"
+            placeholder="e.g. IL"
+            required
+            class="setup-input"
           />
         </div>
 
@@ -118,9 +129,9 @@ async function handleLogin() {
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
               <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
-            Signing In...
+            Creating...
           </span>
-          <span v-else>Sign In</span>
+          <span v-else>Create Establishment</span>
         </button>
       </form>
 
@@ -167,7 +178,7 @@ async function handleLogin() {
   left: -10%;
 }
 
-.login-input {
+.setup-input {
   display: block;
   width: 100%;
   padding: 0.75rem 1rem;
@@ -180,11 +191,11 @@ async function handleLogin() {
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-.login-input::placeholder {
+.setup-input::placeholder {
   color: #4b5563;
 }
 
-.login-input:focus {
+.setup-input:focus {
   border-color: #f59e0b;
   box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
 }

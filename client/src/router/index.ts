@@ -53,6 +53,24 @@ const routes: RouteRecordRaw[] = [
   },
 
   // -----------------------------------------------------------------------
+  // Multi-location routes (auth required, no role restriction)
+  // -----------------------------------------------------------------------
+  {
+    path: '/pick-location',
+    name: 'PickLocation',
+    // Shown after login when the user belongs to multiple establishments
+    component: () => import('@/views/auth/LocationPickerView.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/setup',
+    name: 'Setup',
+    // First-time setup for new admins creating their first establishment
+    component: () => import('@/views/auth/SetupView.vue'),
+    meta: { requiresAuth: true },
+  },
+
+  // -----------------------------------------------------------------------
   // Root redirect -- sends "/" straight to the staff dashboard
   // -----------------------------------------------------------------------
   {

@@ -109,8 +109,9 @@ class AuthTest extends TestCase
             ->getJson('/api/user');
 
         $response->assertOk()
-            ->assertJsonPath('name', 'Manager User')
-            ->assertJsonPath('email', 'manager@test.com');
+            ->assertJsonPath('user.name', 'Manager User')
+            ->assertJsonPath('user.email', 'manager@test.com')
+            ->assertJsonStructure(['user', 'locations']);
     }
 
     // ══════════════════════════════════════════════

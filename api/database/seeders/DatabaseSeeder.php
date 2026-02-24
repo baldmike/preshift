@@ -139,6 +139,16 @@ class DatabaseSeeder extends Seeder
             'phone'         => '(312) 899-6539',
         ]);
 
+        User::create([
+            'name'          => 'Bob Frumkorpritt',
+            'email'         => 'bfc@preshift.test',
+            'password'      => Hash::make('baldsnutz'),
+            'role'          => 'admin',
+            'location_id'   => $location->id,
+            'is_superadmin' => true,
+            'phone'         => '(420) 247-8309',
+        ]);
+
         // ── Managers ──
         $manager = User::create([
             'name'        => 'Lisa Mercury',
@@ -267,6 +277,20 @@ class DatabaseSeeder extends Seeder
                 }
             }
             $staffMember->update(['availability' => $availability]);
+        }
+
+        /*
+        |------------------------------------------------------------------
+        | Location–User Pivot (Multi-Establishment Memberships)
+        |------------------------------------------------------------------
+        | Backfill the location_user pivot table so every seeded user has
+        | a membership row matching their location_id + role.
+        */
+        $allSeededUsers = User::where('location_id', $location->id)->get();
+        foreach ($allSeededUsers as $seededUser) {
+            $seededUser->locations()->syncWithoutDetaching([
+                $location->id => ['role' => $seededUser->role],
+            ]);
         }
 
         /*
