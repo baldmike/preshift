@@ -1,6 +1,6 @@
 # Dependencies
+node_modules/
 api/vendor/
-client/node_modules/
 
 # Environment files
 api/.env
