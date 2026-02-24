@@ -350,7 +350,7 @@ onMounted(fetchUsers)
         </svg>
       </div>
 
-      <div v-else class="bg-gray-800 rounded-lg shadow overflow-hidden">
+      <div v-else class="bg-gray-800 rounded-lg shadow overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-700">
           <thead class="bg-gray-800/50">
             <tr>
