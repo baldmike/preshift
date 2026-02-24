@@ -94,6 +94,21 @@ PreShift is a digital pre-shift meeting replacement for restaurants and bars. Ma
 - Test files: include a file-level block comment listing what the tests verify, and a block comment above each `it()` describing what the test checks and why
 - Composables, stores, and utility files: include a block comment at the top describing the module's purpose and exports
 
+## Deployment
+
+Production server is accessible via `ssh preshift`. Deploy script lives at `deploy/deploy.sh`.
+
+```bash
+# Standard deploy (pull, install, migrate, build, restart services):
+ssh preshift 'cd /var/www/preshift && bash deploy/deploy.sh'
+
+# Full reseed (wipes all data — use only when seeder changes need deploying):
+ssh preshift 'cd /var/www/preshift/api && php artisan migrate:fresh --seed --force'
+
+# Restart Reverb after reseed (cache table gets dropped):
+ssh preshift 'sudo supervisorctl restart preshift-reverb'
+```
+
 ## Do NOT
 
 - Do not install packages without being asked
