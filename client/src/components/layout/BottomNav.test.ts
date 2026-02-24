@@ -52,6 +52,7 @@ describe('BottomNav', () => {
       global: {
         stubs: {
           'router-link': routerLinkStub,
+          Teleport: true,
         },
         mocks: {
           $route: { path: '/dashboard' },
