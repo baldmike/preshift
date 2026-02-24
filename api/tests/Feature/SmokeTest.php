@@ -116,8 +116,9 @@ class SmokeTest extends TestCase
             ->getJson('/api/user');
 
         $response->assertOk()
-            ->assertJsonPath('email', 'manager@test.com')
-            ->assertJsonPath('name', 'Manager User');
+            ->assertJsonPath('user.email', 'manager@test.com')
+            ->assertJsonPath('user.name', 'Manager User')
+            ->assertJsonStructure(['user', 'locations']);
     }
 
     // ══════════════════════════════════════════════

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Http;
 
@@ -66,6 +67,19 @@ class Location extends Model
     public function users(): HasMany
     {
         return $this->hasMany(User::class);
+    }
+
+    /**
+     * All users who are members of this location via the pivot table.
+     * Each membership includes the user's role at this specific location.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany<User>
+     */
+    public function members(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'location_user')
+            ->withPivot('role')
+            ->withTimestamps();
     }
 
     /**

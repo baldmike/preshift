@@ -39,8 +39,13 @@ class AuthController extends Controller
         $token = $user->createToken('auth-token')->plainTextToken;
 
         return response()->json([
-            'user' => new UserResource($user),
-            'token' => $token,
+            'user'      => new UserResource($user->load('location')),
+            'token'     => $token,
+            'locations' => $user->locations()->get()->map(fn ($loc) => [
+                'id'   => $loc->id,
+                'name' => $loc->name,
+                'role' => $loc->pivot->role,
+            ]),
         ]);
     }
 
@@ -96,13 +101,23 @@ class AuthController extends Controller
     }
 
     /**
-     * Return the currently authenticated user's profile with their location.
+     * Return the currently authenticated user's profile with their location
+     * and all establishment memberships.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse  The authenticated user with their location relationship.
+     * @return \Illuminate\Http\JsonResponse  The authenticated user with location and membership list.
      */
     public function user(Request $request): JsonResponse
     {
-        return response()->json(new UserResource($request->user()->load('location')));
+        $user = $request->user()->load('location');
+
+        return response()->json([
+            'user'      => new UserResource($user),
+            'locations' => $user->locations()->get()->map(fn ($loc) => [
+                'id'   => $loc->id,
+                'name' => $loc->name,
+                'role' => $loc->pivot->role,
+            ]),
+        ]);
     }
 }

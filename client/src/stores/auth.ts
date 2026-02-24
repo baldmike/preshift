@@ -6,29 +6,32 @@
  * and actions.
  *
  * State shape:
- *  - `user`  : The currently authenticated User object, or null if not logged in.
- *  - `token` : The Bearer token string used for API authentication.
- *              Initialised from localStorage so that sessions survive page reloads.
+ *  - `user`      : The currently authenticated User object, or null if not logged in.
+ *  - `token`     : The Bearer token string used for API authentication.
+ *                  Initialised from localStorage so that sessions survive page reloads.
+ *  - `locations` : Array of LocationMembership objects — all establishments the user
+ *                  belongs to, each with a role. Populated on login and fetchUser.
  *
  * Getters (computed):
- *  - `isLoggedIn` : True only when both a token AND a user object exist.
- *  - `isAdmin`    : True if the user's role is 'admin'.
- *  - `isManager`  : True if the user's role is 'manager'.
- *  - `isStaff`    : True if the user's role is 'server' or 'bartender'.
- *  - `locationId` : The user's location_id, or null if not logged in.
+ *  - `isLoggedIn`           : True only when both a token AND a user object exist.
+ *  - `isAdmin`              : True if the user's role is 'admin'.
+ *  - `isManager`            : True if the user's role is 'manager'.
+ *  - `isStaff`              : True if the user's role is 'server' or 'bartender'.
+ *  - `locationId`           : The user's location_id, or null if not logged in.
+ *  - `hasMultipleLocations` : True if the user belongs to more than one establishment.
+ *  - `needsSetup`           : True if the user is an admin with zero location memberships.
  *
  * Actions:
- *  - `login(email, password)` : Authenticates with the API and persists the token.
- *  - `logout()`               : Invalidates the session server-side and clears local state.
- *  - `fetchUser()`            : Fetches the current user profile from the API (used to
- *                               rehydrate `user` after a page reload when only the token
- *                               exists in localStorage).
+ *  - `login(email, password)`    : Authenticates with the API and persists the token.
+ *  - `logout()`                  : Invalidates the session server-side and clears local state.
+ *  - `fetchUser()`               : Fetches the current user profile from the API.
+ *  - `switchLocation(locationId)`: Switches the user's active establishment.
  */
 
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import api from '@/composables/useApi'
-import type { User } from '@/types'
+import type { User, LocationMembership } from '@/types'
 
 export const useAuthStore = defineStore('auth', () => {
   // -------------------------------------------------------------------------
@@ -44,6 +47,9 @@ export const useAuthStore = defineStore('auth', () => {
    * Kept in sync with localStorage by the login/logout actions.
    */
   const token = ref<string | null>(localStorage.getItem('preshift_token'))
+
+  /** All establishments the user belongs to, with their role at each. */
+  const locations = ref<LocationMembership[]>([])
 
   // -------------------------------------------------------------------------
   // Getters (computed properties)
@@ -69,6 +75,14 @@ export const useAuthStore = defineStore('auth', () => {
   /** Shortcut to the user's location_id; null if no user is loaded. */
   const locationId = computed(() => user.value?.location_id ?? null)
 
+  /** True if the user belongs to more than one establishment. */
+  const hasMultipleLocations = computed(() => locations.value.length > 1)
+
+  /** True if the user is an admin with no location memberships (first-time setup). */
+  const needsSetup = computed(
+    () => user.value?.role === 'admin' && locations.value.length === 0
+  )
+
   // -------------------------------------------------------------------------
   // Actions
   // -------------------------------------------------------------------------
@@ -90,6 +104,7 @@ export const useAuthStore = defineStore('auth', () => {
     const { data } = await api.post('/api/login', { email, password })
     token.value = data.token
     user.value = data.user
+    locations.value = data.locations ?? []
     // Persist the token so the session survives browser refreshes
     localStorage.setItem('preshift_token', data.token)
   }
@@ -113,13 +128,14 @@ export const useAuthStore = defineStore('auth', () => {
     // Clear all local auth state
     token.value = null
     user.value = null
+    locations.value = []
     localStorage.removeItem('preshift_token')
   }
 
   /**
    * Fetches the currently authenticated user's profile from `GET /api/user`.
    *
-   * Expected API response: a User object (directly, not wrapped).
+   * Expected API response: `{ user: User, locations: LocationMembership[] }`
    *
    * This is called by the router navigation guard when a token exists in
    * localStorage but `user` is still null (e.g. after a page reload).
@@ -128,7 +144,20 @@ export const useAuthStore = defineStore('auth', () => {
    */
   async function fetchUser() {
     const { data } = await api.get('/api/user')
-    user.value = data
+    user.value = data.user
+    locations.value = data.locations ?? []
+  }
+
+  /**
+   * Switches the user's active establishment by calling `POST /api/switch-location`.
+   * Updates both the user profile and the locations list from the response.
+   *
+   * @param locationId - The ID of the location to switch to
+   */
+  async function switchLocation(locationId: number) {
+    const { data } = await api.post('/api/switch-location', { location_id: locationId })
+    user.value = data.user
+    locations.value = data.locations ?? []
   }
 
   // -------------------------------------------------------------------------
@@ -137,14 +166,18 @@ export const useAuthStore = defineStore('auth', () => {
   return {
     user,
     token,
+    locations,
     isLoggedIn,
     isAdmin,
     isManager,
     isStaff,
     isSuperAdmin,
     locationId,
+    hasMultipleLocations,
+    needsSetup,
     login,
     logout,
     fetchUser,
+    switchLocation,
   }
 })

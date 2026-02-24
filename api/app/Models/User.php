@@ -88,14 +88,28 @@ class User extends Authenticatable
     // ── Relationships ──
 
     /**
-     * The venue this user is assigned to.
-     * Every non-admin user works at exactly one location.
+     * The venue this user is currently working in (active context).
+     * Updated when the user switches establishments via switchLocation().
      *
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo<Location, User>
      */
     public function location(): BelongsTo
     {
         return $this->belongsTo(Location::class);
+    }
+
+    /**
+     * All establishments this user is a member of.
+     * The pivot `role` column stores the user's role at each location,
+     * allowing a person to be a manager at one place and a server at another.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany<Location>
+     */
+    public function locations(): BelongsToMany
+    {
+        return $this->belongsToMany(Location::class, 'location_user')
+            ->withPivot('role')
+            ->withTimestamps();
     }
 
     /**
@@ -189,6 +203,36 @@ class User extends Authenticatable
     public function hasRole(string $role): bool
     {
         return in_array($role, $this->getEffectiveRoles());
+    }
+
+    // ── Multi-Location ──
+
+    /**
+     * Switch the user's active context to a different establishment.
+     * Looks up the user's membership in the pivot table and updates
+     * location_id and role to match that establishment.
+     *
+     * @param  \App\Models\Location  $location  The location to switch to
+     * @return void
+     * @throws \Illuminate\Database\Eloquent\ModelNotFoundException  If the user has no membership at the given location
+     */
+    public function switchLocation(Location $location): void
+    {
+        $membership = $this->locations()->where('location_id', $location->id)->firstOrFail();
+
+        $this->location_id = $location->id;
+        $this->role = $membership->pivot->role;
+        $this->save();
+    }
+
+    /**
+     * Check whether this user needs the initial setup flow.
+     * Returns true if the user is an admin with no location memberships,
+     * meaning they have never created or been assigned to an establishment.
+     */
+    public function needsSetup(): bool
+    {
+        return $this->role === 'admin' && $this->locations()->count() === 0;
     }
 
     // ── Scopes ──

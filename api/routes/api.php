@@ -45,6 +45,8 @@ use App\Http\Controllers\BoardMessageController;
 use App\Http\Controllers\ConversationController;
 use App\Http\Controllers\DirectMessageController;
 use App\Http\Controllers\ManagerLogController;
+use App\Http\Controllers\SwitchLocationController;
+use App\Http\Controllers\SetupController;
 
 /*
 |--------------------------------------------------------------------------
@@ -114,6 +116,20 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/config/settings', [ConfigController::class, 'updateSettings'])->middleware('superadmin');
     Route::post('/config/initial-setup', [ConfigController::class, 'initialSetup'])->middleware('superadmin');
     Route::post('/config/reset', [ConfigController::class, 'fullReset'])->middleware('superadmin');
+
+    /*
+    |----------------------------------------------------------------------
+    | Multi-Location Routes (auth:sanctum, NO location middleware)
+    |----------------------------------------------------------------------
+    | These endpoints manage the user's active establishment context.
+    | They live outside the `location` middleware group because they
+    | modify which location the user is working in.
+    |
+    | POST /api/switch-location  -- Switch the user's active establishment.
+    | POST /api/setup            -- Create a new admin's first establishment.
+    */
+    Route::post('/switch-location', [SwitchLocationController::class, 'switch']);
+    Route::post('/setup', [SetupController::class, 'store']);
 
     /*
     |----------------------------------------------------------------------

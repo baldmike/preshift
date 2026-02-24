@@ -9,16 +9,16 @@
  * Initializes the Echo/Reverb WebSocket connection on mount so the
  * RealtimeIndicator in the TopBar can reflect connection state immediately.
  */
-import { onMounted } from 'vue'
+import { onMounted, watch } from 'vue'
 import TopBar from './TopBar.vue'
 import BottomNav from './BottomNav.vue'
 import ToastContainer from '@/components/ui/ToastContainer.vue'
 import AppTour from '@/components/AppTour.vue'
 import { useAuth } from '@/composables/useAuth'
-import { useReverb } from '@/composables/useReverb'
+import { useReverb, disconnectReverb } from '@/composables/useReverb'
 import { useOnboarding } from '@/composables/useOnboarding'
 
-const { user } = useAuth()
+const { user, locationId } = useAuth()
 const { checkAndStart } = useOnboarding()
 
 onMounted(() => {
@@ -28,6 +28,18 @@ onMounted(() => {
 
   /* Delay tour check to let the page finish rendering */
   setTimeout(() => checkAndStart(), 1000)
+})
+
+/**
+ * Re-initialize the Reverb WebSocket connection when the user's active
+ * location changes (e.g. after switching establishments). Disconnects
+ * the old channel and subscribes to the new location's private channel.
+ */
+watch(locationId, (newId, oldId) => {
+  if (newId && newId !== oldId) {
+    disconnectReverb()
+    useReverb(newId)
+  }
 })
 </script>
 
