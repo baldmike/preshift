@@ -564,7 +564,7 @@ function cancelAction() {
     <Teleport to="body">
       <div
         v-if="showConfirmDialog"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
+        class="fixed inset-0 z-[60] flex items-center justify-center bg-black/70"
         @click.self="onConfirmNo"
       >
         <div class="bg-gray-900 border border-gray-700 rounded-xl p-6 max-w-sm mx-4 space-y-4 shadow-2xl">
