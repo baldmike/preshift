@@ -125,8 +125,9 @@ async function handleLogin() {
       </form>
 
       <!-- Footer -->
-      <p class="text-center text-gray-600 text-xs mt-8">
-        &copy; <span class="text-gray-500">BALDMIKE</span>
+      <p class="text-center text-gray-600 text-xs mt-8 leading-relaxed">
+        This is a secret underground version. Please do not share.<br />
+        Everything you see is &copy; <span class="text-gray-500">BALDMIKE</span>.
       </p>
     </div>
   </div>
