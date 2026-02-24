@@ -1341,10 +1341,10 @@ class DatabaseSeeder extends Seeder
                 ['title' => 'Bulls vs Celtics', 'event_time' => '19:00'],
             ],
             'schedule_snapshot' => [
-                ['name' => 'Kyle Hendrix', 'role' => 'bartender', 'shift' => 'Dinner'],
-                ['name' => 'Sam Presley', 'role' => 'server', 'shift' => 'Dinner'],
-                ['name' => 'Riley Plant', 'role' => 'server', 'shift' => 'Dinner'],
-                ['name' => 'Taylor Vedder', 'role' => 'server', 'shift' => 'Dinner'],
+                ['user_name' => 'Kyle Hendrix', 'role' => 'bartender', 'shift_name' => 'Dinner', 'start_time' => '16:00'],
+                ['user_name' => 'Sam Presley', 'role' => 'server', 'shift_name' => 'Dinner', 'start_time' => '16:00'],
+                ['user_name' => 'Riley Plant', 'role' => 'server', 'shift_name' => 'Dinner', 'start_time' => '16:00'],
+                ['user_name' => 'Taylor Vedder', 'role' => 'server', 'shift_name' => 'Dinner', 'start_time' => '16:00'],
             ],
         ]);
 
@@ -1359,9 +1359,9 @@ class DatabaseSeeder extends Seeder
             ],
             'events_snapshot'   => [],
             'schedule_snapshot' => [
-                ['name' => 'Nina Cobain', 'role' => 'bartender', 'shift' => 'Lunch'],
-                ['name' => 'Avery Townshend', 'role' => 'server', 'shift' => 'Lunch'],
-                ['name' => 'Morgan Grohl', 'role' => 'server', 'shift' => 'Lunch'],
+                ['user_name' => 'Nina Cobain', 'role' => 'bartender', 'shift_name' => 'Lunch', 'start_time' => '10:00'],
+                ['user_name' => 'Avery Townshend', 'role' => 'server', 'shift_name' => 'Lunch', 'start_time' => '10:00'],
+                ['user_name' => 'Morgan Grohl', 'role' => 'server', 'shift_name' => 'Lunch', 'start_time' => '10:00'],
             ],
         ]);
 
@@ -1378,12 +1378,12 @@ class DatabaseSeeder extends Seeder
                 ['title' => 'Industry Night — Sundays', 'event_time' => null],
             ],
             'schedule_snapshot' => [
-                ['name' => 'Kyle Hendrix', 'role' => 'bartender', 'shift' => 'Lunch'],
-                ['name' => 'Casey Jagger', 'role' => 'bartender', 'shift' => 'Lunch'],
-                ['name' => 'Sam Presley', 'role' => 'server', 'shift' => 'Lunch'],
-                ['name' => 'Drew Hetfield', 'role' => 'server', 'shift' => 'Lunch'],
-                ['name' => 'Blake Page', 'role' => 'server', 'shift' => 'Lunch'],
-                ['name' => 'Ronnie Dio', 'role' => 'server', 'shift' => 'Lunch'],
+                ['user_name' => 'Kyle Hendrix', 'role' => 'bartender', 'shift_name' => 'Lunch', 'start_time' => '10:00'],
+                ['user_name' => 'Casey Jagger', 'role' => 'bartender', 'shift_name' => 'Lunch', 'start_time' => '10:00'],
+                ['user_name' => 'Sam Presley', 'role' => 'server', 'shift_name' => 'Lunch', 'start_time' => '10:00'],
+                ['user_name' => 'Drew Hetfield', 'role' => 'server', 'shift_name' => 'Lunch', 'start_time' => '10:00'],
+                ['user_name' => 'Blake Page', 'role' => 'server', 'shift_name' => 'Lunch', 'start_time' => '10:00'],
+                ['user_name' => 'Ronnie Dio', 'role' => 'server', 'shift_name' => 'Lunch', 'start_time' => '10:00'],
             ],
         ]);
 
