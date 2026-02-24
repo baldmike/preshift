@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Http;
 
 /**
  * Represents a physical restaurant/bar location.
@@ -33,6 +34,8 @@ class Location extends Model
     protected $fillable = [
         'name',      // Display name for the venue
         'address',   // Physical street address
+        'city',      // City name (e.g. "Austin")
+        'state',     // State abbreviation or name (e.g. "TX")
         'timezone',  // IANA timezone — drives all date/time logic scoped to this location
         'latitude',  // GPS latitude for weather lookups
         'longitude', // GPS longitude for weather lookups
@@ -128,5 +131,55 @@ class Location extends Model
     public function announcements(): HasMany
     {
         return $this->hasMany(Announcement::class);
+    }
+
+    // ── Geocoding ──
+
+    /**
+     * Geocode the location's city/state into latitude and longitude using
+     * the Open-Meteo geocoding API (free, no key required).
+     *
+     * Silently returns false if the city/state is missing or the API call
+     * fails — weather will simply not display until coordinates are set
+     * manually.
+     *
+     * @return bool  Whether coordinates were successfully updated.
+     */
+    public function geocodeFromCityState(): bool
+    {
+        if (!$this->city) {
+            return false;
+        }
+
+        $query = $this->state ? "{$this->city}, {$this->state}" : $this->city;
+
+        try {
+            $response = Http::get('https://geocoding-api.open-meteo.com/v1/search', [
+                'name' => $query,
+                'count' => 1,
+                'language' => 'en',
+                'format' => 'json',
+            ]);
+
+            if ($response->failed()) {
+                return false;
+            }
+
+            $results = $response->json('results');
+
+            if (empty($results)) {
+                return false;
+            }
+
+            $this->update([
+                'latitude' => $results[0]['latitude'],
+                'longitude' => $results[0]['longitude'],
+                'timezone' => $results[0]['timezone'] ?? $this->timezone,
+            ]);
+
+            return true;
+        } catch (\Exception) {
+            return false;
+        }
     }
 }

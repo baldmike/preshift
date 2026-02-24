@@ -76,8 +76,13 @@ class ConfigController extends Controller
         $location = Location::create([
             'name' => $validated['location_name'],
             'address' => 'Update in location settings',
+            'city' => $validated['city'] ?? null,
+            'state' => $validated['state'] ?? null,
             'timezone' => 'America/New_York',
         ]);
+
+        // Auto-geocode city/state into lat/lng for weather
+        $location->geocodeFromCityState();
 
         User::create([
             'name' => $validated['name'],

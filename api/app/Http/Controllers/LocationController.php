@@ -50,6 +50,11 @@ class LocationController extends Controller
 
         $location->update($validated);
 
+        // Re-geocode if city or state changed
+        if (isset($validated['city']) || isset($validated['state'])) {
+            $location->geocodeFromCityState();
+        }
+
         return response()->json(new LocationResource($location));
     }
 }
