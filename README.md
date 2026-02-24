@@ -99,16 +99,19 @@ php artisan reverb:start
 
 ## Demo Login
 
-After seeding, all accounts use the password **`password`**. Here are some accounts to try:
+After seeding, all accounts use the password **`baldsnutz`**. Here are some accounts to try:
 
 | Role | Name | Email |
 |------|------|-------|
-| Admin (superadmin) | Prince Springsteen | `prince@preshift.test` |
+| Admin (superadmin) | BM | `bm@preshift.test` |
+| Admin (superadmin) | Otto | `otto@preshift.test` |
+| Admin (superadmin) | TBone | `tbone@preshift.test` |
+| Admin (superadmin) | Chip | `chip@preshift.test` |
 | Manager | Lisa Mercury | `mercury@preshift.test` |
 | Server | Sam Presley | `presley@preshift.test` |
 | Bartender | Kyle Hendrix | `hendrix@preshift.test` |
 
-The seeder creates a full demo environment with a location ("The Anchor"), staff across all roles, a menu, sample 86'd items, specials, push items, announcements, and a multi-week schedule.
+The seeder creates a full demo environment with a location ("Bald Bar" in Chicago), staff across all roles, a menu, sample 86'd items, specials, push items, announcements, and a multi-week schedule.
 
 ### Initial Setup
 

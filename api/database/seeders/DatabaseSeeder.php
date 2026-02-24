@@ -44,7 +44,7 @@ use Illuminate\Support\Str;
  * All accounts use the password "baldsnutz" for easy local login.
  *
  * Key accounts:
- *   - prince@preshift.test   — SuperAdmin (admin role, global access)
+ *   - bm@preshift.test       — SuperAdmin (admin role, global access)
  *   - mercury@preshift.test  — Manager (creates seed content)
  *   - hendrix@preshift.test  — Bartender
  */
@@ -92,7 +92,7 @@ class DatabaseSeeder extends Seeder
         | Users
         |------------------------------------------------------------------
         | SuperAdmin:
-        |   - Prince Springsteen: admin role, is_superadmin
+        |   - BM: admin role, is_superadmin
         |
         | Staff — all named after rock stars:
         |   - 3 managers (Mercury, Bowie, Joplin)
@@ -102,8 +102,8 @@ class DatabaseSeeder extends Seeder
         | All accounts use password "baldsnutz" for local dev.
         */
         $superadmin = User::create([
-            'name'          => 'Prince Springsteen',
-            'email'         => 'prince@preshift.test',
+            'name'          => 'BM',
+            'email'         => 'bm@preshift.test',
             'password'      => Hash::make('baldsnutz'),
             'role'          => 'admin',
             'location_id'   => $location->id,

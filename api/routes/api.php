@@ -19,6 +19,7 @@
  * location so servers and bartenders can view the pre-shift information.
  */
 
+use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PreShiftController;
@@ -64,6 +65,18 @@ Route::post('/login', [AuthController::class, 'login']);
 | requests with a 401 response.
 */
 Route::middleware('auth:sanctum')->group(function () {
+    /*
+    |----------------------------------------------------------------------
+    | Broadcast Channel Authentication (Sanctum token)
+    |----------------------------------------------------------------------
+    | Overrides Laravel's default /broadcasting/auth (which uses session-
+    | based `web` middleware) with a Sanctum-compatible endpoint at
+    | /api/broadcasting/auth. The SPA sends a Bearer token in the
+    | Authorization header, so this route must live inside the
+    | auth:sanctum group for the token to be resolved correctly.
+    */
+    Broadcast::routes(['middleware' => []]);
+
     // POST /api/logout -- Revokes the current access token, logging the user out.
     Route::post('/logout', [AuthController::class, 'logout']);
     // GET  /api/user   -- Returns the currently authenticated user's profile.
