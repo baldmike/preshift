@@ -73,6 +73,7 @@ PreShift is a digital pre-shift meeting replacement for restaurants and bars. Ma
 - Tailwind CSS for styling — no custom CSS files unless absolutely necessary
 - Axios for API calls, configured with Sanctum token in a shared `api.js` service
 - Vue Router with role-based navigation guards
+- `main.css` must keep `-webkit-text-size-adjust: 100%` and `text-size-adjust: 100%` on `html, body` — prevents mobile WebKit zoom inflation
 
 ## Reverb Conventions
 
@@ -139,3 +140,4 @@ ssh preshift 'sudo supervisorctl restart preshift-reverb'
 - Do not build inventory/stock tracking features (deferred to v2)
 - Do not add kitchen/cook or barback roles (deferred to v2)
 - Do not use Options API in Vue components
+- Do not remove `text-size-adjust` properties from `main.css` — they fix a mobile viewport zoom bug
