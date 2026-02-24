@@ -40,7 +40,7 @@ defineEmits<{
       leave-from-class="opacity-100"
       leave-to-class="opacity-0"
     >
-      <div v-if="open" class="fixed inset-0 z-40 flex items-center justify-center p-4">
+      <div v-if="open" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
         <!-- Backdrop -->
         <div
           class="absolute inset-0 bg-black/50"
@@ -58,7 +58,7 @@ defineEmits<{
           appear
         >
           <div
-            class="relative z-50 w-full rounded-xl bg-gray-950 border border-white/[0.06] shadow-xl overflow-y-auto max-h-[90vh]"
+            class="relative z-[70] w-full rounded-xl bg-gray-950 border border-white/[0.06] shadow-xl overflow-y-auto max-h-[90vh]"
             :class="sizeClass"
           >
             <slot />
