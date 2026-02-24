@@ -5,10 +5,24 @@
  * Top-level layout wrapper used by every page in the app.
  * Provides consistent structure: TopBar, scrollable main content area,
  * copyright footer, BottomNav, and a global ToastContainer for notifications.
+ *
+ * Initializes the Echo/Reverb WebSocket connection on mount so the
+ * RealtimeIndicator in the TopBar can reflect connection state immediately.
  */
+import { onMounted } from 'vue'
 import TopBar from './TopBar.vue'
 import BottomNav from './BottomNav.vue'
 import ToastContainer from '@/components/ui/ToastContainer.vue'
+import { useAuth } from '@/composables/useAuth'
+import { useReverb } from '@/composables/useReverb'
+
+const { user } = useAuth()
+
+onMounted(() => {
+  if (user.value?.location_id) {
+    useReverb(user.value.location_id)
+  }
+})
 </script>
 
 <template>
