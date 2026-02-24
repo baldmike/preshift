@@ -145,14 +145,14 @@ async function changePassword() {
 
 <template>
   <header class="bg-gray-900 text-white sticky top-0 z-40">
-    <div class="px-4 py-3 sm:py-4 sm:px-6 max-w-4xl mx-auto w-full">
-      <div class="flex items-start justify-between">
+    <div class="px-3 py-2 sm:py-4 sm:px-6 max-w-4xl mx-auto w-full">
+      <div class="flex items-center justify-between">
         <!-- Left: establishment + date/time -->
         <div class="min-w-0 flex-1">
-          <h1 class="text-lg sm:text-xl font-bold tracking-tight truncate">
+          <h1 class="text-sm sm:text-xl font-bold tracking-tight truncate">
             {{ establishment }}
           </h1>
-          <div class="flex flex-wrap items-center gap-x-2 text-sm text-gray-400 mt-0.5">
+          <div class="flex flex-wrap items-center gap-x-1.5 sm:gap-x-2 text-[11px] sm:text-sm text-gray-400 mt-0.5">
             <span class="font-medium text-gray-300">{{ dayName }}</span>
             <span class="hidden sm:inline text-gray-600">&middot;</span>
             <span>{{ dateStr }}</span>
