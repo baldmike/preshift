@@ -43,7 +43,7 @@ PreShift is a digital pre-shift meeting replacement for restaurants and bars. Ma
 
 ## Development Rules
 
-- Never commit directly to `main`
+- **DO NOT EVER COMMIT DIRECTLY TO MAIN** — always use a branch + PR, no exceptions
 - Always work in feature branches off `main`: `feature/`, `fix/`, `chore/`, `refactor/`
 - There is NO `develop` branch — `main` is the only base branch
 - Never include "Co-Authored-By" lines, Claude Code references, or any AI attribution in commit messages, PR descriptions, or code comments
