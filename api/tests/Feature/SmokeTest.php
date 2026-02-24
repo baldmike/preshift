@@ -14,6 +14,15 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
+/**
+ * SmokeTest
+ *
+ * End-to-end smoke tests covering the critical happy paths across every
+ * major feature area of the PreShift API. Organized into sections for
+ * authentication, 86'd items, specials, push items, announcements,
+ * acknowledgments, the preshift hero endpoint, location isolation,
+ * role-based access guards, user management, and availability.
+ */
 class SmokeTest extends TestCase
 {
     use RefreshDatabase;
@@ -53,6 +62,7 @@ class SmokeTest extends TestCase
     //  AUTH TESTS
     // ══════════════════════════════════════════════
 
+    /** Verifies that a valid login returns a user object and a Sanctum token. */
     public function test_login_returns_token(): void
     {
         $seed = $this->seedLocationAndUsers();
@@ -66,6 +76,7 @@ class SmokeTest extends TestCase
             ->assertJsonStructure(['user', 'token']);
     }
 
+    /** Verifies that login with an incorrect password returns a 401 Unauthorized response. */
     public function test_login_fails_with_bad_credentials(): void
     {
         $seed = $this->seedLocationAndUsers();
@@ -78,6 +89,7 @@ class SmokeTest extends TestCase
         $response->assertStatus(401);
     }
 
+    /** Verifies that logout revokes the current Sanctum token and removes it from the database. */
     public function test_logout_revokes_token(): void
     {
         $seed = $this->seedLocationAndUsers();
@@ -95,6 +107,7 @@ class SmokeTest extends TestCase
         $this->assertDatabaseCount('personal_access_tokens', 0);
     }
 
+    /** Verifies that GET /api/user returns the currently authenticated user's profile data. */
     public function test_get_user_returns_authenticated_user(): void
     {
         $seed = $this->seedLocationAndUsers();
@@ -111,6 +124,7 @@ class SmokeTest extends TestCase
     //  86'd TESTS
     // ══════════════════════════════════════════════
 
+    /** Verifies that a manager can create a new 86'd item for their location. */
     public function test_create_eighty_sixed_item(): void
     {
         Event::fake();
@@ -126,6 +140,7 @@ class SmokeTest extends TestCase
             ->assertJsonPath('item_name', 'Salmon');
     }
 
+    /** Verifies that the 86'd index only returns active items and excludes restored ones. */
     public function test_list_active_eighty_sixed(): void
     {
         Event::fake();
@@ -157,6 +172,7 @@ class SmokeTest extends TestCase
         $this->assertNotContains('Chicken', $names);
     }
 
+    /** Verifies that a manager can restore an 86'd item and that restored_at is set. */
     public function test_restore_eighty_sixed_item(): void
     {
         Event::fake();
@@ -179,6 +195,7 @@ class SmokeTest extends TestCase
     //  SPECIALS TESTS
     // ══════════════════════════════════════════════
 
+    /** Verifies that a manager can create, list, update, and delete specials for their location. */
     public function test_specials_crud(): void
     {
         Event::fake();
@@ -235,6 +252,7 @@ class SmokeTest extends TestCase
     //  PUSH ITEMS TESTS
     // ══════════════════════════════════════════════
 
+    /** Verifies that a manager can create, list, update, and delete push items for their location. */
     public function test_push_items_crud(): void
     {
         Event::fake();
@@ -287,6 +305,7 @@ class SmokeTest extends TestCase
     //  ANNOUNCEMENTS TESTS
     // ══════════════════════════════════════════════
 
+    /** Verifies that a manager can create, list, update, and delete announcements for their location. */
     public function test_announcements_crud(): void
     {
         Event::fake();
@@ -331,6 +350,7 @@ class SmokeTest extends TestCase
         $deleteResponse->assertNoContent();
     }
 
+    /** Verifies that role-targeted announcements are only visible to the intended roles and hidden from others. */
     public function test_announcements_filtered_by_role(): void
     {
         Event::fake();
@@ -376,6 +396,7 @@ class SmokeTest extends TestCase
     //  ACKNOWLEDGMENTS TESTS
     // ══════════════════════════════════════════════
 
+    /** Verifies that staff can acknowledge a content item and the acknowledgment is recorded correctly. */
     public function test_acknowledge_item(): void
     {
         Event::fake();
@@ -398,6 +419,7 @@ class SmokeTest extends TestCase
             ->assertJsonPath('acknowledgable_type', EightySixed::class);
     }
 
+    /** Verifies that the acknowledgment status endpoint returns items grouped by type for the authenticated user. */
     public function test_acknowledgment_status(): void
     {
         Event::fake();
@@ -434,6 +456,7 @@ class SmokeTest extends TestCase
     //  PRESHIFT HERO
     // ══════════════════════════════════════════════
 
+    /** Verifies that the preshift hero endpoint returns all content types in a single combined response. */
     public function test_preshift_returns_combined_data(): void
     {
         Event::fake();
@@ -494,6 +517,7 @@ class SmokeTest extends TestCase
     //  LOCATION ISOLATION
     // ══════════════════════════════════════════════
 
+    /** Verifies that a user in one location cannot see 86'd items belonging to a different location. */
     public function test_cannot_see_other_locations_data(): void
     {
         Event::fake();
@@ -533,6 +557,7 @@ class SmokeTest extends TestCase
     //  ROLE GUARDS
     // ══════════════════════════════════════════════
 
+    /** Verifies that staff users are forbidden from creating 86'd items, which is a manager-only action. */
     public function test_staff_cannot_create_eighty_sixed(): void
     {
         Event::fake();
@@ -546,6 +571,7 @@ class SmokeTest extends TestCase
         $response->assertStatus(403);
     }
 
+    /** Verifies that staff users are forbidden from accessing the user management endpoint. */
     public function test_staff_cannot_manage_users(): void
     {
         $seed = $this->seedLocationAndUsers();
@@ -556,6 +582,7 @@ class SmokeTest extends TestCase
         $response->assertStatus(403);
     }
 
+    /** Verifies that non-admin users (including managers) are forbidden from accessing location management. */
     public function test_non_admin_cannot_manage_locations(): void
     {
         $seed = $this->seedLocationAndUsers();
@@ -570,6 +597,7 @@ class SmokeTest extends TestCase
     //  USERS (MANAGER MANAGEMENT)
     // ══════════════════════════════════════════════
 
+    /** Verifies that a manager can create a new user assigned to their location. */
     public function test_manager_can_create_user(): void
     {
         $seed = $this->seedLocationAndUsers();
@@ -588,6 +616,7 @@ class SmokeTest extends TestCase
             ->assertJsonPath('role', 'bartender');
     }
 
+    /** Verifies that a manager can update a staff user's name and role, and that changes persist to the database. */
     public function test_manager_can_update_user(): void
     {
         $seed = $this->seedLocationAndUsers();

@@ -18,6 +18,15 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
+/**
+ * NotificationTest
+ *
+ * Tests the notification system including dispatch of notifications for shift drops,
+ * shift drop volunteers, and time-off requests. Verifies that notifications are sent
+ * to managers and admins but not to staff. Also covers the notification list, mark-read,
+ * and mark-all-read API endpoints with role-based access control, and confirms that
+ * email alerts are conditionally sent based on the location's email_alerts_enabled setting.
+ */
 class NotificationTest extends TestCase
 {
     use RefreshDatabase;
@@ -104,6 +113,7 @@ class NotificationTest extends TestCase
     //  NOTIFICATION DISPATCH TESTS
     // ══════════════════════════════════════════════════════════════════════
 
+    /** Verifies that creating a shift drop sends a notification to the location's manager and admin. */
     public function test_shift_drop_store_sends_notification_to_managers(): void
     {
         Notification::fake();
@@ -123,6 +133,7 @@ class NotificationTest extends TestCase
         Notification::assertSentTo($seed['admin'], ShiftDropRequestedNotification::class);
     }
 
+    /** Verifies that volunteering for a shift drop sends a notification to the location's manager and admin. */
     public function test_shift_drop_volunteer_sends_notification_to_managers(): void
     {
         Notification::fake();
@@ -148,6 +159,7 @@ class NotificationTest extends TestCase
         Notification::assertSentTo($seed['admin'], ShiftDropVolunteeredNotification::class);
     }
 
+    /** Verifies that creating a time-off request sends a notification to the location's manager and admin. */
     public function test_time_off_store_sends_notification_to_managers(): void
     {
         Notification::fake();
@@ -167,6 +179,7 @@ class NotificationTest extends TestCase
         Notification::assertSentTo($seed['admin'], TimeOffRequestedNotification::class);
     }
 
+    /** Verifies that notifications are not sent to staff members who created the request. */
     public function test_notifications_not_sent_to_staff(): void
     {
         Notification::fake();
@@ -189,6 +202,7 @@ class NotificationTest extends TestCase
     //  NOTIFICATION ENDPOINT TESTS
     // ══════════════════════════════════════════════════════════════════════
 
+    /** Verifies that a manager can list their notifications and see the correct unread count. */
     public function test_manager_can_list_notifications(): void
     {
         $seed = $this->seedLocationAndUsers();
@@ -214,6 +228,7 @@ class NotificationTest extends TestCase
             ->assertJsonPath('unread_count', 1);
     }
 
+    /** Verifies that a manager can mark a single notification as read. */
     public function test_manager_can_mark_notification_read(): void
     {
         $seed = $this->seedLocationAndUsers();
@@ -237,6 +252,7 @@ class NotificationTest extends TestCase
         $this->assertNotNull($notification->fresh()->read_at);
     }
 
+    /** Verifies that a manager can mark all notifications as read in a single request. */
     public function test_manager_can_mark_all_notifications_read(): void
     {
         $seed = $this->seedLocationAndUsers();
@@ -263,6 +279,7 @@ class NotificationTest extends TestCase
         $this->assertEquals(0, $seed['manager']->unreadNotifications()->count());
     }
 
+    /** Verifies that staff members receive a 403 when accessing any notification endpoint. */
     public function test_staff_cannot_access_notification_endpoints(): void
     {
         $seed = $this->seedLocationAndUsers();
@@ -284,6 +301,7 @@ class NotificationTest extends TestCase
     //  EMAIL ALERT TESTS
     // ══════════════════════════════════════════════════════════════════════
 
+    /** Verifies that the mail channel is included when the location has email alerts enabled. */
     public function test_email_sent_when_email_alerts_enabled(): void
     {
         Notification::fake();
@@ -305,6 +323,7 @@ class NotificationTest extends TestCase
         });
     }
 
+    /** Verifies that the mail channel is excluded when the location has email alerts disabled. */
     public function test_email_not_sent_when_email_alerts_disabled(): void
     {
         Notification::fake();

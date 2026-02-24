@@ -10,6 +10,18 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
+/**
+ * WeatherTest
+ *
+ * Tests the /api/weather endpoint, which returns current conditions and daily
+ * forecast data for a user's location via the Open-Meteo API. Verifies that:
+ * - A 404 is returned when the location has no coordinates configured
+ * - Weather data is returned and correctly formatted when coordinates exist
+ * - Responses are cached to avoid redundant external API calls
+ * - Authentication is required to access the endpoint
+ * - Weather data is scoped to the authenticated user's location
+ * - Both manager and staff roles can access weather data
+ */
 class WeatherTest extends TestCase
 {
     use RefreshDatabase;
@@ -70,6 +82,7 @@ class WeatherTest extends TestCase
     //  RETURNS 404 WHEN COORDINATES NOT SET
     // ══════════════════════════════════════════════
 
+    /** Verifies that a 404 with an appropriate message is returned when the user's location has no latitude/longitude configured. */
     public function test_returns_404_when_location_has_no_coordinates(): void
     {
         $seed = $this->seedLocationAndUsers();
@@ -85,6 +98,7 @@ class WeatherTest extends TestCase
     //  RETURNS WEATHER DATA WHEN COORDINATES SET
     // ══════════════════════════════════════════════
 
+    /** Verifies that the endpoint returns correctly structured current conditions and daily forecast data when the location has coordinates configured. */
     public function test_returns_weather_data_when_coordinates_are_set(): void
     {
         Http::fake([
@@ -116,6 +130,7 @@ class WeatherTest extends TestCase
     //  RESPONSE IS CACHED
     // ══════════════════════════════════════════════
 
+    /** Verifies that the weather response is cached so that consecutive requests only trigger a single external API call. */
     public function test_response_is_cached_for_30_minutes(): void
     {
         Http::fake([
@@ -145,6 +160,7 @@ class WeatherTest extends TestCase
     //  REQUIRES AUTHENTICATION
     // ══════════════════════════════════════════════
 
+    /** Verifies that unauthenticated requests to the weather endpoint receive a 401 response. */
     public function test_requires_authentication(): void
     {
         $response = $this->getJson('/api/weather');
@@ -156,6 +172,7 @@ class WeatherTest extends TestCase
     //  DATA IS SCOPED TO USER'S LOCATION
     // ══════════════════════════════════════════════
 
+    /** Verifies that weather data is scoped to the authenticated user's own location and does not leak data across locations. */
     public function test_weather_is_scoped_to_users_location(): void
     {
         Http::fake([
@@ -198,6 +215,7 @@ class WeatherTest extends TestCase
     //  MANAGER CAN ACCESS WEATHER TOO
     // ══════════════════════════════════════════════
 
+    /** Verifies that managers can access the weather endpoint and receive valid weather data for their location. */
     public function test_manager_can_access_weather(): void
     {
         Http::fake([

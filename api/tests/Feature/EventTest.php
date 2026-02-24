@@ -10,6 +10,14 @@ use Illuminate\Support\Facades\Event as EventFacade;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
+/**
+ * EventTest
+ *
+ * Tests the full CRUD lifecycle for events, including manager create, update,
+ * delete, and list operations, staff read-only access, staff restriction from
+ * creating events, and location-scoped data isolation to prevent cross-location
+ * data leaks.
+ */
 class EventTest extends TestCase
 {
     use RefreshDatabase;
@@ -49,6 +57,7 @@ class EventTest extends TestCase
     //  MANAGER CAN LIST EVENTS
     // ══════════════════════════════════════════════
 
+    /** Verifies that a manager can list events scoped to their location. */
     public function test_manager_can_list_events(): void
     {
         EventFacade::fake();
@@ -75,6 +84,7 @@ class EventTest extends TestCase
     //  MANAGER CAN CREATE EVENT
     // ══════════════════════════════════════════════
 
+    /** Verifies that a manager can create a new event for their location. */
     public function test_manager_can_create_event(): void
     {
         EventFacade::fake();
@@ -96,6 +106,7 @@ class EventTest extends TestCase
     //  MANAGER CAN UPDATE EVENT
     // ══════════════════════════════════════════════
 
+    /** Verifies that a manager can update an existing event's title and time. */
     public function test_manager_can_update_event(): void
     {
         EventFacade::fake();
@@ -124,6 +135,7 @@ class EventTest extends TestCase
     //  MANAGER CAN DELETE EVENT
     // ══════════════════════════════════════════════
 
+    /** Verifies that a manager can delete an event and it is removed from the database. */
     public function test_manager_can_delete_event(): void
     {
         EventFacade::fake();
@@ -147,6 +159,7 @@ class EventTest extends TestCase
     //  STAFF CANNOT CREATE EVENTS
     // ══════════════════════════════════════════════
 
+    /** Verifies that a staff user is forbidden from creating events. */
     public function test_staff_cannot_create_events(): void
     {
         EventFacade::fake();
@@ -165,6 +178,7 @@ class EventTest extends TestCase
     //  STAFF CAN LIST EVENTS (READ-ONLY)
     // ══════════════════════════════════════════════
 
+    /** Verifies that a staff user can list events for read-only access. */
     public function test_staff_can_list_events(): void
     {
         EventFacade::fake();
@@ -189,6 +203,7 @@ class EventTest extends TestCase
     //  LOCATION ISOLATION
     // ══════════════════════════════════════════════
 
+    /** Verifies that a user cannot see events belonging to a different location. */
     public function test_user_cannot_see_other_locations_events(): void
     {
         EventFacade::fake();
