@@ -4,14 +4,16 @@
  *
  * Primary staff dashboard and pre-shift briefing screen. Displays a 2x2
  * grid of 86'd items, specials, push items, and announcements, plus a
- * "Today's Schedule" section showing who is working each shift. Subscribes
- * to real-time Reverb events on the location channel so cards update live
- * as managers make changes.
+ * "Today's Schedule" section showing who is working each shift, and a
+ * Messages preview with recent board posts and unread DM count.
+ * Subscribes to real-time Reverb events on the location channel so
+ * cards update live as managers make changes.
  */
 import { onMounted, onUnmounted, computed, ref, reactive } from 'vue'
 import type { User } from '@/types'
 import { usePreshiftStore } from '@/stores/preshift'
 import { useScheduleStore } from '@/stores/schedule'
+import { useMessageStore } from '@/stores/messages'
 import { useAuth } from '@/composables/useAuth'
 import { useSchedule } from '@/composables/useSchedule'
 import { useLocationChannel } from '@/composables/useReverb'
@@ -63,6 +65,7 @@ function weatherIcon(code: number): string {
 
 const store = usePreshiftStore()
 const scheduleStore = useScheduleStore()
+const messageStore = useMessageStore()
 const { locationId, user } = useAuth()
 
 /** Whether the current user can manage events (admin or manager) */
@@ -271,6 +274,13 @@ async function giveUpShift(entryId: number) {
 
 let channel: ReturnType<typeof useLocationChannel> | null = null
 
+/** Most recent board posts (up to 3) for the dashboard preview */
+const recentBoardPosts = computed(() =>
+  messageStore.boardMessages
+    .filter(m => !m.parent_id)
+    .slice(0, 3)
+)
+
 const hasContent = computed(() =>
   store.eightySixed.length || store.specials.length || store.pushItems.length || store.announcements.length || store.events.length || scheduleStore.currentSchedule
 )
@@ -285,6 +295,10 @@ onMounted(async () => {
   if (canManageEvents.value) {
     scheduleStore.fetchAckSummary()
   }
+
+  // Fetch board messages for the dashboard preview
+  messageStore.fetchBoardMessages()
+  messageStore.fetchUnreadCount()
 
   // Fetch weather (silently ignore 404 when coordinates not configured)
   api.get('/api/weather')
@@ -598,6 +612,67 @@ onUnmounted(() => {
             class="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-semibold rounded-full bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 transition-colors"
           >
             Time Off
+          </router-link>
+        </div>
+      </section>
+
+      <!-- ═══ Messages — recent board posts + DM unread count ═══ -->
+      <section class="rounded-xl bg-orange-500/5 border border-orange-500/10 p-3">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
+            <span class="text-xs font-bold text-orange-400 uppercase tracking-wide">Messages</span>
+            <span
+              v-if="messageStore.unreadDmCount > 0"
+              class="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full text-[0.625rem] font-bold bg-orange-500/20 text-orange-300"
+            >
+              {{ messageStore.unreadDmCount }} DM{{ messageStore.unreadDmCount !== 1 ? 's' : '' }}
+            </span>
+          </div>
+          <router-link to="/messages" class="text-[10px] text-orange-500/60 hover:text-orange-400 transition-colors">
+            All messages
+          </router-link>
+        </div>
+
+        <!-- Recent board posts -->
+        <div v-if="recentBoardPosts.length" class="space-y-1.5">
+          <router-link
+            v-for="post in recentBoardPosts"
+            :key="post.id"
+            to="/messages?tab=board"
+            class="block rounded-lg bg-white/[0.03] border border-white/[0.06] p-2.5 hover:bg-white/[0.05] transition-colors"
+          >
+            <div class="flex items-center gap-1.5 mb-0.5">
+              <span class="text-[11px] font-semibold text-orange-300">{{ post.user?.name || 'Staff' }}</span>
+              <span v-if="post.is_pinned" class="text-[9px] text-amber-400">pinned</span>
+            </div>
+            <p class="text-xs text-gray-400 line-clamp-1">{{ post.body }}</p>
+          </router-link>
+        </div>
+        <p v-else class="text-gray-600 text-xs text-center py-4">No board messages</p>
+
+        <!-- Quick links: Board + DMs -->
+        <div class="flex gap-2 mt-2">
+          <router-link
+            to="/messages?tab=board"
+            class="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-semibold rounded-full bg-orange-500/15 text-orange-400 hover:bg-orange-500/25 transition-colors"
+          >
+            Board
+          </router-link>
+          <router-link
+            to="/messages?tab=direct"
+            class="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-semibold rounded-full bg-orange-500/15 text-orange-400 hover:bg-orange-500/25 transition-colors"
+          >
+            Direct Messages
+            <span
+              v-if="messageStore.unreadDmCount > 0"
+              class="inline-flex items-center justify-center min-w-[14px] h-[14px] px-0.5 rounded-full text-[8px] font-bold bg-orange-500 text-gray-900"
+            >
+              {{ messageStore.unreadDmCount > 9 ? '9+' : messageStore.unreadDmCount }}
+            </span>
           </router-link>
         </div>
       </section>
