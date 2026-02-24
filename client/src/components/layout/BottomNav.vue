@@ -3,25 +3,18 @@
  * BottomNav.vue
  *
  * Fixed bottom navigation bar for mobile-first layout. Displays a persistent
- * copyright line above icon+label links to Dashboard, 86'd Board, Specials,
- * Schedule, Messages, and (for admins/managers) Manage.
- * The active route is highlighted in amber.
+ * copyright line above icon+label links to Dashboard, Schedule, Messages,
+ * and (for admins/managers) Manage. The active route is highlighted in amber.
  *
- * For admins and managers, the 86'd and Specials links point to the manage
- * versions (/manage/86, /manage/specials) instead of the staff read-only views.
+ * 86'd and Specials are accessed from the dashboard tiles rather than
+ * having dedicated nav items, keeping the footer clean and focused.
  */
-import { computed, onMounted } from 'vue'
+import { onMounted } from 'vue'
 import { useAuth } from '@/composables/useAuth'
 import { useMessageStore } from '@/stores/messages'
 
 const { isAdmin, isManager } = useAuth()
 const messageStore = useMessageStore()
-
-/** Route for the 86'd nav item — managers go to /manage/86, staff to /86. */
-const eightySixRoute = computed(() => (isAdmin.value || isManager.value) ? '/manage/86' : '/86')
-
-/** Route for the Specials nav item — managers go to /manage/specials, staff to /specials. */
-const specialsRoute = computed(() => (isAdmin.value || isManager.value) ? '/manage/specials' : '/specials')
 
 onMounted(() => {
   messageStore.fetchUnreadCount()
@@ -42,30 +35,6 @@ onMounted(() => {
             d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
         </svg>
         <span>Dashboard</span>
-      </router-link>
-
-      <router-link
-        :to="eightySixRoute"
-        class="flex flex-col items-center gap-0.5 text-xs transition-colors"
-        :class="$route.path === '/86' || $route.path.startsWith('/manage/86') ? 'text-amber-400' : 'text-gray-500 hover:text-gray-300'"
-      >
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-        </svg>
-        <span>86'd</span>
-      </router-link>
-
-      <router-link
-        :to="specialsRoute"
-        class="flex flex-col items-center gap-0.5 text-xs transition-colors"
-        :class="$route.path === '/specials' || $route.path === '/manage/specials' ? 'text-amber-400' : 'text-gray-500 hover:text-gray-300'"
-      >
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-        </svg>
-        <span>Specials</span>
       </router-link>
 
       <router-link
@@ -104,7 +73,7 @@ onMounted(() => {
         v-if="isAdmin || isManager"
         to="/manage/daily"
         class="flex flex-col items-center gap-0.5 text-xs transition-colors"
-        :class="$route.path.startsWith('/manage') && !$route.path.startsWith('/manage/86') && $route.path !== '/manage/specials' ? 'text-amber-400' : 'text-gray-500 hover:text-gray-300'"
+        :class="$route.path.startsWith('/manage') ? 'text-amber-400' : 'text-gray-500 hover:text-gray-300'"
       >
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
