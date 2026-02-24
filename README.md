@@ -7,7 +7,7 @@ A digital pre-shift meeting replacement for restaurants and bars. Managers post 
 | Layer | Technology |
 |-------|-----------|
 | Frontend | Vue 3, Vite, Pinia, Vue Router, Tailwind CSS |
-| Backend | Laravel 11, PHP 8.2+ |
+| Backend | Laravel 11, PHP 8.4+ |
 | Auth | Laravel Sanctum (token-based) |
 | Realtime | Laravel Reverb (WebSockets) |
 | Database | MySQL (SQLite for tests) |
@@ -23,9 +23,9 @@ The API and client are independent applications. The Vue SPA proxies `/api` requ
 
 ## Prerequisites
 
-- PHP 8.2+
+- PHP 8.4+
 - Composer
-- Node.js 18+
+- Node.js 20+
 - npm
 - MySQL 8+
 
@@ -128,6 +128,26 @@ php artisan test
 ```bash
 cd client
 npm test
+```
+
+## Production
+
+The app is deployed at **https://preshift86.com** on a DigitalOcean droplet running Ubuntu 24.04.
+
+| Component | Detail |
+|-----------|--------|
+| Web server | Nginx (SSL via Let's Encrypt) |
+| PHP | PHP 8.4 FPM |
+| Database | MySQL 8 (local) |
+| WebSockets | Laravel Reverb (proxied via Nginx at `/app`) |
+| Process management | Supervisor (Reverb + queue worker) |
+
+Deploy scripts live in `/deploy`. For subsequent deployments:
+
+```bash
+ssh preshift
+cd /var/www/preshift
+sudo -u preshift bash deploy/deploy.sh
 ```
 
 ## Roles

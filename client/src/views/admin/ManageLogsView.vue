@@ -116,9 +116,9 @@ function toast(message: string, type: string) {
   window.dispatchEvent(new CustomEvent('toast', { detail: { message, type } }))
 }
 
-// Formats an ISO date string to a readable display format
+// Formats a date string (YYYY-MM-DD or full ISO) to a readable display format
 function formatDate(dateStr: string) {
-  const d = new Date(dateStr + 'T12:00:00')
+  const d = new Date(dateStr.split('T')[0] + 'T12:00:00')
   return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })
 }
 
