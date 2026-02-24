@@ -44,6 +44,8 @@ function makeLocation(overrides: Partial<Location> = {}): Location {
     id: Math.floor(Math.random() * 10000),
     name: 'Test Location',
     address: '123 Main St',
+    city: null,
+    state: null,
     timezone: 'America/New_York',
     latitude: null,
     longitude: null,
