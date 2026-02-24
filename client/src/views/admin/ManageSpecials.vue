@@ -214,7 +214,7 @@ onMounted(fetchSpecials)
               <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ special.title }}</td>
               <td class="px-4 py-3 text-sm text-gray-500">{{ special.type || '-' }}</td>
               <td class="px-4 py-3 text-sm text-gray-500">
-                {{ special.starts_at }}{{ special.ends_at ? ` - ${special.ends_at}` : '' }}
+                {{ special.starts_at?.split('T')[0] }}{{ special.ends_at ? ` - ${special.ends_at.split('T')[0]}` : '' }}
               </td>
               <!-- Quantity cell: shows count + decrement button when set, infinity when null -->
               <td class="px-4 py-3 text-center text-sm">
