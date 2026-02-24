@@ -451,7 +451,7 @@ onUnmounted(() => {
       </section>
 
       <!-- ═══ Events — daily happenings ═══ -->
-      <section v-if="store.events.length || canManageEvents" class="rounded-xl bg-violet-500/5 border border-violet-500/10 p-3">
+      <section class="rounded-xl bg-violet-500/5 border border-violet-500/10 p-3">
         <div class="flex items-center justify-between mb-3">
           <div class="flex items-center gap-2">
             <svg class="w-4 h-4 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
