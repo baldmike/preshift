@@ -13,6 +13,16 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
+/**
+ * TimeOffAutomationTest
+ *
+ * Verifies the automated rules surrounding time-off requests:
+ * - Advance notice validation rejects requests submitted fewer than N days before the start date
+ * - The advance notice window respects the configurable `time_off_advance_days` setting and falls back to the 14-day default
+ * - Schedule entries cannot be created for users who have approved time off on the target date
+ * - Schedule entries are allowed when no time off exists or when the time-off request is still pending
+ * - Superadmins can update the `time_off_advance_days` global setting
+ */
 class TimeOffAutomationTest extends TestCase
 {
     use RefreshDatabase;
@@ -57,6 +67,7 @@ class TimeOffAutomationTest extends TestCase
     //  ADVANCE NOTICE VALIDATION
     // ══════════════════════════════════════════════════════════════════════
 
+    /** Verifies that a time-off request is rejected with a 422 when the start date falls within the minimum advance notice window. */
     public function test_time_off_rejected_when_start_date_less_than_n_days_away(): void
     {
         $seed = $this->seedLocationAndUsers();
@@ -77,6 +88,7 @@ class TimeOffAutomationTest extends TestCase
         $this->assertStringContainsString('14 days', $errors[0]);
     }
 
+    /** Verifies that a time-off request is accepted when the start date is exactly at the advance notice boundary. */
     public function test_time_off_accepted_when_start_date_exactly_n_days_away(): void
     {
         $seed = $this->seedLocationAndUsers();
@@ -93,6 +105,7 @@ class TimeOffAutomationTest extends TestCase
             ->assertJsonPath('status', 'pending');
     }
 
+    /** Verifies that the advance notice window uses a custom `time_off_advance_days` setting when one is configured. */
     public function test_advance_notice_respects_custom_setting_value(): void
     {
         $seed = $this->seedLocationAndUsers();
@@ -111,6 +124,7 @@ class TimeOffAutomationTest extends TestCase
         $response->assertStatus(201);
     }
 
+    /** Verifies that the advance notice window defaults to 14 days when no `time_off_advance_days` setting exists. */
     public function test_advance_notice_defaults_to_14_when_setting_not_configured(): void
     {
         $seed = $this->seedLocationAndUsers();
@@ -144,6 +158,7 @@ class TimeOffAutomationTest extends TestCase
     //  SCHEDULE ENTRY BLOCKED BY APPROVED TIME OFF
     // ══════════════════════════════════════════════════════════════════════
 
+    /** Verifies that creating a schedule entry is rejected when the assigned user has approved time off covering the entry date. */
     public function test_schedule_entry_rejected_when_user_has_approved_time_off(): void
     {
         $seed = $this->seedLocationAndUsers();
@@ -189,6 +204,7 @@ class TimeOffAutomationTest extends TestCase
         $this->assertContains('This user has approved time off on this date.', $errors);
     }
 
+    /** Verifies that creating a schedule entry succeeds when the user has no time-off requests for the entry date. */
     public function test_schedule_entry_allowed_when_user_has_no_time_off(): void
     {
         $seed = $this->seedLocationAndUsers();
@@ -218,6 +234,7 @@ class TimeOffAutomationTest extends TestCase
         $response->assertStatus(201);
     }
 
+    /** Verifies that creating a schedule entry succeeds when the user has a pending (not yet approved) time-off request for the entry date. */
     public function test_schedule_entry_allowed_when_time_off_is_pending(): void
     {
         $seed = $this->seedLocationAndUsers();
@@ -261,6 +278,7 @@ class TimeOffAutomationTest extends TestCase
     //  SUPERADMIN SETTING
     // ══════════════════════════════════════════════════════════════════════
 
+    /** Verifies that a superadmin can update the `time_off_advance_days` global setting via the config endpoint. */
     public function test_superadmin_can_update_time_off_advance_days_setting(): void
     {
         $seed = $this->seedLocationAndUsers();
