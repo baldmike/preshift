@@ -550,6 +550,57 @@ class SchedulingTest extends TestCase
         $response->assertStatus(403);
     }
 
+    /**
+     * Test 8: Schedule view returns week_start and entry dates as ISO timestamps.
+     *
+     * Verifies that the GET /api/schedules/{id} response returns week_start as
+     * a full ISO 8601 datetime string (e.g. "2026-03-02T00:00:00.000000Z") rather
+     * than a date-only string. The frontend must parse this with .split('T')[0]
+     * before using it for comparisons. This test documents the API date contract
+     * so any serialization change will be caught early.
+     */
+    public function test_schedule_view_returns_iso_timestamp_dates(): void
+    {
+        // Arrange: seed location/users, create a schedule with an entry.
+        $seed = $this->seedLocationAndUsers();
+        $nextMonday = now()->next('Monday')->toDateString();
+
+        $schedule = Schedule::create([
+            'location_id' => $seed['location']->id,
+            'week_start' => $nextMonday,
+            'status' => 'draft',
+        ]);
+
+        $template = ShiftTemplate::create([
+            'location_id' => $seed['location']->id,
+            'name' => 'Lunch',
+            'start_time' => '10:30',
+        ]);
+
+        ScheduleEntry::create([
+            'schedule_id' => $schedule->id,
+            'user_id' => $seed['staff']->id,
+            'shift_template_id' => $template->id,
+            'date' => $nextMonday,
+            'role' => 'server',
+        ]);
+
+        // Act: authenticate as the manager and view the schedule.
+        $response = $this->actingAs($seed['manager'], 'sanctum')
+            ->getJson("/api/schedules/{$schedule->id}");
+
+        // Assert: week_start is an ISO timestamp containing 'T' (not date-only).
+        $response->assertOk();
+        $weekStart = $response->json('week_start');
+        $this->assertStringContainsString('T', $weekStart);
+        $this->assertStringStartsWith($nextMonday, $weekStart);
+
+        // Assert: entry date is also an ISO timestamp containing 'T'.
+        $entryDate = $response->json('entries.0.date');
+        $this->assertStringContainsString('T', $entryDate);
+        $this->assertStringStartsWith($nextMonday, $entryDate);
+    }
+
     // ══════════════════════════════════════════════════════════════════════
     //  SCHEDULE ENTRY TESTS
     // ══════════════════════════════════════════════════════════════════════
