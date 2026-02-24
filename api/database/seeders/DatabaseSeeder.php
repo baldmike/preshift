@@ -1139,7 +1139,7 @@ class DatabaseSeeder extends Seeder
             'location_id' => $location->id,
             'user_id'     => $manager->id,
             'parent_id'   => null,
-            'body'        => 'Reminder: staff meal is at 4 PM sharp every day. If you\'re on the dinner shift, eat before service. No more eating behind the bar during rush.',
+            'body'        => 'Reminder: staff meal is at 4 PM every day before dinner service. Chef\'s doing a taco bar today — don\'t miss it! Great way to fuel up before the rush.',
             'visibility'  => 'all',
             'pinned'      => true,
         ]);
@@ -1212,7 +1212,7 @@ class DatabaseSeeder extends Seeder
             'location_id' => $location->id,
             'user_id'     => $manager->id,
             'parent_id'   => null,
-            'body'        => 'Managers: We need to talk about Sam\'s attendance. Three late arrivals this month. Let\'s discuss at the Tuesday meeting before we escalate.',
+            'body'        => 'Managers: Shoutout to the whole team for crushing last weekend. Revenue was up 18% over the same week last year. Let\'s keep that energy going into the holiday weekend.',
             'visibility'  => 'managers',
             'pinned'      => false,
         ]);
@@ -1307,7 +1307,7 @@ class DatabaseSeeder extends Seeder
         DirectMessage::create([
             'conversation_id' => $convo3->id,
             'sender_id'       => $manager->id,
-            'body'            => 'Quinn, great job handling that difficult table last night. The customer called back to compliment you. Keep it up!',
+            'body'            => 'Quinn, great job with that big party last night. The customer called back to compliment your service. Keep it up!',
             'created_at'      => now()->subMinutes(30),
             'updated_at'      => now()->subMinutes(30),
         ]);
@@ -1359,7 +1359,7 @@ class DatabaseSeeder extends Seeder
             'location_id'      => $location->id,
             'created_by'       => $manager->id,
             'log_date'         => now()->subDays(3)->toDateString(),
-            'body'             => "Sunday brunch was packed — Industry Night brought in about 20 service industry folks. The 20% food discount plus $5 wells was a big hit. We should consider making it a permanent thing. Churros were the top dessert seller. Had to cut off one table that got too rowdy around 10 PM — handled it smoothly, no incident report needed.",
+            'body'             => "Sunday brunch was packed — Industry Night brought in about 20 service industry folks. The 20% food discount plus \$5 wells was a big hit. We should consider making it a permanent thing. Churros were the top dessert seller. Patio was full all afternoon — guests loved the weather. Great energy from the whole team.",
             'weather_snapshot' => [
                 'current' => ['temperature' => 65, 'feels_like' => 63, 'humidity' => 70, 'wind_speed' => 15, 'weather_code' => 61, 'description' => 'Light rain'],
                 'today'   => ['high' => 66, 'low' => 55, 'weather_code' => 61, 'description' => 'Light rain'],
