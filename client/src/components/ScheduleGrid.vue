@@ -127,7 +127,7 @@ function formatShiftTime(time: string): string {
     dark background consistent with the app's dark theme.
   -->
   <div class="overflow-x-auto rounded-lg border border-white/[0.06] bg-[rgba(255,255,255,0.03)]">
-    <table class="w-full min-w-[640px] text-xs">
+    <table class="w-full min-w-[480px] text-xs">
       <!-- ── Column headers: day abbreviation + date ───────────────── -->
       <thead>
         <tr>
@@ -170,7 +170,7 @@ function formatShiftTime(time: string): string {
           <td
             v-for="date in weekDates"
             :key="date"
-            class="border-b border-white/[0.06] px-1.5 py-1 align-top min-w-[90px]"
+            class="border-b border-white/[0.06] px-1.5 py-1 align-top min-w-[60px]"
           >
             <!--
               If entries exist for this shift+day: render each

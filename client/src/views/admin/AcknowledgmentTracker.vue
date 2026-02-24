@@ -126,7 +126,7 @@ onMounted(fetchData)
       </div>
 
       <!-- Per-user acknowledgment table (populated from /api/acknowledgments/summary) -->
-      <div v-else-if="summary" class="bg-white rounded-lg shadow overflow-hidden">
+      <div v-else-if="summary" class="bg-white rounded-lg shadow overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
             <tr>

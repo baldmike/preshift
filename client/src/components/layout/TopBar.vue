@@ -200,7 +200,7 @@ async function changePassword() {
               <div
                 v-if="menuOpen"
                 @click.stop
-                class="absolute right-0 mt-2 w-64 origin-top-right rounded-lg bg-gray-800
+                class="absolute right-0 mt-2 w-64 max-w-[calc(100vw-1.5rem)] origin-top-right rounded-lg bg-gray-800
                        border border-gray-700 shadow-lg ring-1 ring-black/10 overflow-hidden"
               >
                 <!-- User info -->
