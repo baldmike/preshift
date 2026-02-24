@@ -447,19 +447,21 @@ Route::middleware('auth:sanctum')->group(function () {
 
         /*
         |------------------------------------------------------------------
-        | User Management (admin + manager only)
+        | User Management
         |------------------------------------------------------------------
-        | CRUD for staff accounts at the current location. Wrapped in a
-        | role middleware group so that all four endpoints require
-        | admin or manager privileges.
+        | GET /api/users is available to all authenticated users (needed for
+        | the DM recipient picker, employee profiles, etc.). The response is
+        | already scoped to the user's location in UserController@index.
+        |
+        | Write operations (POST/PATCH/DELETE) require admin or manager role.
         |
         | GET    /api/users                 -- List staff for the location.
         | POST   /api/users                 -- Create a new staff account.
         | PATCH  /api/users/{id}            -- Update a staff account.
         | DELETE /api/users/{id}            -- Deactivate/delete a staff account.
         */
+        Route::get('/users', [UserController::class, 'index']);
         Route::middleware('role:admin,manager')->group(function () {
-            Route::get('/users', [UserController::class, 'index']);
             Route::post('/users', [UserController::class, 'store']);
             Route::patch('/users/{user}', [UserController::class, 'update']);
             Route::delete('/users/{user}', [UserController::class, 'destroy']);

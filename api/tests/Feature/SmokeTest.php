@@ -572,15 +572,28 @@ class SmokeTest extends TestCase
         $response->assertStatus(403);
     }
 
-    /** Verifies that staff users are forbidden from accessing the user management endpoint. */
+    /**
+     * Verifies that staff can read the user list (needed for the DM recipient
+     * picker) but cannot create new users (write operations stay restricted).
+     */
     public function test_staff_cannot_manage_users(): void
     {
         $seed = $this->seedLocationAndUsers();
 
-        $response = $this->actingAs($seed['staff'], 'sanctum')
-            ->getJson('/api/users');
+        // Staff CAN read the user list (used by the DM recipient picker)
+        $this->actingAs($seed['staff'], 'sanctum')
+            ->getJson('/api/users')
+            ->assertOk();
 
-        $response->assertStatus(403);
+        // Staff CANNOT create users (write operations remain admin/manager only)
+        $this->actingAs($seed['staff'], 'sanctum')
+            ->postJson('/api/users', [
+                'name' => 'New User',
+                'email' => 'newuser@test.com',
+                'password' => 'password',
+                'role' => 'server',
+            ])
+            ->assertStatus(403);
     }
 
     /** Verifies that non-admin users (including managers) are forbidden from accessing location management. */
