@@ -41,7 +41,7 @@ use Illuminate\Support\Str;
  *   - Shift drops, time-off requests, board messages, DM conversations
  *   - Manager logs, acknowledgments, and notifications
  *
- * All accounts use the password "password" for easy local login.
+ * All accounts use the password "baldsnutz" for easy local login.
  *
  * Key accounts:
  *   - prince@preshift.test   — SuperAdmin (admin role, global access)
@@ -99,12 +99,12 @@ class DatabaseSeeder extends Seeder
         |   - 5 bartenders (Hendrix, Cobain, Morrison, Jagger, Lennon)
         |   - 15 servers
         |
-        | All accounts use password "password" for local dev.
+        | All accounts use password "baldsnutz" for local dev.
         */
         $superadmin = User::create([
             'name'          => 'Prince Springsteen',
             'email'         => 'prince@preshift.test',
-            'password'      => Hash::make('password'),
+            'password'      => Hash::make('baldsnutz'),
             'role'          => 'admin',
             'location_id'   => $location->id,
             'is_superadmin' => true,
@@ -114,7 +114,7 @@ class DatabaseSeeder extends Seeder
         User::create([
             'name'          => 'Otto',
             'email'         => 'otto@preshift.test',
-            'password'      => Hash::make('password'),
+            'password'      => Hash::make('baldsnutz'),
             'role'          => 'admin',
             'location_id'   => $location->id,
             'is_superadmin' => true,
@@ -124,7 +124,7 @@ class DatabaseSeeder extends Seeder
         User::create([
             'name'          => 'TBone',
             'email'         => 'tbone@preshift.test',
-            'password'      => Hash::make('password'),
+            'password'      => Hash::make('baldsnutz'),
             'role'          => 'admin',
             'location_id'   => $location->id,
             'is_superadmin' => true,
@@ -134,7 +134,7 @@ class DatabaseSeeder extends Seeder
         User::create([
             'name'          => 'Chip',
             'email'         => 'chip@preshift.test',
-            'password'      => Hash::make('password'),
+            'password'      => Hash::make('baldsnutz'),
             'role'          => 'admin',
             'location_id'   => $location->id,
             'is_superadmin' => true,
@@ -145,7 +145,7 @@ class DatabaseSeeder extends Seeder
         $manager = User::create([
             'name'        => 'Lisa Mercury',
             'email'       => 'mercury@preshift.test',
-            'password'    => Hash::make('password'),
+            'password'    => Hash::make('baldsnutz'),
             'role'        => 'manager',
             'location_id' => $location->id,
             'phone'       => $this->randomPhone(),
@@ -154,7 +154,7 @@ class DatabaseSeeder extends Seeder
         $manager2 = User::create([
             'name'        => 'Dan Bowie',
             'email'       => 'bowie@preshift.test',
-            'password'    => Hash::make('password'),
+            'password'    => Hash::make('baldsnutz'),
             'role'        => 'manager',
             'location_id' => $location->id,
             'phone'       => $this->randomPhone(),
@@ -163,7 +163,7 @@ class DatabaseSeeder extends Seeder
         $manager3 = User::create([
             'name'        => 'Rachel Joplin',
             'email'       => 'joplin@preshift.test',
-            'password'    => Hash::make('password'),
+            'password'    => Hash::make('baldsnutz'),
             'role'        => 'manager',
             'location_id' => $location->id,
             'phone'       => $this->randomPhone(),
@@ -173,7 +173,7 @@ class DatabaseSeeder extends Seeder
         $bartender = User::create([
             'name'        => 'Kyle Hendrix',
             'email'       => 'hendrix@preshift.test',
-            'password'    => Hash::make('password'),
+            'password'    => Hash::make('baldsnutz'),
             'role'        => 'bartender',
             'location_id' => $location->id,
             'phone'       => $this->randomPhone(),
@@ -189,7 +189,7 @@ class DatabaseSeeder extends Seeder
             $bartenders->push(User::create([
                 'name'        => $b['name'],
                 'email'       => $b['email'],
-                'password'    => Hash::make('password'),
+                'password'    => Hash::make('baldsnutz'),
                 'role'        => 'bartender',
                 'location_id' => $location->id,
                 'phone'       => $this->randomPhone(),
@@ -218,7 +218,7 @@ class DatabaseSeeder extends Seeder
             $serverList->push(User::create([
                 'name'        => $s['name'],
                 'email'       => $s['email'],
-                'password'    => Hash::make('password'),
+                'password'    => Hash::make('baldsnutz'),
                 'role'        => 'server',
                 'location_id' => $location->id,
                 'phone'       => $this->randomPhone(),
