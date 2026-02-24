@@ -104,9 +104,8 @@ When the user says "branch, tag, pr, deploy it" (or any subset), follow this exa
 3. **Tag** — Bump the minor version: check `git tag --sort=-v:refname | head -1` and increment (e.g. `v1.25.0` → `v1.26.0`)
 4. **Push** — Push the branch with `-u` and the tag
 5. **PR** — Create a PR with `gh pr create` using a short title and a summary + test plan body
-6. **Merge** — Merge with `gh pr merge <number> --merge`
-7. **Deploy** — Run `ssh preshift 'cd /var/www/preshift && bash deploy/deploy.sh'`
-8. **Clean up** — Switch to main, pull, delete the local branch. Remote branch is auto-deleted by GitHub merge.
+6. **STOP** — Do NOT merge. The user will review and merge the PR themselves. Wait for "clean up" or "deploy it".
+7. **Deploy** (only when user says "deploy it") — Run `ssh preshift 'cd /var/www/preshift && bash deploy/deploy.sh'`
 
 If the user says "reseed production" after deploy:
 ```bash
@@ -114,7 +113,7 @@ ssh preshift 'cd /var/www/preshift/api && php artisan migrate:fresh --seed --for
 ssh preshift 'sudo supervisorctl restart preshift-reverb'
 ```
 
-If the user says "clean up" without other context, switch to main, pull, and delete the feature branch locally.
+If the user says "clean up" without other context: ensure everything is pushed, run tests, verify all PRs are merged, switch to main, pull, and prune/delete all merged local branches.
 
 ## Deployment
 
@@ -141,3 +140,4 @@ ssh preshift 'sudo supervisorctl restart preshift-reverb'
 - Do not add kitchen/cook or barback roles (deferred to v2)
 - Do not use Options API in Vue components
 - Do not remove `text-size-adjust` properties from `main.css` — they fix a mobile viewport zoom bug
+- Do not merge PRs — only the user merges PRs, never Claude
