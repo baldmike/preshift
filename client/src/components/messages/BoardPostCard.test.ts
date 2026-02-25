@@ -39,7 +39,7 @@ function makeMessage(overrides: Partial<BoardMessage> = {}): BoardMessage {
     body: 'Test post body',
     visibility: 'all',
     pinned: false,
-    user: { id: 1, name: 'Test User', role: 'server', email: 'test@test.com', location_id: 1, roles: null, is_superadmin: false, phone: null, availability: null, created_at: '', updated_at: '' },
+    user: { id: 1, name: 'Test User', role: 'server', email: 'test@test.com', location_id: 1, roles: null, is_superadmin: false, phone: null, profile_photo_url: null, availability: null, created_at: '', updated_at: '' },
     replies: [],
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),

@@ -141,7 +141,7 @@ describe('ManageShiftDrops', () => {
         id: 1,
         status: 'open',
         volunteers: [
-          { id: 1, shift_drop_id: 1, user_id: 20, selected: false, created_at: '2026-01-01T00:00:00Z', user: { id: 20, location_id: 1, name: 'Bob', email: 'bob@test.com', role: 'server', roles: null, is_superadmin: false, phone: null, availability: null, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' } },
+          { id: 1, shift_drop_id: 1, user_id: 20, selected: false, created_at: '2026-01-01T00:00:00Z', user: { id: 20, location_id: 1, name: 'Bob', email: 'bob@test.com', role: 'server', roles: null, is_superadmin: false, phone: null, profile_photo_url: null, availability: null, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' } },
         ],
       }),
     ]
