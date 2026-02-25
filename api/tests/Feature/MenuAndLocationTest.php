@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Category;
 use App\Models\Location;
 use App\Models\MenuItem;
+use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
@@ -719,22 +720,26 @@ class MenuAndLocationTest extends TestCase
         // Seed the base location, manager, and staff user.
         $seed = $this->seedLocationAndUsers();
 
-        // Create an admin user who has system-wide access to all locations.
-        // Admins are not restricted by location scoping and can manage the
-        // entire multi-location system.
+        // Create an organization so the admin's location list is org-scoped.
+        $org = Organization::create(['name' => 'Test Org']);
+        $seed['location']->update(['organization_id' => $org->id]);
+
+        // Create an admin user who has org-wide access to all locations.
         $admin = User::create([
             'name' => 'Admin User',
             'email' => 'admin@test.com',
             'password' => Hash::make('password'),
             'role' => 'admin',
             'location_id' => $seed['location']->id,
+            'organization_id' => $org->id,
         ]);
 
-        // Create a second location so we can verify the admin sees all of them.
+        // Create a second location in the same org so the admin sees both.
         $secondLocation = Location::create([
             'name' => 'Second Location',
             'address' => '789 Oak Ave',
             'timezone' => 'America/Chicago',
+            'organization_id' => $org->id,
         ]);
 
         // Act: The admin user requests the list of all locations.

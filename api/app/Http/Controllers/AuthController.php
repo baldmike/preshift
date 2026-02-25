@@ -7,6 +7,7 @@ use App\Http\Requests\LoginRequest;
 use App\Http\Requests\UpdateProfileRequest;
 use App\Http\Requests\UploadProfilePhotoRequest;
 use App\Http\Resources\UserResource;
+use App\Models\Location;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -41,13 +42,44 @@ class AuthController extends Controller
         $token = $user->createToken('auth-token')->plainTextToken;
 
         return response()->json([
-            'user'      => new UserResource($user->load('location')),
+            'user'      => new UserResource($user->load(['location', 'organization'])),
             'token'     => $token,
-            'locations' => $user->locations()->get()->map(fn ($loc) => [
+            'locations' => $this->getLocationsForUser($user),
+        ]);
+    }
+
+    /**
+     * Build the locations list for a user based on their role.
+     *
+     * - SuperAdmin: all locations across all orgs
+     * - Admin/Manager: all locations in their organization
+     * - Staff: only their pivot memberships
+     *
+     * @param  \App\Models\User  $user
+     * @return \Illuminate\Support\Collection
+     */
+    private function getLocationsForUser($user)
+    {
+        if ($user->isSuperAdmin()) {
+            return Location::all()->map(fn ($loc) => [
                 'id'   => $loc->id,
                 'name' => $loc->name,
-                'role' => $loc->pivot->role,
-            ]),
+                'role' => $user->locations()->where('location_id', $loc->id)->first()?->pivot->role ?? 'admin',
+            ]);
+        }
+
+        if ($user->isAdmin() && $user->organization_id) {
+            return Location::where('organization_id', $user->organization_id)->get()->map(fn ($loc) => [
+                'id'   => $loc->id,
+                'name' => $loc->name,
+                'role' => $user->locations()->where('location_id', $loc->id)->first()?->pivot->role ?? $user->role,
+            ]);
+        }
+
+        return $user->locations()->get()->map(fn ($loc) => [
+            'id'   => $loc->id,
+            'name' => $loc->name,
+            'role' => $loc->pivot->role,
         ]);
     }
 
@@ -165,15 +197,11 @@ class AuthController extends Controller
      */
     public function user(Request $request): JsonResponse
     {
-        $user = $request->user()->load('location');
+        $user = $request->user()->load(['location', 'organization']);
 
         return response()->json([
             'user'      => new UserResource($user),
-            'locations' => $user->locations()->get()->map(fn ($loc) => [
-                'id'   => $loc->id,
-                'name' => $loc->name,
-                'role' => $loc->pivot->role,
-            ]),
+            'locations' => $this->getLocationsForUser($user),
         ]);
     }
 }

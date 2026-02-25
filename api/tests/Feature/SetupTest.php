@@ -48,6 +48,7 @@ class SetupTest extends TestCase
 
         $response = $this->actingAs($admin, 'sanctum')
             ->postJson('/api/setup', [
+                'organization_name' => 'My First Org',
                 'name' => 'My First Bar',
                 'city' => 'Austin',
                 'state' => 'TX',
@@ -96,6 +97,7 @@ class SetupTest extends TestCase
 
         $response = $this->actingAs($manager, 'sanctum')
             ->postJson('/api/setup', [
+                'organization_name' => 'Sneaky Org',
                 'name' => 'Sneaky Bar',
                 'city' => 'Chicago',
                 'state' => 'IL',
@@ -133,6 +135,7 @@ class SetupTest extends TestCase
 
         $response = $this->actingAs($admin, 'sanctum')
             ->postJson('/api/setup', [
+                'organization_name' => 'Another Org',
                 'name' => 'Another Bar',
                 'city' => 'Denver',
                 'state' => 'CO',

@@ -2,8 +2,8 @@
 
 **Status:** 100% file coverage — every component, view, composable, and store has a corresponding test file.
 
-**Last verified:** 2026-02-24
-**Total:** 74 test files, 620 tests
+**Last verified:** 2026-02-25
+**Total:** 75 test files, 624 tests
 
 ## Components (24 files)
 
@@ -67,6 +67,7 @@
 | `views/auth/LoginView.vue` | `LoginView.test.ts` | 8 |
 | `views/auth/LocationPickerView.vue` | `LocationPickerView.test.ts` | 6 |
 | `views/auth/SetupView.vue` | `SetupView.test.ts` | 6 |
+| `views/auth/AccessPendingView.vue` | `AccessPendingView.test.ts` | 4 |
 | `views/staff/DashboardView.vue` | `DashboardView.test.ts` | 3 |
 | `views/staff/EightySixedBoard.vue` | `EightySixedBoard.test.ts` | 6 |
 | `views/staff/MessagesView.vue` | `MessagesView.test.ts` | 5 |

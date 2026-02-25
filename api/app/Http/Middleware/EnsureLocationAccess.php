@@ -40,8 +40,13 @@ class EnsureLocationAccess
             return response()->json(['message' => 'Unauthenticated.'], 401);
         }
 
+        // SuperAdmins have universal cross-org access — always allowed through.
+        if ($user->isSuperAdmin()) {
+            return $next($request);
+        }
+
         // Admins can access any endpoint regardless of location assignment.
-        // They operate at a system-wide level and are not bound to a single location.
+        // They operate at an org-wide level and are not bound to a single location.
         if ($user->isAdmin()) {
             return $next($request);
         }

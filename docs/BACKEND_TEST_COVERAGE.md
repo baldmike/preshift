@@ -2,8 +2,8 @@
 
 **Status:** 100% controller coverage — every controller, model, and middleware has test coverage.
 
-**Last verified:** 2026-02-24
-**Total:** 35 test files, 377 tests
+**Last verified:** 2026-02-25
+**Total:** 36 test files, 387 tests
 
 ## Feature Tests (32 files)
 
@@ -39,6 +39,7 @@
 | `TimeOffAutomationTest` | TimeOffRequestController (advance notice), ScheduleEntryController (conflict check) | 8 |
 | `TonightsScheduleTest` | ScheduleController (published schedule with entries) | 3 |
 | `WeatherTest` | WeatherController (caching, coordinates, auth) | 6 |
+| `OrganizationTest` | Organization layer (org-scoped locations, switch within/outside org, setup, access pending) | 10 |
 | `FormRequestValidationTest` | All Form Requests (validation rules, 422 responses) | 26 |
 | `PolicyAuthorizationTest` | All Policies (cross-location isolation, same-location pass) | 28 |
 
@@ -96,6 +97,7 @@
 | `Location` | ModelTest (relationships) | MenuAndLocationTest, MultiLocationTest |
 | `ManagerLog` | — | ManagerLogTest |
 | `MenuItem` | — | MenuAndLocationTest |
+| `Organization` | — | OrganizationTest |
 | `PushItem` | — | PushItemTest, SmokeTest |
 | `Schedule` | ModelTest (relationships, casts) | SchedulingTest, TonightsScheduleTest |
 | `ScheduleEntry` | ModelTest (relationships, casts) | SchedulingTest |

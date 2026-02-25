@@ -6,6 +6,7 @@ use App\Http\Requests\StoreLocationRequest;
 use App\Http\Resources\LocationResource;
 use App\Models\Location;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 /**
  * LocationController manages restaurant/bar location records.
@@ -13,13 +14,30 @@ use Illuminate\Http\JsonResponse;
 class LocationController extends Controller
 {
     /**
-     * List all locations in the system.
+     * List locations scoped by the user's role and organization.
      *
-     * @return \Illuminate\Http\JsonResponse  A JSON array of all locations.
+     * - SuperAdmin: all locations across all orgs
+     * - Admin/Manager: all locations in their organization
+     * - Staff: only their pivot locations
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse  A JSON array of locations.
      */
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        return response()->json(LocationResource::collection(Location::all()));
+        $user = $request->user();
+
+        if ($user->isSuperAdmin()) {
+            return response()->json(LocationResource::collection(Location::all()));
+        }
+
+        if ($user->isAdmin() && $user->organization_id) {
+            $locations = Location::where('organization_id', $user->organization_id)->get();
+            return response()->json(LocationResource::collection($locations));
+        }
+
+        $locations = $user->locations()->get();
+        return response()->json(LocationResource::collection($locations));
     }
 
     /**

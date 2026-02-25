@@ -69,6 +69,13 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/auth/SetupView.vue'),
     meta: { requiresAuth: true },
   },
+  {
+    path: '/access-pending',
+    name: 'AccessPending',
+    // Shown when a user is authenticated but has no location memberships
+    component: () => import('@/views/auth/AccessPendingView.vue'),
+    meta: { requiresAuth: true },
+  },
 
   // -----------------------------------------------------------------------
   // Root redirect -- sends "/" straight to the staff dashboard
@@ -309,14 +316,22 @@ router.beforeEach(async (to, _from, next) => {
       }
     }
 
-    // GUARD 3: SuperAdmin access control
+    // GUARD 3: Access pending — user authenticated but no location memberships
+    if (authStore.accessPending && to.path !== '/access-pending') {
+      return next('/access-pending')
+    }
+    if (!authStore.accessPending && to.path === '/access-pending') {
+      return next('/dashboard')
+    }
+
+    // GUARD 4: SuperAdmin access control
     if (to.meta.requiresSuperAdmin) {
       if (!authStore.user?.is_superadmin) {
         return next('/dashboard')
       }
     }
 
-    // GUARD 4: Role-based access control
+    // GUARD 5: Role-based access control
     if (to.meta.roles) {
       const allowedRoles = to.meta.roles as string[]
       if (authStore.user && !allowedRoles.includes(authStore.user.role)) {

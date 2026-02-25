@@ -8,6 +8,30 @@
  */
 
 /**
+ * Represents a business organization that owns one or more locations.
+ * Organizations sit above locations in the hierarchy — each restaurant
+ * group is an organization containing one or more Location records.
+ */
+export interface Organization {
+  /** Primary key */
+  id: number
+  /** Business/organization name */
+  name: string
+  /** Street address; nullable */
+  address: string | null
+  /** City name; nullable */
+  city: string | null
+  /** State abbreviation; nullable */
+  state: string | null
+  /** IANA timezone identifier; nullable */
+  timezone: string | null
+  /** ISO-8601 creation timestamp */
+  created_at: string
+  /** ISO-8601 last-update timestamp */
+  updated_at: string
+}
+
+/**
  * Represents a physical restaurant / bar location.
  * A location is the top-level tenant; almost every other entity belongs to
  * exactly one location via `location_id`.
@@ -15,6 +39,8 @@
 export interface Location {
   /** Primary key */
   id: number
+  /** Foreign key to the owning Organization; nullable */
+  organization_id: number | null
   /** Human-readable venue name (e.g. "Downtown Bistro") */
   name: string
   /** Street address; nullable if not yet provided */
@@ -59,6 +85,8 @@ export interface User {
   id: number
   /** Foreign key to the Location this user belongs to */
   location_id: number
+  /** Foreign key to the Organization this user belongs to; nullable */
+  organization_id: number | null
   /** Display name */
   name: string
   /** Login email address */
@@ -89,6 +117,8 @@ export interface User {
   profile_photo_url: string | null
   /** Eagerly-loaded Location relationship (optional, depends on API include) */
   location?: Location
+  /** Eagerly-loaded Organization relationship (optional, depends on API include) */
+  organization?: Organization
   /** ISO-8601 creation timestamp */
   created_at: string
   /** ISO-8601 last-update timestamp */

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\SetupLocationRequest;
 use App\Http\Resources\UserResource;
 use App\Models\Location;
+use App\Models\Organization;
 use Illuminate\Http\JsonResponse;
 
 /**
@@ -46,8 +47,14 @@ class SetupController extends Controller
 
         $validated = $request->validated();
 
-        // Create the new location
+        // Create the organization first
+        $organization = Organization::create([
+            'name' => $validated['organization_name'],
+        ]);
+
+        // Create the new location under the organization
         $location = Location::create([
+            'organization_id' => $organization->id,
             'name'  => $validated['name'],
             'city'  => $validated['city'],
             'state' => $validated['state'],
@@ -59,12 +66,13 @@ class SetupController extends Controller
         // Create the pivot membership
         $user->locations()->attach($location->id, ['role' => 'admin']);
 
-        // Set this as the user's active location
+        // Set this as the user's active location and organization
         $user->location_id = $location->id;
+        $user->organization_id = $organization->id;
         $user->role = 'admin';
         $user->save();
 
-        $user->load('location');
+        $user->load(['location', 'organization']);
 
         return response()->json([
             'user'      => new UserResource($user),

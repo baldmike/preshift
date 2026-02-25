@@ -45,6 +45,7 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'location_id', // FK — ties this user to a specific venue
+        'organization_id', // FK — ties this user to an organization
         'name',        // Display name shown in the UI and acknowledgment records
         'email',       // Unique credential used for login
         'password',    // Stored as a bcrypt/argon hash via the 'hashed' cast
@@ -97,6 +98,17 @@ class User extends Authenticatable
     public function location(): BelongsTo
     {
         return $this->belongsTo(Location::class);
+    }
+
+    /**
+     * The organization this user belongs to.
+     * Admin/manager users can access all locations within their organization.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo<Organization, User>
+     */
+    public function organization(): BelongsTo
+    {
+        return $this->belongsTo(Organization::class);
     }
 
     /**

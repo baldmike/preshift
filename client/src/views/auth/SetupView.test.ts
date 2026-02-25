@@ -5,10 +5,10 @@
  * users who need to create their first establishment.
  *
  * Verifies:
- *   1. The form renders inputs for name, city, and state plus a submit button.
+ *   1. The form renders inputs for organization name, name, city, and state plus a submit button.
  *   2. Input fields bind correctly via v-model.
- *   3. Successful form submission posts to /api/setup, updates the auth store,
- *      and redirects to /manage/daily.
+ *   3. Successful form submission posts to /api/setup with organization_name,
+ *      updates the auth store, and redirects to /manage/daily.
  *   4. Failed submission displays the error banner with the server message.
  *   5. The submit button is disabled and shows a spinner while loading.
  */
@@ -68,17 +68,18 @@ describe('SetupView', () => {
   })
 
   /**
-   * The setup form must render three text inputs (establishment name, city,
-   * state) and a Create Establishment submit button.
+   * The setup form must render four text inputs (organization name,
+   * establishment name, city, state) and a Create Establishment submit button.
    */
-  it('renders name, city, state inputs and a submit button', () => {
+  it('renders organization name, name, city, state inputs and a submit button', () => {
     const wrapper = mount(SetupView)
 
     const inputs = wrapper.findAll('input')
-    expect(inputs.length).toBe(3)
-    expect(inputs[0].attributes('placeholder')).toContain('Downtown Taproom')
-    expect(inputs[1].attributes('placeholder')).toContain('Chicago')
-    expect(inputs[2].attributes('placeholder')).toContain('IL')
+    expect(inputs.length).toBe(4)
+    expect(inputs[0].attributes('placeholder')).toContain('My Restaurant Group')
+    expect(inputs[1].attributes('placeholder')).toContain('Downtown Taproom')
+    expect(inputs[2].attributes('placeholder')).toContain('Chicago')
+    expect(inputs[3].attributes('placeholder')).toContain('IL')
 
     const button = wrapper.find('button[type="submit"]')
     expect(button.exists()).toBe(true)
@@ -86,20 +87,22 @@ describe('SetupView', () => {
   })
 
   /**
-   * Typing into the name, city, and state fields should update the reactive
-   * v-model bindings so handleSetup sends the correct data.
+   * Typing into the organization name, name, city, and state fields should
+   * update the reactive v-model bindings so handleSetup sends the correct data.
    */
-  it('binds name, city, and state inputs via v-model', async () => {
+  it('binds organization name, name, city, and state inputs via v-model', async () => {
     const wrapper = mount(SetupView)
 
     const inputs = wrapper.findAll('input')
-    await inputs[0].setValue('Test Bar')
-    await inputs[1].setValue('Austin')
-    await inputs[2].setValue('TX')
+    await inputs[0].setValue('Test Group')
+    await inputs[1].setValue('Test Bar')
+    await inputs[2].setValue('Austin')
+    await inputs[3].setValue('TX')
 
-    expect((inputs[0].element as HTMLInputElement).value).toBe('Test Bar')
-    expect((inputs[1].element as HTMLInputElement).value).toBe('Austin')
-    expect((inputs[2].element as HTMLInputElement).value).toBe('TX')
+    expect((inputs[0].element as HTMLInputElement).value).toBe('Test Group')
+    expect((inputs[1].element as HTMLInputElement).value).toBe('Test Bar')
+    expect((inputs[2].element as HTMLInputElement).value).toBe('Austin')
+    expect((inputs[3].element as HTMLInputElement).value).toBe('TX')
   })
 
   /**
@@ -118,13 +121,15 @@ describe('SetupView', () => {
     const wrapper = mount(SetupView)
 
     const inputs = wrapper.findAll('input')
-    await inputs[0].setValue('Test Bar')
-    await inputs[1].setValue('Austin')
-    await inputs[2].setValue('TX')
+    await inputs[0].setValue('Test Group')
+    await inputs[1].setValue('Test Bar')
+    await inputs[2].setValue('Austin')
+    await inputs[3].setValue('TX')
     await wrapper.find('form').trigger('submit')
     await flushPromises()
 
     expect(postMock).toHaveBeenCalledWith('/api/setup', {
+      organization_name: 'Test Group',
       name: 'Test Bar',
       city: 'Austin',
       state: 'TX',

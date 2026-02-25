@@ -13,6 +13,7 @@ use App\Models\Event;
 use App\Models\Location;
 use App\Models\ManagerLog;
 use App\Models\MenuItem;
+use App\Models\Organization;
 use App\Models\PushItem;
 use App\Models\Schedule;
 use App\Models\ScheduleEntry;
@@ -32,17 +33,18 @@ use Illuminate\Support\Str;
  * Database Seeder — populates the database with comprehensive sample data
  * for local development and demo purposes.
  *
- * Creates six establishments:
- *   - Bald Bar (BM, Sean Hulet + full staff, schedules, content)
- *   - TITZ (Bob Frumkorpritt — menu, specials, events, no other staff yet)
- *   - Field of Dreams (Chip — menu, specials, events, no other staff yet)
- *   - Almost Home (Otto, TBone — menu, specials, events, no other staff yet)
- *   - The Rail (Dean DeRenzis — menu, specials, events, no other staff yet)
- *   - Snooki's (Russell Cougar Springsteen — server, chronically drops shifts)
+ * Creates six organizations, each with one location:
+ *   - PreShift86 → Bald Bar (BM superadmin + full staff, schedules, content)
+ *   - Almost Home → Almost Home (Otto, TBone superadmins + staff)
+ *   - TITZ → TITZ (Bob Frumkorpritt superadmin + staff)
+ *   - Field of Dreams → Field of Dreams (Chip superadmin + staff)
+ *   - The Rail → The Rail (Dean DeRenzis superadmin + staff)
+ *   - Snooki's → Snooki's (Mike Williamson superadmin + staff)
  *
- * BM has access to all five establishments. Other superadmins only see
- * their own. Bald Bar is fully operational with 28 weeks of schedules,
- * shift drops, board messages, DMs, manager logs, and acknowledgments.
+ * BM has access to all locations (universal superadmin). Cross-location
+ * employees: Nina Cobain, Morgan Grohl, Casey Jagger, Chris Cornell.
+ * Bald Bar is fully operational with 28 weeks of schedules, shift drops,
+ * board messages, DMs, manager logs, and acknowledgments.
  */
 class DatabaseSeeder extends Seeder
 {
@@ -59,12 +61,19 @@ class DatabaseSeeder extends Seeder
     {
         /*
         |------------------------------------------------------------------
-        | Location
+        | Organizations & Locations
         |------------------------------------------------------------------
-        | Bald Bar — a sports bar in Chicago's River North neighborhood.
-        | Coordinates point to downtown Chicago. Timezone is Central.
+        | Each business is an organization with one or more locations.
         */
+        $orgPreShift = Organization::create(['name' => 'PreShift86']);
+        $orgAlmostHome = Organization::create(['name' => 'Almost Home']);
+        $orgTitz = Organization::create(['name' => 'TITZ']);
+        $orgFieldOfDreams = Organization::create(['name' => 'Field of Dreams']);
+        $orgTheRail = Organization::create(['name' => 'The Rail']);
+        $orgSnookis = Organization::create(['name' => "Snooki's"]);
+
         $location = Location::create([
+            'organization_id' => $orgPreShift->id,
             'name'      => 'Bald Bar',
             'address'   => '401 N Wabash Ave, Chicago, IL 60611',
             'city'      => 'Chicago',
@@ -75,6 +84,7 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $titz = Location::create([
+            'organization_id' => $orgTitz->id,
             'name'      => 'TITZ',
             'address'   => '1200 N Lake Shore Dr, Chicago, IL 60610',
             'city'      => 'Chicago',
@@ -85,6 +95,7 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $fieldOfDreams = Location::create([
+            'organization_id' => $orgFieldOfDreams->id,
             'name'      => 'Field of Dreams',
             'address'   => '825 W Addison St, Chicago, IL 60613',
             'city'      => 'Chicago',
@@ -95,6 +106,7 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $almostHome = Location::create([
+            'organization_id' => $orgAlmostHome->id,
             'name'      => 'Almost Home',
             'address'   => '742 N Clark St, Chicago, IL 60654',
             'city'      => 'Chicago',
@@ -105,6 +117,7 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $theRail = Location::create([
+            'organization_id' => $orgTheRail->id,
             'name'      => 'The Rail',
             'address'   => '2012 W Roscoe St, Chicago, IL 60618',
             'city'      => 'Chicago',
@@ -115,6 +128,7 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $snookis = Location::create([
+            'organization_id' => $orgSnookis->id,
             'name'      => "Snooki's",
             'address'   => '2437 N Racine Ave, Chicago, IL 60614',
             'city'      => 'Chicago',
@@ -143,120 +157,143 @@ class DatabaseSeeder extends Seeder
         |   - 15 servers
         */
         $superadmin = User::create([
-            'name'          => 'BM',
-            'email'         => 'bm@preshift.test',
-            'password'      => Hash::make('funky101'),
-            'role'          => 'admin',
-            'location_id'   => $location->id,
-            'is_superadmin' => true,
-            'phone'         => $this->randomPhone(),
+            'name'            => 'BM',
+            'email'           => 'bm@preshift.test',
+            'password'        => Hash::make('funky101'),
+            'role'            => 'admin',
+            'location_id'     => $location->id,
+            'organization_id' => $orgPreShift->id,
+            'is_superadmin'   => true,
+            'phone'           => $this->randomPhone(),
         ]);
 
         User::create([
-            'name'          => 'Otto',
-            'email'         => 'otto@preshift.test',
-            'password'      => Hash::make('baldsnutz'),
-            'role'          => 'admin',
-            'location_id'   => $almostHome->id,
-            'is_superadmin' => true,
-            'phone'         => '(312) 588-2300',
+            'name'            => 'Otto',
+            'email'           => 'otto@preshift.test',
+            'password'        => Hash::make('baldsnutz'),
+            'role'            => 'admin',
+            'location_id'     => $almostHome->id,
+            'organization_id' => $orgAlmostHome->id,
+            'is_superadmin'   => true,
+            'phone'           => '(312) 588-2300',
         ]);
 
         User::create([
-            'name'          => 'TBone',
-            'email'         => 'tbone@preshift.test',
-            'password'      => Hash::make('baldsnutz'),
-            'role'          => 'admin',
-            'location_id'   => $almostHome->id,
-            'is_superadmin' => true,
-            'phone'         => '(312) DWN-STRS',
+            'name'            => 'TBone',
+            'email'           => 'tbone@preshift.test',
+            'password'        => Hash::make('baldsnutz'),
+            'role'            => 'admin',
+            'location_id'     => $almostHome->id,
+            'organization_id' => $orgAlmostHome->id,
+            'is_superadmin'   => true,
+            'phone'           => '(312) DWN-STRS',
         ]);
 
         User::create([
-            'name'          => 'Chip',
-            'email'         => 'chip@preshift.test',
-            'password'      => Hash::make('baldsnutz'),
-            'role'          => 'admin',
-            'location_id'   => $fieldOfDreams->id,
-            'is_superadmin' => true,
-            'phone'         => '(312) 420-6969',
+            'name'            => 'Chip',
+            'email'           => 'chip@preshift.test',
+            'password'        => Hash::make('baldsnutz'),
+            'role'            => 'admin',
+            'location_id'     => $fieldOfDreams->id,
+            'organization_id' => $orgFieldOfDreams->id,
+            'is_superadmin'   => true,
+            'phone'           => '(312) 420-6969',
         ]);
 
         User::create([
-            'name'          => 'Sean Hulet',
-            'email'         => 'sean@preshift.test',
-            'password'      => Hash::make('baldsnutz'),
-            'role'          => 'admin',
-            'location_id'   => $location->id,
-            'is_superadmin' => true,
-            'phone'         => '(312) 899-6539',
+            'name'            => 'Sean Hulet',
+            'email'           => 'sean@preshift.test',
+            'password'        => Hash::make('baldsnutz'),
+            'role'            => 'admin',
+            'location_id'     => $location->id,
+            'organization_id' => $orgPreShift->id,
+            'is_superadmin'   => true,
+            'phone'           => '(312) 899-6539',
         ]);
 
         User::create([
-            'name'          => 'Bob Frumkorpritt',
-            'email'         => 'bfc@preshift.test',
-            'password'      => Hash::make('baldsnutz'),
-            'role'          => 'admin',
-            'location_id'   => $titz->id,
-            'is_superadmin' => true,
-            'phone'         => '(420) 247-8309',
+            'name'            => 'Bob Frumkorpritt',
+            'email'           => 'bfc@preshift.test',
+            'password'        => Hash::make('baldsnutz'),
+            'role'            => 'admin',
+            'location_id'     => $titz->id,
+            'organization_id' => $orgTitz->id,
+            'is_superadmin'   => true,
+            'phone'           => '(420) 247-8309',
         ]);
 
         $dean = User::create([
-            'name'          => 'Dean DeRenzis',
-            'email'         => 'deano@preshift.test',
-            'password'      => Hash::make('baldsnutz'),
-            'role'          => 'admin',
-            'location_id'   => $theRail->id,
-            'is_superadmin' => true,
-            'phone'         => '(888) 123-4567',
+            'name'            => 'Dean DeRenzis',
+            'email'           => 'deano@preshift.test',
+            'password'        => Hash::make('baldsnutz'),
+            'role'            => 'admin',
+            'location_id'     => $theRail->id,
+            'organization_id' => $orgTheRail->id,
+            'is_superadmin'   => true,
+            'phone'           => '(888) 123-4567',
+        ]);
+
+        User::create([
+            'name'            => 'Mike Williamson',
+            'email'           => 'bigmike@preshift.test',
+            'password'        => Hash::make('baldsnutz'),
+            'role'            => 'admin',
+            'location_id'     => $snookis->id,
+            'organization_id' => $orgSnookis->id,
+            'is_superadmin'   => true,
+            'phone'           => $this->randomPhone(),
         ]);
 
         $russell = User::create([
-            'name'        => 'Russell Cougar Springsteen',
-            'email'       => 'russ@preshift.test',
-            'password'    => Hash::make('baldsnutz'),
-            'role'        => 'server',
-            'location_id' => $snookis->id,
-            'phone'       => $this->randomPhone(),
+            'name'            => 'Russell Cougar Springsteen',
+            'email'           => 'russ@preshift.test',
+            'password'        => Hash::make('baldsnutz'),
+            'role'            => 'server',
+            'location_id'     => $snookis->id,
+            'organization_id' => $orgSnookis->id,
+            'phone'           => $this->randomPhone(),
         ]);
 
-        // ── Managers ──
+        // ── Bald Bar Managers ──
         $manager = User::create([
-            'name'        => 'Lisa Mercury',
-            'email'       => 'mercury@preshift.test',
-            'password'    => Hash::make('baldsnutz'),
-            'role'        => 'manager',
-            'location_id' => $location->id,
-            'phone'       => $this->randomPhone(),
+            'name'            => 'Lisa Mercury',
+            'email'           => 'mercury@preshift.test',
+            'password'        => Hash::make('baldsnutz'),
+            'role'            => 'manager',
+            'location_id'     => $location->id,
+            'organization_id' => $orgPreShift->id,
+            'phone'           => $this->randomPhone(),
         ]);
 
         $manager2 = User::create([
-            'name'        => 'Dan Bowie',
-            'email'       => 'bowie@preshift.test',
-            'password'    => Hash::make('baldsnutz'),
-            'role'        => 'manager',
-            'location_id' => $location->id,
-            'phone'       => $this->randomPhone(),
+            'name'            => 'Dan Bowie',
+            'email'           => 'bowie@preshift.test',
+            'password'        => Hash::make('baldsnutz'),
+            'role'            => 'manager',
+            'location_id'     => $location->id,
+            'organization_id' => $orgPreShift->id,
+            'phone'           => $this->randomPhone(),
         ]);
 
         $manager3 = User::create([
-            'name'        => 'Rachel Joplin',
-            'email'       => 'joplin@preshift.test',
-            'password'    => Hash::make('baldsnutz'),
-            'role'        => 'manager',
-            'location_id' => $location->id,
-            'phone'       => $this->randomPhone(),
+            'name'            => 'Rachel Joplin',
+            'email'           => 'joplin@preshift.test',
+            'password'        => Hash::make('baldsnutz'),
+            'role'            => 'manager',
+            'location_id'     => $location->id,
+            'organization_id' => $orgPreShift->id,
+            'phone'           => $this->randomPhone(),
         ]);
 
-        // ── Bartenders ──
+        // ── Bald Bar Bartenders ──
         $bartender = User::create([
-            'name'        => 'Kyle Hendrix',
-            'email'       => 'hendrix@preshift.test',
-            'password'    => Hash::make('baldsnutz'),
-            'role'        => 'bartender',
-            'location_id' => $location->id,
-            'phone'       => $this->randomPhone(),
+            'name'            => 'Kyle Hendrix',
+            'email'           => 'hendrix@preshift.test',
+            'password'        => Hash::make('baldsnutz'),
+            'role'            => 'bartender',
+            'location_id'     => $location->id,
+            'organization_id' => $orgPreShift->id,
+            'phone'           => $this->randomPhone(),
         ]);
 
         $bartenders = collect([$bartender]);
@@ -267,16 +304,17 @@ class DatabaseSeeder extends Seeder
             ['name' => 'Jordan Lennon', 'email' => 'lennon@preshift.test'],
         ] as $b) {
             $bartenders->push(User::create([
-                'name'        => $b['name'],
-                'email'       => $b['email'],
-                'password'    => Hash::make('baldsnutz'),
-                'role'        => 'bartender',
-                'location_id' => $location->id,
-                'phone'       => $this->randomPhone(),
+                'name'            => $b['name'],
+                'email'           => $b['email'],
+                'password'        => Hash::make('baldsnutz'),
+                'role'            => 'bartender',
+                'location_id'     => $location->id,
+                'organization_id' => $orgPreShift->id,
+                'phone'           => $this->randomPhone(),
             ]));
         }
 
-        // ── Servers ──
+        // ── Bald Bar Servers ──
         $serverList = collect();
         foreach ([
             ['name' => 'Sam Presley',     'email' => 'presley@preshift.test'],
@@ -296,12 +334,13 @@ class DatabaseSeeder extends Seeder
             ['name' => 'Ronnie Dio',      'email' => 'dio@preshift.test'],
         ] as $s) {
             $serverList->push(User::create([
-                'name'        => $s['name'],
-                'email'       => $s['email'],
-                'password'    => Hash::make('baldsnutz'),
-                'role'        => 'server',
-                'location_id' => $location->id,
-                'phone'       => $this->randomPhone(),
+                'name'            => $s['name'],
+                'email'           => $s['email'],
+                'password'        => Hash::make('baldsnutz'),
+                'role'            => 'server',
+                'location_id'     => $location->id,
+                'organization_id' => $orgPreShift->id,
+                'phone'           => $this->randomPhone(),
             ]));
         }
 
@@ -353,6 +392,66 @@ class DatabaseSeeder extends Seeder
 
         /*
         |------------------------------------------------------------------
+        | Per-Location Staff (unique employees per location)
+        |------------------------------------------------------------------
+        */
+
+        // ── Almost Home staff ──
+        $this->createStaff($almostHome, $orgAlmostHome, [
+            ['name' => 'Frankie Valli',   'email' => 'valli@preshift.test',    'role' => 'manager'],
+            ['name' => 'Stevie Nicks',    'email' => 'nicks@preshift.test',    'role' => 'bartender'],
+            ['name' => 'Tom Petty',       'email' => 'petty@preshift.test',    'role' => 'bartender'],
+            ['name' => 'Linda Ronstadt',  'email' => 'ronstadt@preshift.test', 'role' => 'server'],
+            ['name' => 'Debbie Harry',    'email' => 'harry@preshift.test',    'role' => 'server'],
+            ['name' => 'Joan Jett',       'email' => 'jett@preshift.test',     'role' => 'server'],
+            ['name' => 'Billy Joel',      'email' => 'joel@preshift.test',     'role' => 'server'],
+        ]);
+
+        // ── TITZ staff ──
+        $this->createStaff($titz, $orgTitz, [
+            ['name' => 'Tina Turner',     'email' => 'turner@preshift.test',   'role' => 'manager'],
+            ['name' => 'Prince Rogers',   'email' => 'prince@preshift.test',   'role' => 'bartender'],
+            ['name' => 'Grace Slick',     'email' => 'slick@preshift.test',    'role' => 'bartender'],
+            ['name' => 'Chrissie Hynde',  'email' => 'hynde@preshift.test',    'role' => 'server'],
+            ['name' => 'Siouxsie Sioux',  'email' => 'sioux@preshift.test',    'role' => 'server'],
+            ['name' => 'Cyndi Lauper',    'email' => 'lauper@preshift.test',   'role' => 'server'],
+            ['name' => 'Annie Lennox',    'email' => 'lennox@preshift.test',   'role' => 'server'],
+        ]);
+
+        // ── Field of Dreams staff ──
+        $this->createStaff($fieldOfDreams, $orgFieldOfDreams, [
+            ['name' => 'Bruce Springsteen', 'email' => 'bruce@preshift.test',  'role' => 'manager'],
+            ['name' => 'Eddie Vedder',      'email' => 'evedder@preshift.test','role' => 'bartender'],
+            ['name' => 'Dave Grohl',        'email' => 'dgrohl@preshift.test', 'role' => 'bartender'],
+            ['name' => 'Bob Dylan',         'email' => 'dylan@preshift.test',  'role' => 'server'],
+            ['name' => 'Joni Mitchell',     'email' => 'mitchell@preshift.test','role' => 'server'],
+            ['name' => 'Neil Young',        'email' => 'young@preshift.test',  'role' => 'server'],
+            ['name' => 'Patti Smith',       'email' => 'psmith@preshift.test', 'role' => 'server'],
+        ]);
+
+        // ── The Rail staff ──
+        $this->createStaff($theRail, $orgTheRail, [
+            ['name' => 'Mick Jagger',     'email' => 'mjagger@preshift.test',  'role' => 'manager'],
+            ['name' => 'Keith Richards',   'email' => 'richards@preshift.test', 'role' => 'bartender'],
+            ['name' => 'Ronnie Wood',      'email' => 'wood@preshift.test',     'role' => 'bartender'],
+            ['name' => 'David Gilmour',    'email' => 'gilmour@preshift.test',  'role' => 'server'],
+            ['name' => 'Roger Waters',     'email' => 'waters@preshift.test',   'role' => 'server'],
+            ['name' => 'Robert Plant',     'email' => 'rplant@preshift.test',   'role' => 'server'],
+            ['name' => 'Jimmy Page',       'email' => 'jpage@preshift.test',    'role' => 'server'],
+        ]);
+
+        // ── Snooki's staff ──
+        $this->createStaff($snookis, $orgSnookis, [
+            ['name' => 'Ozzy Osbourne',    'email' => 'ozzy@preshift.test',     'role' => 'manager'],
+            ['name' => 'Lemmy Kilmister',  'email' => 'lemmy@preshift.test',    'role' => 'bartender'],
+            ['name' => 'Rob Halford',      'email' => 'halford@preshift.test',  'role' => 'bartender'],
+            ['name' => 'Dio Ronnie',       'email' => 'dioronnie@preshift.test','role' => 'server'],
+            ['name' => 'Angus Young',      'email' => 'angus@preshift.test',    'role' => 'server'],
+            ['name' => 'James Hetfield',   'email' => 'jhetfield@preshift.test','role' => 'server'],
+        ]);
+
+        /*
+        |------------------------------------------------------------------
         | Location–User Pivot (Multi-Establishment Memberships)
         |------------------------------------------------------------------
         | Backfill the location_user pivot table so every seeded user has
@@ -374,7 +473,7 @@ class DatabaseSeeder extends Seeder
             $snookis->id       => ['role' => 'admin'],
         ]);
 
-        // Backfill pivot for new location users (each only their own)
+        // Backfill pivot for other location users (each only their own)
         foreach ([$titz, $fieldOfDreams, $almostHome, $theRail, $snookis] as $loc) {
             $locUsers = User::where('location_id', $loc->id)->get();
             foreach ($locUsers as $locUser) {
@@ -383,6 +482,32 @@ class DatabaseSeeder extends Seeder
                 ]);
             }
         }
+
+        /*
+        |------------------------------------------------------------------
+        | Cross-Location Employees
+        |------------------------------------------------------------------
+        | Some employees work at two locations, getting additional pivot rows.
+        */
+        $ninaCobain = User::where('email', 'cobain@preshift.test')->first();
+        $ninaCobain->locations()->syncWithoutDetaching([
+            $almostHome->id => ['role' => 'bartender'],
+        ]);
+
+        $morganGrohl = User::where('email', 'grohl@preshift.test')->first();
+        $morganGrohl->locations()->syncWithoutDetaching([
+            $fieldOfDreams->id => ['role' => 'server'],
+        ]);
+
+        $caseyJagger = User::where('email', 'jagger@preshift.test')->first();
+        $caseyJagger->locations()->syncWithoutDetaching([
+            $theRail->id => ['role' => 'bartender'],
+        ]);
+
+        $chrisCornell = User::where('email', 'cornell@preshift.test')->first();
+        $chrisCornell->locations()->syncWithoutDetaching([
+            $titz->id => ['role' => 'server'],
+        ]);
 
         /*
         |------------------------------------------------------------------
@@ -1546,6 +1671,31 @@ class DatabaseSeeder extends Seeder
         $this->seedLocationContent($almostHome, User::where('email', 'otto@preshift.test')->first());
         $this->seedLocationContent($theRail, $dean);
         $this->seedLocationContent($snookis, $superadmin);
+    }
+
+    /**
+     * Create staff members for a location and attach them via pivot.
+     *
+     * @param  Location      $location  The location to assign staff to
+     * @param  Organization  $org       The organization the staff belong to
+     * @param  array         $staff     Array of [name, email, role] entries
+     */
+    private function createStaff(Location $location, Organization $org, array $staff): void
+    {
+        foreach ($staff as $s) {
+            $user = User::create([
+                'name'            => $s['name'],
+                'email'           => $s['email'],
+                'password'        => Hash::make('baldsnutz'),
+                'role'            => $s['role'],
+                'location_id'     => $location->id,
+                'organization_id' => $org->id,
+                'phone'           => $this->randomPhone(),
+            ]);
+            $user->locations()->syncWithoutDetaching([
+                $location->id => ['role' => $s['role']],
+            ]);
+        }
     }
 
     /**
