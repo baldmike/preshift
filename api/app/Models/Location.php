@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Http;
@@ -33,6 +34,7 @@ class Location extends Model
      * @var list<string>
      */
     protected $fillable = [
+        'organization_id', // FK — ties this location to an organization
         'name',      // Display name for the venue
         'address',   // Physical street address
         'city',      // City name (e.g. "Austin")
@@ -58,6 +60,16 @@ class Location extends Model
     }
 
     // ── Relationships ──
+
+    /**
+     * The organization this location belongs to.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo<Organization, Location>
+     */
+    public function organization(): BelongsTo
+    {
+        return $this->belongsTo(Organization::class);
+    }
 
     /**
      * All staff members (admins, managers, servers, bartenders) assigned to this location.

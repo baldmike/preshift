@@ -32,7 +32,55 @@ class SwitchLocationController extends Controller
         $user = $request->user();
         $location = Location::findOrFail($request->validated('location_id'));
 
-        // Verify the user has a pivot membership at this location
+        // SuperAdmins can switch to any location
+        if ($user->isSuperAdmin()) {
+            // Ensure pivot row exists for the superadmin at this location
+            if (!$user->locations()->where('location_id', $location->id)->exists()) {
+                $user->locations()->attach($location->id, ['role' => 'admin']);
+            }
+            $user->switchLocation($location);
+            $user->load(['location', 'organization']);
+
+            return response()->json([
+                'user'      => new UserResource($user),
+                'locations' => Location::all()->map(fn ($loc) => [
+                    'id'   => $loc->id,
+                    'name' => $loc->name,
+                    'role' => $user->locations()->where('location_id', $loc->id)->first()?->pivot->role ?? 'admin',
+                ]),
+            ]);
+        }
+
+        // Admin/Manager: allow switching to any location in their org
+        if ($user->isAdmin() && $user->organization_id) {
+            $orgLocation = Location::where('organization_id', $user->organization_id)
+                ->where('id', $location->id)
+                ->first();
+
+            if (!$orgLocation) {
+                return response()->json([
+                    'message' => 'You do not have access to this location.',
+                ], 403);
+            }
+
+            // Ensure pivot row exists for the admin at this org location
+            if (!$user->locations()->where('location_id', $location->id)->exists()) {
+                $user->locations()->attach($location->id, ['role' => 'admin']);
+            }
+            $user->switchLocation($location);
+            $user->load(['location', 'organization']);
+
+            return response()->json([
+                'user'      => new UserResource($user),
+                'locations' => Location::where('organization_id', $user->organization_id)->get()->map(fn ($loc) => [
+                    'id'   => $loc->id,
+                    'name' => $loc->name,
+                    'role' => $user->locations()->where('location_id', $loc->id)->first()?->pivot->role ?? $user->role,
+                ]),
+            ]);
+        }
+
+        // Staff: require pivot membership
         $membership = $user->locations()->where('location_id', $location->id)->first();
 
         if (!$membership) {
@@ -42,7 +90,7 @@ class SwitchLocationController extends Controller
         }
 
         $user->switchLocation($location);
-        $user->load('location');
+        $user->load(['location', 'organization']);
 
         return response()->json([
             'user'      => new UserResource($user),

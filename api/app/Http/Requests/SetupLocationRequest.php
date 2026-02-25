@@ -29,6 +29,7 @@ class SetupLocationRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'organization_name' => 'required|string|max:255',
             'name'  => 'required|string|max:255',
             'city'  => 'required|string|max:255',
             'state' => 'required|string|max:255',

@@ -54,7 +54,15 @@ class UserController extends Controller
             $validated['location_id'] = $request->user()->location_id;
         }
 
+        // Set organization_id from the creating user's organization
+        $validated['organization_id'] = $request->user()->organization_id;
+
         $user = User::create($validated);
+
+        // Create the pivot membership row
+        $user->locations()->attach($validated['location_id'], [
+            'role' => $validated['role'],
+        ]);
 
         return response()->json(new UserResource($user), 201);
     }

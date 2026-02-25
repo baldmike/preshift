@@ -83,6 +83,11 @@ export const useAuthStore = defineStore('auth', () => {
     () => user.value?.role === 'admin' && locations.value.length === 0
   )
 
+  /** True if the user is authenticated but has zero location memberships (access pending). */
+  const accessPending = computed(
+    () => !!user.value && locations.value.length === 0 && !needsSetup.value
+  )
+
   // -------------------------------------------------------------------------
   // Actions
   // -------------------------------------------------------------------------
@@ -175,6 +180,7 @@ export const useAuthStore = defineStore('auth', () => {
     locationId,
     hasMultipleLocations,
     needsSetup,
+    accessPending,
     login,
     logout,
     fetchUser,

@@ -16,6 +16,7 @@ import api from '@/composables/useApi'
 const router = useRouter()
 const authStore = useAuthStore()
 
+const organizationName = ref('')
 const name = ref('')
 const city = ref('')
 const state = ref('')
@@ -27,6 +28,7 @@ async function handleSetup() {
   loading.value = true
   try {
     const { data } = await api.post('/api/setup', {
+      organization_name: organizationName.value,
       name: name.value,
       city: city.value,
       state: state.value,
@@ -70,6 +72,20 @@ async function handleSetup() {
           class="bg-red-500/10 border border-red-500/30 text-red-400 rounded-lg px-4 py-3 text-sm backdrop-blur-sm"
         >
           {{ error }}
+        </div>
+
+        <!-- Organization Name -->
+        <div>
+          <label class="block text-xs font-medium text-gray-400 uppercase tracking-wider mb-2">
+            Organization Name
+          </label>
+          <input
+            v-model="organizationName"
+            type="text"
+            placeholder="e.g. My Restaurant Group"
+            required
+            class="setup-input"
+          />
         </div>
 
         <!-- Establishment Name -->
