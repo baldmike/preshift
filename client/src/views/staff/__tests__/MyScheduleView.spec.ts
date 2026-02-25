@@ -33,6 +33,7 @@ function makeUser(overrides: Partial<User> = {}): User {
     role: 'server',
     roles: null,
     location_id: 1,
+    organization_id: null,
     is_superadmin: false,
     phone: null,
     profile_photo_url: null,

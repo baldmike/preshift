@@ -123,7 +123,7 @@ describe('TonightsScheduleView', () => {
         shift_template_id: 10,
         user_id: 1,
         role: 'server',
-        user: { id: 1, name: 'Alice', email: 'a@t.com', role: 'server', roles: null, location_id: 1, is_superadmin: false, phone: null, profile_photo_url: null, availability: null, created_at: '', updated_at: '' },
+        user: { id: 1, name: 'Alice', email: 'a@t.com', role: 'server', roles: null, location_id: 1, organization_id: null, is_superadmin: false, phone: null, profile_photo_url: null, availability: null, created_at: '', updated_at: '' },
         shift_template: { id: 10, location_id: 1, name: 'Dinner', start_time: '16:00', created_at: '', updated_at: '' },
       }),
       makeEntry({
@@ -132,7 +132,7 @@ describe('TonightsScheduleView', () => {
         shift_template_id: 10,
         user_id: 2,
         role: 'bartender',
-        user: { id: 2, name: 'Bob', email: 'b@t.com', role: 'bartender', roles: null, location_id: 1, is_superadmin: false, phone: null, profile_photo_url: null, availability: null, created_at: '', updated_at: '' },
+        user: { id: 2, name: 'Bob', email: 'b@t.com', role: 'bartender', roles: null, location_id: 1, organization_id: null, is_superadmin: false, phone: null, profile_photo_url: null, availability: null, created_at: '', updated_at: '' },
         shift_template: { id: 10, location_id: 1, name: 'Dinner', start_time: '16:00', created_at: '', updated_at: '' },
       }),
     ])
