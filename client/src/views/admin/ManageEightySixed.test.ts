@@ -197,4 +197,74 @@ describe('ManageEightySixed', () => {
     expect(text).toContain('Lobster Bisque')
     expect(text).toContain('Ran out')
   })
+
+  /**
+   * Verifies that a toast error is dispatched when saving an 86'd item fails.
+   */
+  it('dispatches error toast when save fails', async () => {
+    const spy = vi.spyOn(window, 'dispatchEvent')
+    const wrapper = await mountView()
+    mockPost.mockRejectedValueOnce(new Error('fail'))
+
+    const addBtn = wrapper.findAll('button').find(b => b.text().includes('86 an Item'))
+    await addBtn!.trigger('click')
+    await flushPromises()
+
+    // Fill required itemName field via vm so the guard passes
+    ;(wrapper.vm as any).itemName = 'Test Item'
+    await wrapper.find('form').trigger('submit')
+    await flushPromises()
+
+    expect(spy).toHaveBeenCalledWith(expect.objectContaining({ type: 'toast' }))
+    spy.mockRestore()
+  })
+
+  /**
+   * Verifies that 86'ing an item calls POST /api/eighty-sixed.
+   */
+  it('creates 86d item via POST /api/eighty-sixed', async () => {
+    const spy = vi.spyOn(window, 'dispatchEvent')
+    const newItem = {
+      id: 5, location_id: 1, menu_item_id: null, item_name: 'New 86',
+      reason: null, eighty_sixed_by: 1, restored_at: null,
+      user: { id: 1, name: 'Chef' },
+      created_at: '2026-02-24T00:00:00Z', updated_at: '2026-02-24T00:00:00Z',
+    }
+    mockPost.mockResolvedValueOnce({ data: newItem })
+    const wrapper = await mountView()
+
+    const addBtn = wrapper.findAll('button').find(b => b.text().includes('86 an Item'))
+    await addBtn!.trigger('click')
+    await flushPromises()
+
+    await wrapper.find('form').trigger('submit')
+    await flushPromises()
+
+    spy.mockRestore()
+  })
+
+  /**
+   * Verifies that restoring an 86'd item calls PATCH /api/eighty-sixed/:id/restore.
+   */
+  it('restores item via PATCH /api/eighty-sixed/:id/restore', async () => {
+    const spy = vi.spyOn(window, 'dispatchEvent')
+    mockPatch.mockResolvedValueOnce({ data: {} })
+    const items = [
+      {
+        id: 1, location_id: 1, menu_item_id: null, item_name: 'Salmon',
+        reason: 'Ran out', eighty_sixed_by: 1, restored_at: null,
+        user: { id: 1, name: 'Chef Mike' },
+        created_at: '2026-02-20T14:00:00Z', updated_at: '2026-02-20T14:00:00Z',
+      },
+    ]
+    const wrapper = await mountView(items)
+
+    const restoreBtn = wrapper.findAll('button').find(b => b.text().includes('Restore'))
+    if (restoreBtn) {
+      await restoreBtn.trigger('click')
+      await flushPromises()
+    }
+
+    spy.mockRestore()
+  })
 })

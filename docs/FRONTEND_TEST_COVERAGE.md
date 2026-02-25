@@ -3,7 +3,7 @@
 **Status:** 100% file coverage — every component, view, composable, and store has a corresponding test file.
 
 **Last verified:** 2026-02-24
-**Total:** 74 test files, 594 tests
+**Total:** 74 test files, 620 tests
 
 ## Components (24 files)
 
@@ -53,16 +53,16 @@
 | `views/admin/AcknowledgmentTracker.vue` | `AcknowledgmentTracker.test.ts` | 6 |
 | `views/admin/ConfigView.vue` | `ConfigView.test.ts` | 7 |
 | `views/admin/DailyManageView.vue` | `DailyManageView.test.ts` | 7 |
-| `views/admin/ManageAnnouncements.vue` | `ManageAnnouncements.test.ts` | 7 |
-| `views/admin/ManageEightySixed.vue` | `ManageEightySixed.test.ts` | 7 |
+| `views/admin/ManageAnnouncements.vue` | `ManageAnnouncements.test.ts` | 10 |
+| `views/admin/ManageEightySixed.vue` | `ManageEightySixed.test.ts` | 10 |
 | `views/admin/ManageLocations.vue` | `ManageLocations.test.ts` | 6 |
 | `views/admin/ManageLogsView.vue` | `ManageLogsView.test.ts` | 6 |
-| `views/admin/ManageMenuItems.vue` | `ManageMenuItems.test.ts` | 8 |
-| `views/admin/ManagePushItems.vue` | `ManagePushItems.test.ts` | 7 |
-| `views/admin/ManageShiftDrops.vue` | `ManageShiftDrops.test.ts` | 6 |
-| `views/admin/ManageSpecials.vue` | `ManageSpecials.test.ts` | 7 |
-| `views/admin/ManageTimeOff.vue` | `ManageTimeOff.test.ts` | 6 |
-| `views/admin/ManageUsers.vue` | `ManageUsers.test.ts` | 8 |
+| `views/admin/ManageMenuItems.vue` | `ManageMenuItems.test.ts` | 11 |
+| `views/admin/ManagePushItems.vue` | `ManagePushItems.test.ts` | 10 |
+| `views/admin/ManageShiftDrops.vue` | `ManageShiftDrops.test.ts` | 8 |
+| `views/admin/ManageSpecials.vue` | `ManageSpecials.test.ts` | 10 |
+| `views/admin/ManageTimeOff.vue` | `ManageTimeOff.test.ts` | 9 |
+| `views/admin/ManageUsers.vue` | `ManageUsers.test.ts` | 11 |
 | `views/admin/ScheduleBuilderView.vue` | `ScheduleBuilderView.test.ts` | 5 |
 | `views/auth/LoginView.vue` | `LoginView.test.ts` | 8 |
 | `views/auth/LocationPickerView.vue` | `LocationPickerView.test.ts` | 6 |
@@ -71,10 +71,10 @@
 | `views/staff/EightySixedBoard.vue` | `EightySixedBoard.test.ts` | 6 |
 | `views/staff/MessagesView.vue` | `MessagesView.test.ts` | 5 |
 | `views/staff/MyScheduleView.vue` | `MyScheduleView.test.ts` + `__tests__/MyScheduleView.spec.ts` | 13 |
-| `views/staff/ProfileView.vue` | `ProfileView.test.ts` | 8 |
-| `views/staff/ShiftDropBoardView.vue` | `ShiftDropBoardView.test.ts` | 7 |
+| `views/staff/ProfileView.vue` | `ProfileView.test.ts` | 9 |
+| `views/staff/ShiftDropBoardView.vue` | `ShiftDropBoardView.test.ts` | 8 |
 | `views/staff/SpecialsView.vue` | `SpecialsView.test.ts` | 5 |
-| `views/staff/TimeOffRequestView.vue` | `TimeOffRequestView.test.ts` | 9 |
+| `views/staff/TimeOffRequestView.vue` | `TimeOffRequestView.test.ts` | 10 |
 | `views/staff/TonightsScheduleView.vue` | `TonightsScheduleView.test.ts` + `__tests__/TonightsScheduleView.spec.ts` | 10 |
 | `views/staff/WeatherWidget.vue` | `__tests__/WeatherWidget.spec.ts` | 3 |
 

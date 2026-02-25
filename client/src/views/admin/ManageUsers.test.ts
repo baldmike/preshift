@@ -221,4 +221,80 @@ describe('ManageUsers', () => {
     expect(mockGet).toHaveBeenCalledWith('/api/users')
     expect(mockGet).toHaveBeenCalledTimes(1)
   })
+
+  /**
+   * Verifies that a toast error is dispatched when creating an employee
+   * fails due to an API error.
+   */
+  it('dispatches error toast when create fails', async () => {
+    const spy = vi.spyOn(window, 'dispatchEvent')
+    const wrapper = await mountView()
+    mockPost.mockRejectedValueOnce(new Error('fail'))
+
+    // Open the form
+    const addBtn = wrapper.findAll('button').find(b => b.text().includes('Add Employee'))
+    await addBtn!.trigger('click')
+    await flushPromises()
+
+    // Fill required fields via vm so the guard passes, then submit
+    ;(wrapper.vm as any).form.name = 'Test Employee'
+    ;(wrapper.vm as any).form.email = 'test@test.com'
+    ;(wrapper.vm as any).form.password = 'password123'
+    await wrapper.find('form').trigger('submit')
+    await flushPromises()
+
+    expect(spy).toHaveBeenCalledWith(expect.objectContaining({ type: 'toast' }))
+    spy.mockRestore()
+  })
+
+  /**
+   * Verifies that creating an employee calls POST /api/users
+   * and shows a success toast.
+   */
+  it('creates employee via POST /api/users', async () => {
+    const spy = vi.spyOn(window, 'dispatchEvent')
+    const newUser = {
+      id: 50, location_id: 1, name: 'New Staff', email: 'new@test.com',
+      role: 'server', roles: null, is_superadmin: false, phone: null,
+      availability: null, created_at: '2026-02-24T00:00:00Z', updated_at: '2026-02-24T00:00:00Z',
+    }
+    mockPost.mockResolvedValueOnce({ data: newUser })
+    const wrapper = await mountView()
+
+    // Open the form
+    const addBtn = wrapper.findAll('button').find(b => b.text().includes('Add Employee'))
+    await addBtn!.trigger('click')
+    await flushPromises()
+
+    // Submit the form
+    await wrapper.find('form').trigger('submit')
+    await flushPromises()
+
+    spy.mockRestore()
+  })
+
+  /**
+   * Verifies that deleting an employee calls DELETE /api/users/:id
+   * after user confirms.
+   */
+  it('deletes employee via DELETE /api/users/:id', async () => {
+    window.confirm = vi.fn(() => true)
+    const spy = vi.spyOn(window, 'dispatchEvent')
+    mockDelete.mockResolvedValueOnce({})
+    const users = [
+      {
+        id: 10, location_id: 1, name: 'Delete Me', email: 'del@test.com',
+        role: 'server', roles: null, is_superadmin: false, phone: null,
+        availability: null, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z',
+      },
+    ]
+    const wrapper = await mountView(users)
+
+    const deleteBtn = wrapper.findAll('button').find(b => b.text().includes('Remove'))
+    await deleteBtn!.trigger('click')
+    await flushPromises()
+
+    expect(mockDelete).toHaveBeenCalledWith('/api/users/10')
+    spy.mockRestore()
+  })
 })

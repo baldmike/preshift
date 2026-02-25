@@ -196,4 +196,30 @@ describe('TimeOffRequestView', () => {
 
     expect(wrapper.text()).toContain('Loading requests...')
   })
+
+  /**
+   * Verifies that a toast error is dispatched when submitting a time-off
+   * request fails.
+   */
+  it('dispatches error toast when submit fails', async () => {
+    const spy = vi.spyOn(window, 'dispatchEvent')
+    const useApi = await import('@/composables/useApi')
+    const apiMock = useApi.default as any
+    apiMock.post.mockRejectedValueOnce(new Error('fail'))
+
+    const wrapper = mountView()
+    await flushPromises()
+
+    // Fill in date fields
+    const dateInputs = wrapper.findAll('input[type="date"]')
+    await dateInputs[0].setValue('2026-04-01')
+    await dateInputs[1].setValue('2026-04-05')
+
+    // Submit the form
+    await wrapper.find('form').trigger('submit')
+    await flushPromises()
+
+    expect(spy).toHaveBeenCalledWith(expect.objectContaining({ type: 'toast' }))
+    spy.mockRestore()
+  })
 })

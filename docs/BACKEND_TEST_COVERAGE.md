@@ -3,9 +3,9 @@
 **Status:** 100% controller coverage — every controller, model, and middleware has test coverage.
 
 **Last verified:** 2026-02-24
-**Total:** 33 test files, 323 tests
+**Total:** 35 test files, 377 tests
 
-## Feature Tests (30 files)
+## Feature Tests (32 files)
 
 | Test File | Covers | Tests |
 |---|---|---|
@@ -39,6 +39,8 @@
 | `TimeOffAutomationTest` | TimeOffRequestController (advance notice), ScheduleEntryController (conflict check) | 8 |
 | `TonightsScheduleTest` | ScheduleController (published schedule with entries) | 3 |
 | `WeatherTest` | WeatherController (caching, coordinates, auth) | 6 |
+| `FormRequestValidationTest` | All Form Requests (validation rules, 422 responses) | 26 |
+| `PolicyAuthorizationTest` | All Policies (cross-location isolation, same-location pass) | 28 |
 
 ## Unit Tests (3 files)
 

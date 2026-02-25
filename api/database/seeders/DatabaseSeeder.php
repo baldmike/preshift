@@ -32,12 +32,13 @@ use Illuminate\Support\Str;
  * Database Seeder — populates the database with comprehensive sample data
  * for local development and demo purposes.
  *
- * Creates five establishments:
+ * Creates six establishments:
  *   - Bald Bar (BM, Sean Hulet + full staff, schedules, content)
  *   - TITZ (Bob Frumkorpritt — menu, specials, events, no other staff yet)
  *   - Field of Dreams (Chip — menu, specials, events, no other staff yet)
  *   - Almost Home (Otto, TBone — menu, specials, events, no other staff yet)
  *   - The Rail (Dean DeRenzis — menu, specials, events, no other staff yet)
+ *   - Snooki's (Russell Cougar Springsteen — server, chronically drops shifts)
  *
  * BM has access to all five establishments. Other superadmins only see
  * their own. Bald Bar is fully operational with 28 weeks of schedules,
@@ -111,6 +112,16 @@ class DatabaseSeeder extends Seeder
             'timezone'  => 'America/Chicago',
             'latitude'  => 41.9434,
             'longitude' => -87.6792,
+        ]);
+
+        $snookis = Location::create([
+            'name'      => "Snooki's",
+            'address'   => '3453 N Southport Ave, Chicago, IL 60657',
+            'city'      => 'Chicago',
+            'state'     => 'IL',
+            'timezone'  => 'America/Chicago',
+            'latitude'  => 41.9448,
+            'longitude' => -87.6639,
         ]);
 
         /*
@@ -199,6 +210,15 @@ class DatabaseSeeder extends Seeder
             'location_id'   => $theRail->id,
             'is_superadmin' => true,
             'phone'         => '(888) 123-4567',
+        ]);
+
+        $russell = User::create([
+            'name'        => 'Russell Cougar Springsteen',
+            'email'       => 'russ@preshift.test',
+            'password'    => Hash::make('baldsnutz'),
+            'role'        => 'server',
+            'location_id' => $snookis->id,
+            'phone'       => $this->randomPhone(),
         ]);
 
         // ── Managers ──
@@ -351,10 +371,11 @@ class DatabaseSeeder extends Seeder
             $fieldOfDreams->id => ['role' => 'admin'],
             $almostHome->id    => ['role' => 'admin'],
             $theRail->id       => ['role' => 'admin'],
+            $snookis->id       => ['role' => 'admin'],
         ]);
 
         // Backfill pivot for new location users (each only their own)
-        foreach ([$titz, $fieldOfDreams, $almostHome, $theRail] as $loc) {
+        foreach ([$titz, $fieldOfDreams, $almostHome, $theRail, $snookis] as $loc) {
             $locUsers = User::where('location_id', $loc->id)->get();
             foreach ($locUsers as $locUser) {
                 $locUser->locations()->syncWithoutDetaching([
@@ -1524,6 +1545,7 @@ class DatabaseSeeder extends Seeder
         $this->seedLocationContent($fieldOfDreams, User::where('email', 'chip@preshift.test')->first());
         $this->seedLocationContent($almostHome, User::where('email', 'otto@preshift.test')->first());
         $this->seedLocationContent($theRail, $dean);
+        $this->seedLocationContent($snookis, $superadmin);
     }
 
     /**
