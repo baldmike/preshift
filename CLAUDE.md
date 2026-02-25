@@ -87,6 +87,8 @@ PreShift is a digital pre-shift meeting replacement for restaurants and bars. Ma
 - Test files mirror controller names: `ShiftDropController` → `ShiftDropTest`
 - Use Laravel factories for test data
 - Test role restrictions: verify staff can't access manager routes, location A can't see location B data
+- Frontend: 100% file coverage — every component, view, composable, and store has a test file (see `docs/FRONTEND_TEST_COVERAGE.md`)
+- When adding a field to the `User` type (or any shared type), update **all** test fixtures that construct that type
 
 ## Commenting Conventions
 
