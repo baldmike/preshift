@@ -1,7 +1,7 @@
 # Test Coverage Report
 
 **Generated:** 2026-02-24
-**Test Suite:** 303 tests, 900 assertions
+**Test Suite:** 315 tests, 963 assertions
 **Status:** All passing
 
 ---
@@ -260,6 +260,23 @@
 | `PATCH /api/locations/{id}` | `MenuAndLocationTest.php` | `test_admin_can_update_location` | Covered |
 | `GET /api/locations` | `SmokeTest.php` | `test_non_admin_cannot_manage_locations` | Covered |
 
+## Multi-Location Data Isolation
+
+| Feature | Test File | Test Methods | Status |
+|---------|-----------|--------------|--------|
+| Login returns all user locations | `MultiLocationTest.php` | `test_login_with_multiple_locations_returns_all_user_locations` | Covered |
+| Login with single location | `MultiLocationTest.php` | `test_login_with_single_location_returns_only_that_location` | Covered |
+| User sees only own locations | `MultiLocationTest.php` | `test_user_only_sees_own_locations_not_all_system_locations` | Covered |
+| GET /api/user scoped | `MultiLocationTest.php` | `test_get_user_returns_only_own_locations` | Covered |
+| 86'd items scoped to location A | `MultiLocationTest.php` | `test_eighty_sixed_scoped_to_active_location_A` | Covered |
+| 86'd items scoped to location B | `MultiLocationTest.php` | `test_eighty_sixed_scoped_to_active_location_B` | Covered |
+| Specials scoped to location | `MultiLocationTest.php` | `test_specials_scoped_to_active_location` | Covered |
+| Push items scoped to location | `MultiLocationTest.php` | `test_push_items_scoped_to_active_location` | Covered |
+| Announcements scoped to location | `MultiLocationTest.php` | `test_announcements_scoped_to_active_location` | Covered |
+| Cannot switch without membership | `MultiLocationTest.php` | `test_user_cannot_switch_to_location_without_membership` | Covered |
+| Preshift hero scoped | `MultiLocationTest.php` | `test_preshift_returns_only_active_location_content` | Covered |
+| Menu items scoped to location | `MultiLocationTest.php` | `test_menu_items_scoped_to_active_location` | Covered |
+
 ---
 
 ## Middleware
@@ -314,6 +331,7 @@
 | Cross-location data isolation | `ManagerLogTest.php` | `test_cross_location_isolation` | Covered |
 | Cross-location data isolation | `WeatherTest.php` | `test_weather_is_scoped_to_users_location` | Covered |
 | Cross-location data isolation | `ConversationTest.php` | `test_cannot_create_conversation_with_different_location_user` | Covered |
+| Cross-location data isolation | `MultiLocationTest.php` | `test_eighty_sixed_scoped_to_active_location_A`, `test_eighty_sixed_scoped_to_active_location_B`, `test_specials_scoped_to_active_location`, `test_push_items_scoped_to_active_location`, `test_announcements_scoped_to_active_location`, `test_preshift_returns_only_active_location_content`, `test_menu_items_scoped_to_active_location` | Covered |
 
 ### `superadmin` (SuperAdminMiddleware)
 
@@ -382,6 +400,8 @@
 | GET /api/user includes locations | `LocationUserTest.php` | `test_get_user_response_includes_locations` | Covered |
 | Multi-role via user update | `ShiftDropRoleTest.php` | `test_manager_can_set_multi_role_via_user_update` | Covered |
 | Multi-role drop visibility | `ShiftDropRoleTest.php` | `test_multi_role_user_sees_drops_for_all_roles`, `test_multi_role_user_can_volunteer_for_either_role` | Covered |
+| Multi-location login flow | `MultiLocationTest.php` | `test_login_with_multiple_locations_returns_all_user_locations`, `test_login_with_single_location_returns_only_that_location`, `test_user_only_sees_own_locations_not_all_system_locations`, `test_get_user_returns_only_own_locations` | Covered |
+| Multi-location data isolation | `MultiLocationTest.php` | `test_eighty_sixed_scoped_to_active_location_A`, `test_eighty_sixed_scoped_to_active_location_B`, `test_specials_scoped_to_active_location`, `test_push_items_scoped_to_active_location`, `test_announcements_scoped_to_active_location`, `test_user_cannot_switch_to_location_without_membership`, `test_preshift_returns_only_active_location_content`, `test_menu_items_scoped_to_active_location` | Covered |
 
 ---
 
@@ -415,6 +435,7 @@
 | Switch Location | 1 | `SwitchLocationTest.php`, `LocationUserTest.php` | All Covered |
 | Locations | 3 | `MenuAndLocationTest.php`, `SmokeTest.php` | All Covered |
 | My Availability | 1 | `SmokeTest.php` | All Covered |
-| **TOTAL** | **89** | **32 test files** | **All Covered** |
+| Multi-Location | 12 | `MultiLocationTest.php` | All Covered |
+| **TOTAL** | **101** | **33 test files** | **All Covered** |
 
-**Test Suite Totals:** 303 tests, 900 assertions -- all passing
+**Test Suite Totals:** 315 tests, 963 assertions -- all passing
