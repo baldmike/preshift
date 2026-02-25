@@ -169,7 +169,7 @@ onMounted(loadAvailability)
                 v-model="nameInput"
                 type="text"
                 class="px-2 py-1 text-sm bg-gray-800 border border-gray-600 rounded text-white
-                       placeholder-gray-500 focus:outline-none focus:border-amber-500 w-48"
+                       placeholder-gray-500 focus:outline-none focus:border-amber-500 flex-1 min-w-0"
                 @keyup.enter="saveName"
               />
               <button
