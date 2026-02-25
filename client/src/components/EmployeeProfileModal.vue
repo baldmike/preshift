@@ -21,6 +21,7 @@ import type { User } from '@/types'
 import BaseModal from '@/components/ui/BaseModal.vue'
 import BadgePill from '@/components/ui/BadgePill.vue'
 import AvailabilityGrid from '@/components/AvailabilityGrid.vue'
+import UserAvatar from '@/components/ui/UserAvatar.vue'
 
 const props = defineProps<{
   user: User | null
@@ -87,8 +88,9 @@ function handleMessage() {
 <template>
   <BaseModal :open="isOpen" @close="$emit('close')">
     <div v-if="user" class="p-5 space-y-4">
-      <!-- Header: name + role badge -->
+      <!-- Header: avatar + name + role badge -->
       <div class="flex items-center gap-3">
+        <UserAvatar :user="user" size="lg" />
         <div class="flex-1 min-w-0">
           <h2 class="text-lg font-bold text-white truncate">{{ user.name }}</h2>
         </div>

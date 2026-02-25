@@ -20,6 +20,7 @@ import { ref, computed } from 'vue'
 import type { BoardMessage } from '@/types'
 import { useAuth } from '@/composables/useAuth'
 import MessageComposer from './MessageComposer.vue'
+import UserAvatar from '@/components/ui/UserAvatar.vue'
 
 const props = defineProps<{
   message: BoardMessage
@@ -87,10 +88,6 @@ function relativeTime(dateStr: string): string {
   return `${diffDays}d ago`
 }
 
-/** Get the first letter of a name for the avatar */
-function initial(name: string): string {
-  return name.charAt(0).toUpperCase()
-}
 </script>
 
 <template>
@@ -101,10 +98,8 @@ function initial(name: string): string {
   >
     <!-- Header: avatar, name, role, time, badges, actions -->
     <div class="flex items-start gap-3">
-      <!-- Avatar initial -->
-      <div class="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-xs font-bold text-gray-300 shrink-0">
-        {{ message.user ? initial(message.user.name) : '?' }}
-      </div>
+      <!-- Avatar -->
+      <UserAvatar :user="message.user ?? null" size="sm" />
 
       <div class="flex-1 min-w-0">
         <div class="flex items-center gap-2 flex-wrap">
@@ -232,9 +227,7 @@ function initial(name: string): string {
           class="space-y-1"
         >
           <div class="flex items-center gap-2">
-            <div class="w-6 h-6 rounded-full bg-gray-700 flex items-center justify-center text-[10px] font-bold text-gray-300">
-              {{ reply.user ? initial(reply.user.name) : '?' }}
-            </div>
+            <UserAvatar :user="reply.user ?? null" size="xs" />
             <span class="text-xs font-semibold text-white">{{ reply.user?.name ?? 'Unknown' }}</span>
             <span class="text-[10px] text-gray-500">{{ relativeTime(reply.created_at) }}</span>
           </div>

@@ -52,6 +52,7 @@ class User extends Authenticatable
         'roles',       // JSON array of additional roles for multi-role staff (nullable)
         'phone',       // Contact phone number (nullable)
         'availability', // JSON map of day-of-week availability (nullable)
+        'profile_photo_path', // Path to uploaded profile photo on public disk (nullable)
         'is_superadmin', // SuperAdmin privilege flag
     ];
 

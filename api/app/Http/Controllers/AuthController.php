@@ -5,11 +5,13 @@ namespace App\Http\Controllers;
 use App\Http\Requests\ChangePasswordRequest;
 use App\Http\Requests\LoginRequest;
 use App\Http\Requests\UpdateProfileRequest;
+use App\Http\Requests\UploadProfilePhotoRequest;
 use App\Http\Resources\UserResource;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * AuthController handles user authentication for the application.
@@ -96,6 +98,60 @@ class AuthController extends Controller
 
         $user->fill($validated);
         $user->save();
+
+        return response()->json(new UserResource($user->load('location')));
+    }
+
+    /**
+     * Upload a profile photo for the authenticated user.
+     *
+     * Deletes the old photo (if any), stores the new file at
+     * `profile-photos/{user_id}.{ext}` on the public disk, and
+     * updates the user's `profile_photo_path` column.
+     *
+     * @param  \App\Http\Requests\UploadProfilePhotoRequest  $request
+     * @return \Illuminate\Http\JsonResponse  The updated user with location.
+     */
+    public function uploadProfilePhoto(UploadProfilePhotoRequest $request): JsonResponse
+    {
+        $user = $request->user();
+
+        // Delete old photo if exists
+        if ($user->profile_photo_path) {
+            Storage::disk('public')->delete($user->profile_photo_path);
+        }
+
+        $ext = $request->file('photo')->getClientOriginalExtension();
+        $path = $request->file('photo')->storeAs(
+            'profile-photos',
+            $user->id . '.' . $ext,
+            'public'
+        );
+
+        $user->profile_photo_path = $path;
+        $user->save();
+
+        return response()->json(new UserResource($user->load('location')));
+    }
+
+    /**
+     * Delete the authenticated user's profile photo.
+     *
+     * Removes the file from the public disk and sets the
+     * `profile_photo_path` column to null.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse  The updated user with location.
+     */
+    public function deleteProfilePhoto(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        if ($user->profile_photo_path) {
+            Storage::disk('public')->delete($user->profile_photo_path);
+            $user->profile_photo_path = null;
+            $user->save();
+        }
 
         return response()->json(new UserResource($user->load('location')));
     }
