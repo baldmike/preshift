@@ -1,6 +1,39 @@
 # PreShift
 
-A digital pre-shift meeting replacement for restaurants and bars. Managers post daily operational updates — 86'd items, specials, push items, announcements — and staff check in before their shift to see everything they need, tailored to their role. Includes a full scheduling system with shift drops and time-off requests.
+A complete communication and operations platform for restaurants and bars. PreShift replaces the daily pre-shift meeting, staff scheduling, shift management, and team messaging in one place — everything your team needs to stay aligned, accessible from any device.
+
+## Features
+
+### Daily Operations
+- **86'd Items** — Track what's out of stock in real time so every server and bartender knows before they hit the floor
+- **Specials** — Post daily specials with descriptions, pricing, and limited quantities that decrement as they sell
+- **Push Items** — Highlight what the kitchen or bar wants to move tonight
+- **Announcements** — Post targeted messages to specific roles (all staff, servers only, bartenders only) with optional expiration dates
+
+### Scheduling
+- **Schedule Builder** — Managers build weekly schedules using reusable shift templates, then publish when ready
+- **Tonight's Schedule** — Staff see who's working tonight at a glance
+- **My Schedule** — Each employee sees their upcoming shifts across all locations they work at
+- **Shift Drops** — Staff drop shifts they can't work, eligible same-role employees volunteer, manager picks a replacement
+- **Time-Off Requests** — Staff submit requests with configurable advance-notice rules, managers approve or deny, scheduling conflicts are flagged automatically
+
+### Messaging
+- **Message Board** — Location-wide posts visible to all staff, with threaded replies
+- **Direct Messages** — Private one-on-one conversations between any two team members
+- **Real-Time Delivery** — All messages broadcast instantly via WebSockets
+
+### Team Management
+- **Multi-Location Organizations** — Group locations under a single organization with org-scoped admin access and cross-location employees
+- **Role-Based Access** — Admins, managers, servers, and bartenders each see only what's relevant to their role
+- **Employee Profiles** — Staff availability, contact info, and multi-location assignments
+- **Acknowledgment Tracking** — Managers see who has and hasn't checked in on today's content
+- **Manager Logs** — Daily operational notes visible only to management
+
+### Platform
+- **One API Call** — The `/api/preshift` hero endpoint delivers everything a staff member needs in a single request, filtered by role and location
+- **Real-Time Updates** — WebSocket broadcasts via Laravel Reverb keep all connected clients in sync without refreshing
+- **Mobile-First** — Designed for phones in a server's apron pocket, works on any device
+- **Notifications** — In-app notifications for shift drops, time-off decisions, and new messages
 
 ## Tech Stack
 
