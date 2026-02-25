@@ -144,7 +144,7 @@ function toggleAllOpen() {
           v-for="slot in SLOTS"
           :key="slot.value"
           type="button"
-          class="px-1 py-1.5 text-[10px] font-semibold rounded-md border transition-colors leading-tight"
+          class="px-1 py-2.5 text-[10px] font-semibold rounded-md border transition-colors leading-tight"
           :class="isActive(day, slot.value)
             ? 'bg-blue-500/25 border-blue-400/40 text-blue-300'
             : 'bg-white/[0.03] border-white/[0.08] text-gray-500 hover:border-white/[0.15] hover:text-gray-300'

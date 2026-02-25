@@ -23,7 +23,7 @@ onMounted(() => {
 
 <template>
   <Teleport to="body">
-    <nav class="fixed bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-800 z-50">
+    <nav class="fixed bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-800 z-50 pb-[env(safe-area-inset-bottom)]">
       <p class="text-center text-[9px] text-gray-600 pt-1">&copy; BALDMIKE</p>
       <div class="flex items-center justify-around h-14 max-w-lg mx-auto">
         <router-link

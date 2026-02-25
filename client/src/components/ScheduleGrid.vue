@@ -207,7 +207,7 @@ function formatShiftTime(time: string): string {
 
               <!-- Remove button (visible on hover) -->
               <button
-                class="ml-0.5 text-red-400/60 hover:text-red-400 opacity-0 group-hover/entry:opacity-100 transition-opacity text-[10px] leading-none"
+                class="ml-0.5 text-red-400/60 hover:text-red-400 opacity-100 sm:opacity-0 sm:group-hover/entry:opacity-100 sm:focus:opacity-100 transition-opacity text-[10px] leading-none"
                 title="Remove entry"
                 @click="emit('remove-entry', entry.id)"
               >

@@ -46,7 +46,7 @@ watch(locationId, (newId, oldId) => {
 <template>
   <div class="min-h-screen bg-gray-950 flex flex-col overflow-x-hidden">
     <TopBar />
-    <main class="flex-1 pb-24 px-3 sm:px-4 py-4 max-w-4xl mx-auto w-full">
+    <main class="flex-1 pb-[calc(6rem+env(safe-area-inset-bottom,0px))] px-3 sm:px-4 py-4 max-w-4xl mx-auto w-full">
       <slot />
     </main>
     <!-- Copyright moved into BottomNav for persistent visibility -->

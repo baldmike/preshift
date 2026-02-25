@@ -59,7 +59,7 @@ defineExpose({ addToast })
 </script>
 
 <template>
-  <div class="fixed top-4 right-4 z-50 flex flex-col gap-2">
+  <div class="fixed top-[max(1rem,env(safe-area-inset-top))] right-[max(1rem,env(safe-area-inset-right))] z-50 flex flex-col gap-2">
     <TransitionGroup name="toast">
       <div
         v-for="toast in toasts"

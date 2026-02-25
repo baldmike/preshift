@@ -58,7 +58,7 @@ defineEmits<{
           appear
         >
           <div
-            class="relative z-[70] w-full rounded-xl bg-gray-950 border border-white/[0.06] shadow-xl overflow-y-auto max-h-[90vh]"
+            class="relative z-[70] w-full rounded-xl bg-gray-950 border border-white/[0.06] shadow-xl overflow-y-auto max-h-[90dvh]"
             :class="sizeClass"
           >
             <slot />
