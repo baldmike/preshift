@@ -166,4 +166,36 @@ describe('ProfileView', () => {
 
     expect(wrapper.text()).toContain('Manage your name and availability')
   })
+
+  /**
+   * Verifies that a toast error is dispatched when profile update fails.
+   */
+  it('dispatches error toast when profile update fails', async () => {
+    const spy = vi.spyOn(window, 'dispatchEvent')
+    const useApi = await import('@/composables/useApi')
+    const apiMock = useApi.default as any
+    apiMock.put.mockRejectedValueOnce(new Error('fail'))
+
+    const wrapper = mountView()
+    await flushPromises()
+
+    // Click pencil icon to enter name edit mode, then save
+    // Find the pencil/edit button near the name
+    const editBtns = wrapper.findAll('button')
+    // The edit (pencil) button is inside the Name section
+    const pencilBtn = editBtns.find(b => b.find('svg path[d*="11 5H6"]').exists())
+    if (pencilBtn) {
+      await pencilBtn.trigger('click')
+      await flushPromises()
+      // Now find the Save button
+      const saveBtn = wrapper.findAll('button').find(b => b.text().includes('Save'))
+      if (saveBtn) {
+        await saveBtn.trigger('click')
+        await flushPromises()
+      }
+    }
+
+    expect(spy).toHaveBeenCalledWith(expect.objectContaining({ type: 'toast' }))
+    spy.mockRestore()
+  })
 })

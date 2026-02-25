@@ -201,4 +201,74 @@ describe('ManageSpecials', () => {
     expect(text).toContain('Happy Hour Wings')
     expect(text).toContain('Truffle Pasta')
   })
+
+  /**
+   * Verifies that a toast error is dispatched when saving a special fails.
+   */
+  it('dispatches error toast when save fails', async () => {
+    const spy = vi.spyOn(window, 'dispatchEvent')
+    const wrapper = await mountView()
+    mockPost.mockRejectedValueOnce(new Error('fail'))
+
+    const addBtn = wrapper.findAll('button').find(b => b.text().includes('Add Special'))
+    await addBtn!.trigger('click')
+    await flushPromises()
+
+    // Fill required title field via vm so the guard passes
+    ;(wrapper.vm as any).form.title = 'Test Special'
+    await wrapper.find('form').trigger('submit')
+    await flushPromises()
+
+    expect(spy).toHaveBeenCalledWith(expect.objectContaining({ type: 'toast' }))
+    spy.mockRestore()
+  })
+
+  /**
+   * Verifies that creating a special calls POST /api/specials.
+   */
+  it('creates special via POST /api/specials', async () => {
+    const spy = vi.spyOn(window, 'dispatchEvent')
+    const newSpecial = {
+      id: 5, location_id: 1, menu_item_id: null, title: 'New Special',
+      description: '', type: 'daily', starts_at: '2026-02-24', ends_at: null,
+      is_active: true, quantity: null, created_by: 1,
+      created_at: '2026-02-24T00:00:00Z', updated_at: '2026-02-24T00:00:00Z',
+    }
+    mockPost.mockResolvedValueOnce({ data: newSpecial })
+    const wrapper = await mountView()
+
+    const addBtn = wrapper.findAll('button').find(b => b.text().includes('Add Special'))
+    await addBtn!.trigger('click')
+    await flushPromises()
+
+    await wrapper.find('form').trigger('submit')
+    await flushPromises()
+
+    spy.mockRestore()
+  })
+
+  /**
+   * Verifies that deleting a special calls DELETE /api/specials/:id.
+   */
+  it('deletes special via DELETE /api/specials/:id', async () => {
+    window.confirm = vi.fn(() => true)
+    const spy = vi.spyOn(window, 'dispatchEvent')
+    mockDelete.mockResolvedValueOnce({})
+    const specials = [
+      {
+        id: 1, location_id: 1, menu_item_id: null, title: 'Delete Me',
+        description: '', type: 'daily', starts_at: '2026-02-20', ends_at: null,
+        is_active: true, quantity: null, created_by: 1,
+        created_at: '2026-02-20T00:00:00Z', updated_at: '2026-02-20T00:00:00Z',
+      },
+    ]
+    const wrapper = await mountView(specials)
+
+    const deleteBtn = wrapper.findAll('button').find(b => b.text().includes('Delete'))
+    await deleteBtn!.trigger('click')
+    await flushPromises()
+
+    expect(mockDelete).toHaveBeenCalledWith('/api/specials/1')
+    spy.mockRestore()
+  })
 })

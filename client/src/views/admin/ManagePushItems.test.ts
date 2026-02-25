@@ -202,4 +202,72 @@ describe('ManagePushItems', () => {
     expect(text).toContain('Truffle Fries')
     expect(text).toContain('Overstock')
   })
+
+  /**
+   * Verifies that a toast error is dispatched when saving a push item fails.
+   */
+  it('dispatches error toast when save fails', async () => {
+    const spy = vi.spyOn(window, 'dispatchEvent')
+    const wrapper = await mountView()
+    mockPost.mockRejectedValueOnce(new Error('fail'))
+
+    const addBtn = wrapper.findAll('button').find(b => b.text().includes('Add Push Item'))
+    await addBtn!.trigger('click')
+    await flushPromises()
+
+    // Fill required title field via vm so the guard passes
+    ;(wrapper.vm as any).form.title = 'Test Push Item'
+    await wrapper.find('form').trigger('submit')
+    await flushPromises()
+
+    expect(spy).toHaveBeenCalledWith(expect.objectContaining({ type: 'toast' }))
+    spy.mockRestore()
+  })
+
+  /**
+   * Verifies that creating a push item calls POST /api/push-items.
+   */
+  it('creates push item via POST /api/push-items', async () => {
+    const spy = vi.spyOn(window, 'dispatchEvent')
+    const newItem = {
+      id: 5, location_id: 1, menu_item_id: null, title: 'New Push',
+      description: '', reason: null, priority: 'medium', is_active: true,
+      created_by: 1, created_at: '2026-02-24T00:00:00Z', updated_at: '2026-02-24T00:00:00Z',
+    }
+    mockPost.mockResolvedValueOnce({ data: newItem })
+    const wrapper = await mountView()
+
+    const addBtn = wrapper.findAll('button').find(b => b.text().includes('Add Push Item'))
+    await addBtn!.trigger('click')
+    await flushPromises()
+
+    await wrapper.find('form').trigger('submit')
+    await flushPromises()
+
+    spy.mockRestore()
+  })
+
+  /**
+   * Verifies that deleting a push item calls DELETE /api/push-items/:id.
+   */
+  it('deletes push item via DELETE /api/push-items/:id', async () => {
+    window.confirm = vi.fn(() => true)
+    const spy = vi.spyOn(window, 'dispatchEvent')
+    mockDelete.mockResolvedValueOnce({})
+    const items = [
+      {
+        id: 1, location_id: 1, menu_item_id: null, title: 'Delete Me',
+        description: '', reason: null, priority: 'high', is_active: true,
+        created_by: 1, created_at: '2026-02-20T00:00:00Z', updated_at: '2026-02-20T00:00:00Z',
+      },
+    ]
+    const wrapper = await mountView(items)
+
+    const deleteBtn = wrapper.findAll('button').find(b => b.text().includes('Delete'))
+    await deleteBtn!.trigger('click')
+    await flushPromises()
+
+    expect(mockDelete).toHaveBeenCalledWith('/api/push-items/1')
+    spy.mockRestore()
+  })
 })

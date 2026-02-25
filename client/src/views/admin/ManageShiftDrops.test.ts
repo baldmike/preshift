@@ -165,4 +165,60 @@ describe('ManageShiftDrops', () => {
     expect(wrapper.text()).toContain('Waiting for Volunteers')
     expect(wrapper.text()).toContain('No volunteers yet')
   })
+
+  /**
+   * Verifies that a toast error is dispatched when selecting a volunteer fails.
+   */
+  it('dispatches error toast when select volunteer fails', async () => {
+    const spy = vi.spyOn(window, 'dispatchEvent')
+    mockPost.mockRejectedValueOnce(new Error('fail'))
+
+    const drops: ShiftDrop[] = [
+      makeDrop({
+        id: 1,
+        status: 'open',
+        volunteers: [
+          { id: 1, shift_drop_id: 1, user_id: 20, selected: false, created_at: '2026-01-01T00:00:00Z', user: { id: 20, location_id: 1, name: 'Bob', email: 'bob@test.com', role: 'server', roles: null, is_superadmin: false, phone: null, profile_photo_url: null, availability: null, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' } },
+        ],
+      }),
+    ]
+    const wrapper = await mountView(drops)
+
+    // Click the Select button for the volunteer
+    const selectBtn = wrapper.findAll('button').find(b => b.text().includes('Select'))
+    await selectBtn!.trigger('click')
+    await flushPromises()
+
+    expect(spy).toHaveBeenCalledWith(expect.objectContaining({ type: 'toast' }))
+    spy.mockRestore()
+  })
+
+  /**
+   * Verifies that selecting a volunteer calls POST /api/shift-drops/:id/select/:userId
+   * and shows a success toast.
+   */
+  it('selects volunteer and shows success toast', async () => {
+    const spy = vi.spyOn(window, 'dispatchEvent')
+    const updatedDrop = makeDrop({ id: 1, status: 'filled', filled_by: 20 })
+    mockPost.mockResolvedValueOnce({ data: updatedDrop })
+
+    const drops: ShiftDrop[] = [
+      makeDrop({
+        id: 1,
+        status: 'open',
+        volunteers: [
+          { id: 1, shift_drop_id: 1, user_id: 20, selected: false, created_at: '2026-01-01T00:00:00Z', user: { id: 20, location_id: 1, name: 'Bob', email: 'bob@test.com', role: 'server', roles: null, is_superadmin: false, phone: null, profile_photo_url: null, availability: null, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' } },
+        ],
+      }),
+    ]
+    const wrapper = await mountView(drops)
+
+    const selectBtn = wrapper.findAll('button').find(b => b.text().includes('Select'))
+    await selectBtn!.trigger('click')
+    await flushPromises()
+
+    expect(mockPost).toHaveBeenCalledWith('/api/shift-drops/1/select/20')
+    expect(spy).toHaveBeenCalledWith(expect.objectContaining({ type: 'toast' }))
+    spy.mockRestore()
+  })
 })

@@ -226,4 +226,74 @@ describe('ManageMenuItems', () => {
     expect(mockGet).toHaveBeenCalledWith('/api/menu-items')
     expect(mockGet).toHaveBeenCalledWith('/api/categories')
   })
+
+  /**
+   * Verifies that a toast error is dispatched when saving a menu item fails.
+   */
+  it('dispatches error toast when save fails', async () => {
+    const spy = vi.spyOn(window, 'dispatchEvent')
+    const wrapper = await mountView()
+    mockPost.mockRejectedValueOnce(new Error('fail'))
+
+    const addBtn = wrapper.findAll('button').find(b => b.text().includes('Add Item'))
+    await addBtn!.trigger('click')
+    await flushPromises()
+
+    // Fill required name field via vm so the guard passes
+    ;(wrapper.vm as any).form.name = 'Test Item'
+    await wrapper.find('form').trigger('submit')
+    await flushPromises()
+
+    expect(spy).toHaveBeenCalledWith(expect.objectContaining({ type: 'toast' }))
+    spy.mockRestore()
+  })
+
+  /**
+   * Verifies that creating a menu item calls POST /api/menu-items.
+   */
+  it('creates menu item via POST /api/menu-items', async () => {
+    const spy = vi.spyOn(window, 'dispatchEvent')
+    const newItem = {
+      id: 5, location_id: 1, category_id: null, name: 'New Item',
+      description: '', price: '10.00', type: 'food', is_new: false,
+      is_active: true, allergens: null,
+      created_at: '2026-02-24T00:00:00Z', updated_at: '2026-02-24T00:00:00Z',
+    }
+    mockPost.mockResolvedValueOnce({ data: newItem })
+    const wrapper = await mountView()
+
+    const addBtn = wrapper.findAll('button').find(b => b.text().includes('Add Item'))
+    await addBtn!.trigger('click')
+    await flushPromises()
+
+    await wrapper.find('form').trigger('submit')
+    await flushPromises()
+
+    spy.mockRestore()
+  })
+
+  /**
+   * Verifies that deleting a menu item calls DELETE /api/menu-items/:id.
+   */
+  it('deletes menu item via DELETE /api/menu-items/:id', async () => {
+    window.confirm = vi.fn(() => true)
+    const spy = vi.spyOn(window, 'dispatchEvent')
+    mockDelete.mockResolvedValueOnce({})
+    const menuItems = [
+      {
+        id: 1, location_id: 1, category_id: null, name: 'Delete Me',
+        description: '', price: '10.00', type: 'food', is_new: false,
+        is_active: true, allergens: null,
+        created_at: '2026-02-20T00:00:00Z', updated_at: '2026-02-20T00:00:00Z',
+      },
+    ]
+    const wrapper = await mountView(menuItems)
+
+    const deleteBtn = wrapper.findAll('button').find(b => b.text().includes('Delete'))
+    await deleteBtn!.trigger('click')
+    await flushPromises()
+
+    expect(mockDelete).toHaveBeenCalledWith('/api/menu-items/1')
+    spy.mockRestore()
+  })
 })

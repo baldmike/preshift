@@ -163,4 +163,52 @@ describe('ShiftDropBoardView', () => {
     expect(text).toContain('No available shifts to pick up right now')
     expect(text).toContain("You haven't dropped any shifts")
   })
+
+  /**
+   * Verifies that a toast error is dispatched when volunteering for a
+   * shift drop fails.
+   */
+  it('dispatches error toast when volunteer fails', async () => {
+    const spy = vi.spyOn(window, 'dispatchEvent')
+    const useApi = await import('@/composables/useApi')
+    const apiMock = useApi.default as any
+
+    // Mock the get to return an available drop from another user, so the
+    // store gets populated when the component's onMounted fetches drops.
+    apiMock.get.mockImplementation((url: string) => {
+      if (url === '/api/shift-drops') {
+        return Promise.resolve({ data: [
+          {
+            id: 5,
+            schedule_entry_id: 1,
+            requested_by: 99,
+            reason: null,
+            status: 'open',
+            filled_by: null,
+            filled_at: null,
+            volunteers: [],
+            has_volunteered: false,
+            created_at: '2026-01-01T00:00:00Z',
+            updated_at: '2026-01-01T00:00:00Z',
+          },
+        ] })
+      }
+      return Promise.resolve({ data: [] })
+    })
+
+    apiMock.post.mockRejectedValueOnce(new Error('fail'))
+
+    const wrapper = mountView()
+    await flushPromises()
+
+    // Find and click the "Pick It Up" button
+    const volunteerBtn = wrapper.findAll('button').find(b => b.text().includes('Pick It Up'))
+    if (volunteerBtn) {
+      await volunteerBtn.trigger('click')
+      await flushPromises()
+    }
+
+    expect(spy).toHaveBeenCalledWith(expect.objectContaining({ type: 'toast' }))
+    spy.mockRestore()
+  })
 })

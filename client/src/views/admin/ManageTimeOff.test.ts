@@ -164,4 +164,64 @@ describe('ManageTimeOff', () => {
     // The count badge should show "1" for the single resolved request
     expect(wrapper.text()).toContain('1')
   })
+
+  /**
+   * Verifies that a toast error is dispatched when approving a request fails.
+   */
+  it('dispatches error toast when approve fails', async () => {
+    const spy = vi.spyOn(window, 'dispatchEvent')
+    mockPost.mockRejectedValueOnce(new Error('fail'))
+
+    const requests = [makeRequest({ id: 1, status: 'pending' })]
+    const wrapper = await mountView(requests)
+
+    const approveBtn = wrapper.findAll('button').find(b => b.text().includes('Approve'))
+    await approveBtn!.trigger('click')
+    await flushPromises()
+
+    expect(spy).toHaveBeenCalledWith(expect.objectContaining({ type: 'toast' }))
+    spy.mockRestore()
+  })
+
+  /**
+   * Verifies that approving a request calls POST /api/time-off-requests/:id/approve
+   * and shows a success toast.
+   */
+  it('approves request and shows success toast', async () => {
+    const spy = vi.spyOn(window, 'dispatchEvent')
+    const approvedReq = makeRequest({ id: 1, status: 'approved' })
+    mockPost.mockResolvedValueOnce({ data: approvedReq })
+
+    const requests = [makeRequest({ id: 1, status: 'pending' })]
+    const wrapper = await mountView(requests)
+
+    const approveBtn = wrapper.findAll('button').find(b => b.text().includes('Approve'))
+    await approveBtn!.trigger('click')
+    await flushPromises()
+
+    expect(mockPost).toHaveBeenCalledWith('/api/time-off-requests/1/approve')
+    expect(spy).toHaveBeenCalledWith(expect.objectContaining({ type: 'toast' }))
+    spy.mockRestore()
+  })
+
+  /**
+   * Verifies that denying a request calls POST /api/time-off-requests/:id/deny
+   * and shows a success toast.
+   */
+  it('denies request and shows success toast', async () => {
+    const spy = vi.spyOn(window, 'dispatchEvent')
+    const deniedReq = makeRequest({ id: 1, status: 'denied' })
+    mockPost.mockResolvedValueOnce({ data: deniedReq })
+
+    const requests = [makeRequest({ id: 1, status: 'pending' })]
+    const wrapper = await mountView(requests)
+
+    const denyBtn = wrapper.findAll('button').find(b => b.text().includes('Deny'))
+    await denyBtn!.trigger('click')
+    await flushPromises()
+
+    expect(mockPost).toHaveBeenCalledWith('/api/time-off-requests/1/deny')
+    expect(spy).toHaveBeenCalledWith(expect.objectContaining({ type: 'toast' }))
+    spy.mockRestore()
+  })
 })
