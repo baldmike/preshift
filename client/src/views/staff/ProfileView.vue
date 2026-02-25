@@ -44,9 +44,7 @@ async function handlePhotoSelected(event: Event) {
   try {
     const formData = new FormData()
     formData.append('photo', file)
-    const { data } = await api.post('/api/profile/photo', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    })
+    const { data } = await api.post('/api/profile/photo', formData)
     authStore.user = data
     toast('Photo updated', 'success')
   } catch {
