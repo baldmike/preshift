@@ -62,7 +62,7 @@ function makeRequest(overrides: Partial<TimeOffRequest> = {}): TimeOffRequest {
     resolved_by: null,
     resolved_at: null,
     user: {
-      id: 10, location_id: 1, name: 'Alice Server', email: 'alice@test.com',
+      id: 10, location_id: 1, organization_id: null, name: 'Alice Server', email: 'alice@test.com',
       role: 'server', roles: null, is_superadmin: false, phone: null, profile_photo_url: null,
       availability: null, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z',
     },

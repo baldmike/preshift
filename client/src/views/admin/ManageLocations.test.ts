@@ -60,6 +60,7 @@ const BaseInputStub = {
 function makeLocation(overrides: Partial<Location> = {}): Location {
   return {
     id: 1,
+    organization_id: null,
     name: 'Downtown Bistro',
     address: '123 Main St',
     city: 'Austin',

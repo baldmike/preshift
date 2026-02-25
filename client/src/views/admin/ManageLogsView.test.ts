@@ -66,7 +66,7 @@ function makeLog(overrides: Partial<ManagerLog> = {}): ManagerLog {
     events_snapshot: null,
     schedule_snapshot: null,
     creator: {
-      id: 1, location_id: 1, name: 'Admin User', email: 'admin@test.com',
+      id: 1, location_id: 1, organization_id: null, name: 'Admin User', email: 'admin@test.com',
       role: 'admin', roles: null, is_superadmin: true, phone: null, profile_photo_url: null,
       availability: null, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z',
     },

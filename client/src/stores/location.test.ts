@@ -42,6 +42,7 @@ vi.mock('@/composables/useApi', () => ({
 function makeLocation(overrides: Partial<Location> = {}): Location {
   return {
     id: Math.floor(Math.random() * 10000),
+    organization_id: null,
     name: 'Test Location',
     address: '123 Main St',
     city: null,
