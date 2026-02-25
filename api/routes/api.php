@@ -89,6 +89,10 @@ Route::middleware('auth:sanctum')->group(function () {
     //                      Lives outside `location` middleware because it only
     //                      touches the authenticated user's own record.
     Route::put('/profile', [AuthController::class, 'updateProfile']);
+    // POST /api/profile/photo  -- Upload a profile photo (any authenticated user).
+    Route::post('/profile/photo', [AuthController::class, 'uploadProfilePhoto']);
+    // DELETE /api/profile/photo -- Delete own profile photo (any authenticated user).
+    Route::delete('/profile/photo', [AuthController::class, 'deleteProfilePhoto']);
 
     /*
     |----------------------------------------------------------------------

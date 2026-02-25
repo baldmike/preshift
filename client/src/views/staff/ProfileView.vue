@@ -15,8 +15,65 @@ import api from '@/composables/useApi'
 import AppShell from '@/components/layout/AppShell.vue'
 import BadgePill from '@/components/ui/BadgePill.vue'
 import AvailabilityGrid from '@/components/AvailabilityGrid.vue'
+import UserAvatar from '@/components/ui/UserAvatar.vue'
 
 const authStore = useAuthStore()
+
+// ── Photo upload ─────────────────────────────────────────────────────
+// Hidden file input ref for triggering camera/gallery on mobile.
+const photoInput = ref<HTMLInputElement | null>(null)
+// True while the photo upload POST is in-flight.
+const uploadingPhoto = ref(false)
+
+/** Open the native file picker (triggers camera/gallery on mobile). */
+function triggerPhotoUpload() {
+  photoInput.value?.click()
+}
+
+/**
+ * Upload the selected photo via POST /api/profile/photo.
+ * Updates the auth store with the response so the avatar
+ * refreshes everywhere without a page reload.
+ */
+async function handlePhotoSelected(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+
+  uploadingPhoto.value = true
+  try {
+    const formData = new FormData()
+    formData.append('photo', file)
+    const { data } = await api.post('/api/profile/photo', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    authStore.user = data
+    toast('Photo updated', 'success')
+  } catch {
+    toast('Failed to upload photo', 'error')
+  } finally {
+    uploadingPhoto.value = false
+    // Reset the input so the same file can be re-selected
+    if (photoInput.value) photoInput.value.value = ''
+  }
+}
+
+/**
+ * Delete the profile photo via DELETE /api/profile/photo.
+ * Reverts to the initials-based avatar fallback.
+ */
+async function removePhoto() {
+  uploadingPhoto.value = true
+  try {
+    const { data } = await api.delete('/api/profile/photo')
+    authStore.user = data
+    toast('Photo removed', 'success')
+  } catch {
+    toast('Failed to remove photo', 'error')
+  } finally {
+    uploadingPhoto.value = false
+  }
+}
 
 // ── Name editing ────────────────────────────────────────────────────
 // Controls whether the name field is in display or edit mode.
@@ -145,6 +202,44 @@ onMounted(loadAvailability)
 
       <!-- Profile Info Card -->
       <section class="rounded-xl border border-white/[0.06] bg-white/[0.03] p-4 space-y-4">
+
+        <!-- Profile Photo -->
+        <div class="flex flex-col items-center gap-2">
+          <button
+            type="button"
+            class="relative group focus:outline-none"
+            :disabled="uploadingPhoto"
+            @click="triggerPhotoUpload"
+          >
+            <UserAvatar :user="authStore.user ?? null" size="lg" bg="bg-amber-500 text-gray-950" />
+            <!-- Camera overlay -->
+            <div class="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+              <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </div>
+          </button>
+          <input
+            ref="photoInput"
+            type="file"
+            accept="image/*"
+            class="hidden"
+            @change="handlePhotoSelected"
+          />
+          <p v-if="uploadingPhoto" class="text-[10px] text-gray-500">Uploading...</p>
+          <button
+            v-else-if="authStore.user?.profile_photo_url"
+            type="button"
+            class="text-[10px] text-red-400 hover:text-red-300 transition-colors"
+            @click="removePhoto"
+          >
+            Remove photo
+          </button>
+          <p v-else class="text-[10px] text-gray-600">Tap to add a photo</p>
+        </div>
 
         <!-- Name (editable via pencil icon toggle) -->
         <div class="flex items-center justify-between">

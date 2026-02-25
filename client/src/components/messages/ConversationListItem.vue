@@ -16,6 +16,7 @@
 import { computed } from 'vue'
 import type { Conversation } from '@/types'
 import { useAuth } from '@/composables/useAuth'
+import UserAvatar from '@/components/ui/UserAvatar.vue'
 
 const props = defineProps<{
   conversation: Conversation
@@ -66,15 +67,14 @@ function relativeTime(dateStr: string | undefined): string {
     :class="active ? 'bg-gray-700/50' : 'hover:bg-gray-800/50'"
     @click="emit('select', conversation.id)"
   >
-    <!-- Avatar initial -->
-    <div class="w-9 h-9 rounded-full bg-gray-700 flex items-center justify-center text-sm font-bold text-gray-300 shrink-0 relative">
-      {{ otherParticipant ? otherParticipant.name.charAt(0).toUpperCase() : '?' }}
+    <!-- Avatar -->
+    <UserAvatar :user="otherParticipant" size="md">
       <!-- Unread dot -->
       <div
         v-if="conversation.unread_count > 0"
         class="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-amber-500 border-2 border-gray-900"
       />
-    </div>
+    </UserAvatar>
 
     <div class="flex-1 min-w-0">
       <div class="flex items-center justify-between gap-2">

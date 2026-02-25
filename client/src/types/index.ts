@@ -85,6 +85,8 @@ export interface User {
    * Null means the employee hasn't set availability yet.
    */
   availability: Record<string, string[]> | null
+  /** Full URL to the user's profile photo; null if no photo uploaded */
+  profile_photo_url: string | null
   /** Eagerly-loaded Location relationship (optional, depends on API include) */
   location?: Location
   /** ISO-8601 creation timestamp */

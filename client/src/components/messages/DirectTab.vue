@@ -27,6 +27,7 @@ import { useUserChannel } from '@/composables/useReverb'
 import type { DirectMessage, User } from '@/types'
 import ConversationListItem from './ConversationListItem.vue'
 import ConversationThread from './ConversationThread.vue'
+import UserAvatar from '@/components/ui/UserAvatar.vue'
 
 const props = withDefaults(defineProps<{
   initialUserId?: number | null
@@ -228,10 +229,8 @@ onUnmounted(() => {
           class="w-full text-left px-3 py-2.5 flex items-center gap-3 hover:bg-gray-800/50 transition-colors disabled:opacity-50"
           @click="selectRecipient(u.id)"
         >
-          <!-- Avatar initial -->
-          <div class="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-sm font-bold text-gray-300 shrink-0">
-            {{ u.name.charAt(0).toUpperCase() }}
-          </div>
+          <!-- Avatar -->
+          <UserAvatar :user="u" size="sm" />
           <div class="flex items-center gap-1.5 min-w-0">
             <span class="text-sm font-medium text-white truncate">{{ u.name }}</span>
             <span

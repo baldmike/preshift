@@ -26,6 +26,7 @@ class UserFactory extends Factory
             'location_id' => Location::factory(),
             'phone' => fake()->optional()->phoneNumber(),
             'availability' => null,
+            'profile_photo_path' => null,
             'is_superadmin' => false,
         ];
     }

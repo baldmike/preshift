@@ -14,6 +14,7 @@ import { useRouter } from 'vue-router'
 import api from '@/composables/useApi'
 import RealtimeIndicator from '@/components/RealtimeIndicator.vue'
 import NotificationBell from '@/components/layout/NotificationBell.vue'
+import UserAvatar from '@/components/ui/UserAvatar.vue'
 
 const { user, isAdmin, isManager, locations, hasMultipleLocations } = useAuth()
 const authStore = useAuthStore()
@@ -100,16 +101,6 @@ const cityState = computed(() => {
   const loc = user.value?.location
   if (!loc?.city) return null
   return loc.state ? `${loc.city}, ${loc.state}` : loc.city
-})
-
-const initials = computed(() => {
-  if (!user.value?.name) return '?'
-  return user.value.name
-    .split(' ')
-    .map(w => w[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2)
 })
 
 async function handleLogout() {
@@ -203,11 +194,9 @@ async function changePassword() {
           <div v-if="user" class="relative">
             <button
               @click.stop="menuOpen = !menuOpen"
-              class="flex items-center justify-center w-8 h-8 rounded-full bg-amber-500 text-gray-950
-                     text-xs font-bold hover:bg-amber-400 transition-colors focus:outline-none
-                     focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 focus:ring-offset-gray-900"
+              class="focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 focus:ring-offset-gray-900 rounded-full"
             >
-              {{ initials }}
+              <UserAvatar :user="user" size="sm" bg="bg-amber-500 text-gray-950" />
             </button>
 
             <!-- Dropdown menu -->
