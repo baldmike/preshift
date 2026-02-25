@@ -116,7 +116,7 @@ class DatabaseSeeder extends Seeder
 
         $snookis = Location::create([
             'name'      => "Snooki's",
-            'address'   => '2400 W Montana St, Chicago, IL 60647',
+            'address'   => '2400 N Racine Ave, Chicago, IL 60614',
             'city'      => 'Chicago',
             'state'     => 'IL',
             'timezone'  => 'America/Chicago',
