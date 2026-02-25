@@ -74,6 +74,7 @@ function makeTimeOffRequest(overrides: Partial<TimeOffRequest> = {}): TimeOffReq
       roles: null,
       is_superadmin: false,
       phone: null,
+      profile_photo_url: null,
       availability: null,
       created_at: '2026-01-01T00:00:00Z',
       updated_at: '2026-01-01T00:00:00Z',

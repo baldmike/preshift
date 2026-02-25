@@ -35,6 +35,7 @@ function makeUser(overrides: Partial<User> = {}): User {
     location_id: 1,
     is_superadmin: false,
     phone: null,
+    profile_photo_url: null,
     availability: null,
     created_at: '',
     updated_at: '',
