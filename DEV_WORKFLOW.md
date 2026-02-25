@@ -319,6 +319,15 @@ End of week:
   12. If milestone hit: tag a release on main
 ```
 
+### Run Daily Sprints
+
+Each day, treat your work session as a mini-sprint:
+
+1. **Pick 1-3 focused tasks** from the current sprint backlog
+2. **Time-box each task** — if it's taking longer than expected, commit what you have and reassess
+3. **Ship something every day** — even a small fix or incremental progress counts
+4. **End-of-day checkpoint** — push all work, note where you left off, update SPRINT.md if needed
+
 ---
 
 ## Tools
