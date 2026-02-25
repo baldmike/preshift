@@ -212,8 +212,8 @@ onMounted(loadAvailability)
             @click="triggerPhotoUpload"
           >
             <UserAvatar :user="authStore.user ?? null" size="lg" bg="bg-amber-500 text-gray-950" />
-            <!-- Camera overlay -->
-            <div class="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+            <!-- Camera overlay (always visible on mobile, hover-only on desktop) -->
+            <div class="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-60 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
               <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
@@ -226,7 +226,7 @@ onMounted(loadAvailability)
             ref="photoInput"
             type="file"
             accept="image/*"
-            class="hidden"
+            class="absolute w-0 h-0 overflow-hidden opacity-0"
             @change="handlePhotoSelected"
           />
           <p v-if="uploadingPhoto" class="text-[10px] text-gray-500">Uploading...</p>
