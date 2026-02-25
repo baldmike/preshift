@@ -134,7 +134,7 @@ class DatabaseSeeder extends Seeder
         $superadmin = User::create([
             'name'          => 'BM',
             'email'         => 'bm@preshift.test',
-            'password'      => Hash::make('baldsnutz'),
+            'password'      => Hash::make('funky101'),
             'role'          => 'admin',
             'location_id'   => $location->id,
             'is_superadmin' => true,
